@@ -1,0 +1,12 @@
+import Link from "next/link";
+
+export default function AdminPage(){
+ return <main style={{maxWidth:1180,margin:"auto",padding:32}}>
+  <h1>Admin Dashboard</h1><p>Store overview and management center.</p>
+  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,margin:"28px 0"}}>
+   {[["Orders","0"],["Products","0"],["Customers","0"],["Revenue","৳0"]].map(([a,b])=><div key={a} style={{background:"#fff",border:"1px solid #ddd",borderRadius:14,padding:24}}><b>{a}</b><div style={{fontSize:30,fontWeight:700,marginTop:16}}>{b}</div></div>)}
+  </div>
+  <nav style={{display:"flex",gap:12,flexWrap:"wrap"}}><Link href="/admin/products" style={button}>Products</Link><Link href="/admin/orders" style={button}>Orders</Link></nav>
+ </main>
+}
+const button={background:"#111",color:"#fff",padding:"12px 18px",borderRadius:8};
