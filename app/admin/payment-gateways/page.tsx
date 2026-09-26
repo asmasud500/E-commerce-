@@ -1,0 +1,31 @@
+"use client";
+import {useEffect,useState} from "react";
+type G={id:string;name:string;type:string;mode:string;enabled:boolean;apiBaseUrl?:string|null;qrImageUrl?:string|null;qrMerchantName?:string|null};
+const types=["SSLCOMMERZ","BKASH","NAGAD","ROCKET","BANGLA_QR","CUSTOM"];
+export default function PaymentGateways(){
+ const [items,setItems]=useState<G[]>([]),[form,setForm]=useState({name:"",type:"SSLCOMMERZ",mode:"SANDBOX",apiBaseUrl:"",qrImageUrl:"",qrMerchantName:""}),[msg,setMsg]=useState("");
+ const load=()=>fetch("/api/admin/payment-gateways").then(r=>r.json()).then(setItems);
+ useEffect(()=>{load()},[]);
+ async function add(e:React.FormEvent){e.preventDefault();const r=await fetch("/api/admin/payment-gateways",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...form,enabled:false,sortOrder:items.length})});const d=await r.json();if(!r.ok)return setMsg(d.error);setMsg("Gateway added");setForm({...form,name:"",apiBaseUrl:"",qrImageUrl:"",qrMerchantName:""});load()}
+ async function toggle(g:G){await fetch("/api/admin/payment-gateways/"+g.id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({enabled:!g.enabled})});load()}
+ async function remove(id:string){if(!confirm("Remove this payment gateway?"))return;await fetch("/api/admin/payment-gateways/"+id,{method:"DELETE"});load()}
+ return <main style={{maxWidth:1100,margin:"auto",padding:32}}>
+  <a href="/admin">← Admin Dashboard</a><h1>Payment Gateways</h1>
+  <p>Manage Bangladesh payment methods, sandbox/live mode and Bangla QR.</p>
+  <form onSubmit={add} style={{display:"grid",gap:10,maxWidth:650,border:"1px solid #ddd",padding:20,borderRadius:14}}>
+   <input required placeholder="Gateway name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>
+   <select value={form.type} onChange={e=>setForm({...form,type:e.target.value})}>{types.map(x=><option key={x}>{x}</option>)}</select>
+   <select value={form.mode} onChange={e=>setForm({...form,mode:e.target.value})}><option>SANDBOX</option><option>LIVE</option></select>
+   <input placeholder="API base URL (optional)" value={form.apiBaseUrl} onChange={e=>setForm({...form,apiBaseUrl:e.target.value})}/>
+   {form.type==="BANGLA_QR"&&<><input placeholder="Bangla QR image URL" value={form.qrImageUrl} onChange={e=>setForm({...form,qrImageUrl:e.target.value})}/><input placeholder="Merchant name" value={form.qrMerchantName} onChange={e=>setForm({...form,qrMerchantName:e.target.value})}/></>}
+   <button type="submit">+ Add Gateway</button>{msg&&<small>{msg}</small>}
+  </form>
+  <section style={{display:"grid",gap:12,marginTop:25}}>
+   {items.map(g=><article key={g.id} style={{border:"1px solid #ddd",padding:18,borderRadius:12}}>
+    <div style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}><div><h2>{g.name}</h2><p>{g.type} · {g.mode} · {g.enabled?"Enabled":"Disabled"}</p></div>
+    <div><button onClick={()=>toggle(g)}>{g.enabled?"Disable":"Enable"}</button>{" "}<button onClick={()=>remove(g.id)}>Delete</button></div></div>
+    {g.type==="BANGLA_QR"&&g.qrImageUrl&&<img src={g.qrImageUrl} alt="Bangla QR" style={{width:180,marginTop:12}}/>}
+   </article>)}
+  </section>
+ </main>
+}
