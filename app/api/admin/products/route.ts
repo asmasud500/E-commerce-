@@ -1,0 +1,4 @@
+import {NextRequest,NextResponse} from "next/server";
+import {db} from "@/lib/prisma";
+export async function GET(){return NextResponse.json(await db.product.findMany({include:{category:true},orderBy:{createdAt:"desc"}}))}
+export async function POST(req:NextRequest){try{const b=await req.json();const name=String(b.name),slug=(String(b.slug||name).toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""));const p=await db.product.create({data:{name,slug,sku:String(b.sku),description:b.description||null,price:Number(b.price),compareAtPrice:b.compareAtPrice==null?null:Number(b.compareAtPrice),stock:Number(b.stock||0),published:Boolean(b.published),categoryId:b.categoryId||null}});return NextResponse.json(p,{status:201})}catch{return NextResponse.json({error:"Product creation failed"},{status:400})}}
