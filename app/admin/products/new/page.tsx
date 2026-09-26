@@ -1,18 +1,6 @@
 "use client";
-import {useState} from "react";
-
-export default function NewProduct(){
- const [saved,setSaved]=useState(false);
- return <main style={{maxWidth:800,margin:"auto",padding:32}}>
-  <a href="/admin/products">← Products</a><h1>Add Product</h1>
-  <form onSubmit={e=>{e.preventDefault();setSaved(true)}} style={{display:"grid",gap:16,marginTop:24}}>
-   <input required placeholder="Product name" style={field}/><input required placeholder="SKU" style={field}/>
-   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}><input required type="number" step="0.01" placeholder="Price" style={field}/><input required type="number" placeholder="Stock quantity" style={field}/></div>
-   <input placeholder="Category" style={field}/><textarea placeholder="Product description" rows={7} style={field}/>
-   <label><input type="checkbox"/> Publish immediately</label>
-   <button style={{background:"#111",color:"#fff",border:0,padding:14,borderRadius:8}}>Create Product</button>
-   {saved&&<p>Product form validated. Database create API will connect this form next.</p>}
-  </form>
- </main>
-}
-const field={padding:14,border:"1px solid #ddd",borderRadius:8,fontSize:16};
+import {useEffect,useState} from "react";
+export default function NewProduct(){const [categories,setCategories]=useState<any[]>([]),[form,setForm]=useState({name:"",sku:"",price:"",stock:"0",categoryId:"",description:"",published:false}),[message,setMessage]=useState("");
+ useEffect(()=>{fetch("/api/products").then(()=>{});},[]);
+ async function submit(e:React.FormEvent){e.preventDefault();setMessage("");const r=await fetch("/api/admin/products",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});const d=await r.json();if(r.ok)location.href="/admin/products";else setMessage(d.error||"Create failed")}
+ return <main style={{maxWidth:800,margin:"auto",padding:32}}><a href="/admin/products">← Products</a><h1>Add Product</h1><form onSubmit={submit} style={{display:"grid",gap:16,marginTop:24}}><input required placeholder="Product name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/><input required placeholder="SKU" value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})}/><input required type="number" step="0.01" placeholder="Price" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/><input required type="number" placeholder="Stock quantity" value={form.stock} onChange={e=>setForm({...form,stock:e.target.value})}/><input placeholder="Category ID (optional)" value={form.categoryId} onChange={e=>setForm({...form,categoryId:e.target.value})}/><textarea placeholder="Product description" rows={7} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/><label><input type="checkbox" checked={form.published} onChange={e=>setForm({...form,published:e.target.checked})}/> Publish immediately</label>{message&&<p>{message}</p>}<button>Create Product</button></form></main>}
