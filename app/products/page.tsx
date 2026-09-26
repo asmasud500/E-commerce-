@@ -1,0 +1,16 @@
+import Link from "next/link";
+import { db } from "@/lib/prisma";
+
+export default async function ProductsPage() {
+  const products = await db.product.findMany({ where: { published: true, stock: { gt: 0 } }, orderBy: { createdAt: "desc" } });
+  return <main style={{maxWidth:1180,margin:"auto",padding:32}}>
+    <nav style={{display:"flex",justifyContent:"space-between"}}><Link href="/">← Store</Link><Link href="/cart">Cart</Link></nav>
+    <h1 style={{marginTop:40}}>Products</h1>
+    {products.length === 0 ? <p>No products are published yet. Add products from the admin panel.</p> :
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:18,marginTop:28}}>
+        {products.map(p=><article key={p.id} style={{background:"#fff",border:"1px solid #ddd",borderRadius:14,padding:22}}>
+          <small>{p.sku}</small><h2>{p.name}</h2><strong>৳{Number(p.price).toLocaleString("en-BD")}</strong><p>{p.description || "Premium quality product."}</p><button style={{padding:"10px 14px",border:0,borderRadius:7,background:"#111",color:"#fff"}}>Add to cart</button>
+        </article>)}
+      </div>}
+  </main>;
+}
