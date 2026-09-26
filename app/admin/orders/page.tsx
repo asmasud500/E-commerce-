@@ -1,15 +1,10 @@
+"use client";
+import {useEffect,useState} from "react";
 import Link from "next/link";
-
-const orders=[
- {id:"#ORD-1001",customer:"Demo Customer",total:"৳2,450",payment:"Paid",status:"Processing"},
- {id:"#ORD-1002",customer:"Demo Customer 2",total:"৳1,200",payment:"Pending",status:"Pending"}
-];
-
-export default function Orders(){
- return <main style={{maxWidth:1180,margin:"auto",padding:32}}>
-  <Link href="/admin">← Dashboard</Link><h1>Orders</h1><p>Monitor payment and fulfilment status.</p>
-  <div style={{marginTop:24,border:"1px solid #ddd",borderRadius:12,overflow:"hidden",background:"#fff"}}>
-   {orders.map(o=><div key={o.id} style={{display:"grid",gridTemplateColumns:"1fr 2fr 1fr 1fr 1fr",gap:16,padding:18,borderBottom:"1px solid #eee"}}><b>{o.id}</b><span>{o.customer}</span><span>{o.total}</span><span>{o.payment}</span><span>{o.status}</span></div>)}
-  </div>
- </main>
-}
+type O={id:string;orderNumber:string;customerName:string;total:number;paymentStatus:string;status:string};
+const statuses=["PENDING","CONFIRMED","PROCESSING","SHIPPED","DELIVERED","CANCELLED","REFUNDED"];
+export default function Orders(){const [orders,setOrders]=useState<O[]>([]);const [error,setError]=useState("");
+ async function load(){const r=await fetch("/api/admin/orders");if(r.ok)setOrders(await r.json());else setError("Unable to load orders")}
+ useEffect(()=>{load()},[]);
+ async function change(id:string,status:string){const r=await fetch("/api/admin/orders/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});if(r.ok)load();else setError((await r.json()).error||"Update failed")}
+ return <main style={{maxWidth:1200,margin:"auto",padding:32}}><Link href="/admin">← Dashboard</Link><h1>Orders</h1>{error&&<p>{error}</p>}<div style={{overflowX:"auto",marginTop:24}}><table style={{width:"100%",background:"#fff",borderCollapse:"collapse"}}><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead><tbody>{orders.map(o=><tr key={o.id}><td>{o.orderNumber}</td><td>{o.customerName}</td><td>৳{o.total.toLocaleString("en-BD")}</td><td>{o.paymentStatus}</td><td><select value={o.status} onChange={e=>change(o.id,e.target.value)}>{statuses.map(s=><option key={s}>{s}</option>)}</select></td></tr>)}</tbody></table></div>{!orders.length&&<p>No orders yet.</p>}</main>}
