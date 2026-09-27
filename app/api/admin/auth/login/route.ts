@@ -1,4 +1,4 @@
-import {NextRequest,NextResponse} from "next/server";
+import {NextRequest,NextResponse} from "next/server";import {rateLimit} from "@/lib/security/rate-limit";
 import {adminCredentials,createAdminToken} from "@/lib/auth/admin";
 export async function POST(req:NextRequest){
  try{const {email,password}=await req.json();const c=adminCredentials();
