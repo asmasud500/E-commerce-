@@ -1,0 +1,4 @@
+import {NextRequest,NextResponse} from "next/server";import {db} from "@/lib/prisma";import {z} from "zod";
+export async function GET(){const rows=await db.review.findMany({include:{user:{select:{name:true,email:true}},product:{select:{name:true,slug:true}}},orderBy:{createdAt:"desc"},take:200});return NextResponse.json(rows)}
+export async function PATCH(req:NextRequest){try{const b=z.object({id:z.string(),approved:z.boolean()}).parse(await req.json());const row=await db.review.update({where:{id:b.id},data:{approved:b.approved}});return NextResponse.json(row)}catch{return NextResponse.json({error:"Invalid review update"},{status:400})}}
+export async function DELETE(req:NextRequest){const id=req.nextUrl.searchParams.get("id");if(!id)return NextResponse.json({error:"id required"},{status:400});await db.review.delete({where:{id}});return NextResponse.json({ok:true})}

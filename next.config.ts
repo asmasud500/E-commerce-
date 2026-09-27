@@ -1,10 +1,5 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {};
-
+import type {NextConfig} from "next";
+const securityHeaders=[{key:"X-Content-Type-Options",value:"nosniff"},{key:"X-Frame-Options",value:"DENY"},{key:"Referrer-Policy",value:"strict-origin-when-cross-origin"},{key:"Permissions-Policy",value:"camera=(),microphone=(),geolocation=()"}];
+const nextConfig:NextConfig={async headers(){return [{source:"/:path*",headers:securityHeaders}]},poweredByHeader:false};
 export default nextConfig;
-
-// Enables the local `next dev` experience to also work against Cloudflare
-// bindings (KV/D1/etc.) when running under the OpenNext Cloudflare adapter.
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-initOpenNextCloudflareForDev();
+import {initOpenNextCloudflareForDev} from "@opennextjs/cloudflare";initOpenNextCloudflareForDev();

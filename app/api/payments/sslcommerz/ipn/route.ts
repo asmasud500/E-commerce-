@@ -1,0 +1,2 @@
+import {NextRequest,NextResponse} from "next/server";import {settlePayment} from "@/lib/payments/settle";
+export async function POST(req:NextRequest){try{const text=await req.text();const form=new URLSearchParams(text);const payload=Object.fromEntries(form.entries());const orderNumber=String(payload.tran_id||"");if(!orderNumber)return NextResponse.json({error:"Missing transaction reference"},{status:400});return NextResponse.json({ok:true,...await settlePayment(orderNumber,payload)})}catch{return NextResponse.json({error:"Payment verification failed"},{status:400})}}

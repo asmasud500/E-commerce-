@@ -1,10 +1,3 @@
-import {NextRequest,NextResponse} from "next/server";
-import {db} from "@/lib/prisma";
-const allowed=["PENDING","CONFIRMED","PROCESSING","SHIPPED","DELIVERED","CANCELLED","REFUNDED"] as const;
-export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}>}){
- const {id}=await params;try{const {status}=await req.json();if(!allowed.includes(status))return NextResponse.json({error:"Invalid status"},{status:400});
-  const before=await db.order.findUnique({where:{id},select:{status:true}});if(!before)return NextResponse.json({error:"Order not found"},{status:404});
-  const order=await db.$transaction(async tx=>{const updated=await tx.order.update({where:{id},data:{status}});await tx.auditLog.create({data:{action:"ORDER_STATUS_CHANGED",entity:"Order",entityId:id,metadata:{from:before.status,to:status}}});return updated});
-  return NextResponse.json(order);
- }catch{return NextResponse.json({error:"Order update failed"},{status:400})}
-}
+import {NextRequest,NextResponse} from "next/server";import {db} from "@/lib/prisma";
+const next:Record<string,string[]>={PENDING:["CONFIRMED","CANCELLED"],CONFIRMED:["PROCESSING","CANCELLED"],PROCESSING:["SHIPPED"],SHIPPED:["DELIVERED"],DELIVERED:[],CANCELLED:[],REFUNDED:[]};
+export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}>}){const {id}=await params;try{const {status}=await req.json();const before=await db.order.findUnique({where:{id},select:{status:true,paymentStatus:true}});if(!before)return NextResponse.json({error:"Order not found"},{status:404});if(!next[before.status]?.includes(status))return NextResponse.json({error:`Invalid transition: ${before.status} → ${status}`},{status:409});if(status==="CONFIRMED"&&before.paymentStatus!=="PAID")return NextResponse.json({error:"Payment must be paid before confirmation."},{status:409});const order=await db.$transaction(async tx=>{const updated=await tx.order.update({where:{id},data:{status}});await tx.auditLog.create({data:{action:"ORDER_STATUS_CHANGED",entity:"Order",entityId:id,metadata:{from:before.status,to:status}}});if(status==="CANCELLED"&&before.paymentStatus==="PENDING"){const rs=await tx.stockReservation.findMany({where:{orderId:id,status:"HELD"}});for(const r of rs)await tx.product.update({where:{id:r.productId},data:{stock:{increment:r.quantity}}});await tx.stockReservation.updateMany({where:{orderId:id,status:"HELD"},data:{status:"RELEASED"}})}return updated});return NextResponse.json(order)}catch{return NextResponse.json({error:"Order update failed"},{status:400})}}

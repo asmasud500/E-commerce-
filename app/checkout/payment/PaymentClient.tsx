@@ -1,0 +1,6 @@
+"use client";
+import{useEffect,useState}from"react";import{useSearchParams}from"next/navigation";
+export default function PaymentClient(){const search=useSearchParams();const[orderId,setOrderId]=useState(""),[loading,setLoading]=useState(false),[result,setResult]=useState<any>(null);
+useEffect(()=>{const id=search.get("order")||sessionStorage.getItem("lastOrderId")||"";setOrderId(id)},[search]);
+async function pay(){if(!orderId)return;setLoading(true);try{const r=await fetch("/api/payments/initiate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId,accessToken:sessionStorage.getItem("orderPaymentToken")||""})});setResult(await r.json())}finally{setLoading(false)}}
+return <main style={{maxWidth:650,margin:"60px auto",padding:32}}><h1>Payment</h1>{!orderId?<p>Order information not found.</p>:<><p>Order ID: <b>{orderId}</b></p><button disabled={loading} onClick={pay}>{loading?"Starting payment...":"Continue to payment"}</button>{result?.qrImageUrl&&<div><h2>Bangla QR</h2><img src={result.qrImageUrl} alt="Bangla QR" style={{width:260}}/><p>Reference: {result.reference}</p></div>}{result?.paymentUrl&&<p><a href={result.paymentUrl}>Open payment page</a></p>}{result?.message&&<p>{result.message}</p>}{result?.error&&<p>{result.error}</p>}</>}</main>}

@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -12,7 +11,6 @@ enum Role {
   CUSTOMER
   ADMIN
 }
-
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -22,19 +20,16 @@ enum OrderStatus {
   CANCELLED
   REFUNDED
 }
-
 enum PaymentStatus {
   PENDING
   PAID
   FAILED
   REFUNDED
 }
-
 enum GatewayMode {
   SANDBOX
   LIVE
 }
-
 enum GatewayType {
   SSLCOMMERZ
   BKASH
@@ -43,149 +38,205 @@ enum GatewayType {
   BANGLA_QR
   CUSTOM
 }
+enum ReservationStatus {
+  HELD
+  CONFIRMED
+  RELEASED
+}
+enum CouponType {
+  PERCENT
+  FIXED
+}
 
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
+  id String @id @default(cuid())
+  name String
+  email String @unique
   passwordHash String?
-  role         Role     @default(CUSTOMER)
-  orders       Order[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  role Role @default(CUSTOMER)
+  orders Order[]
+  wishlist WishlistItem[]
+  reviews Review[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Category {
-  id        String    @id @default(cuid())
-  name      String
-  slug      String    @unique
-  products  Product[]
-  createdAt DateTime  @default(now())
+  id String @id @default(cuid())
+  name String
+  slug String @unique
+  products Product[]
+  createdAt DateTime @default(now())
 }
 
 model Product {
-  id             String             @id @default(cuid())
-  name           String
-  slug           String             @unique
-  description    String?
-  sku            String             @unique
-  price          Decimal            @db.Decimal(12, 2)
-  compareAtPrice Decimal?           @db.Decimal(12, 2)
-  stock          Int                @default(0)
-  published      Boolean            @default(false)
-  categoryId     String?
-  category       Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  items          OrderItem[]
-  reservations   StockReservation[]
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  id String @id @default(cuid())
+  name String
+  slug String @unique
+  description String?
+  sku String @unique
+  price Decimal @db.Decimal(12,2)
+  compareAtPrice Decimal? @db.Decimal(12,2)
+  salePrice Decimal? @db.Decimal(12,2)
+  stock Int @default(0)
+  lowStockThreshold Int @default(5)
+  featured Boolean @default(false)
+  published Boolean @default(false)
+  categoryId String?
+  category Category? @relation(fields:[categoryId], references:[id], onDelete:SetNull)
+  images ProductImage[]
+  items OrderItem[]
+  reservations StockReservation[]
+  wishlist WishlistItem[]
+  reviews Review[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductImage {
+  id String @id @default(cuid())
+  productId String
+  product Product @relation(fields:[productId], references:[id], onDelete:Cascade)
+  url String
+  alt String?
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  @@index([productId, sortOrder])
+}
+
+model WishlistItem {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  productId String
+  product Product @relation(fields:[productId], references:[id], onDelete:Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId, productId])
+}
+
+model Review {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  productId String
+  product Product @relation(fields:[productId], references:[id], onDelete:Cascade)
+  rating Int
+  comment String?
+  approved Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([userId, productId])
 }
 
 model PaymentGateway {
-  id               String               @id @default(cuid())
-  name             String
-  type             GatewayType
-  mode             GatewayMode          @default(SANDBOX)
-  enabled          Boolean              @default(false)
-  sortOrder        Int                  @default(0)
-  apiBaseUrl       String?
-  publicConfig     Json?
+  id String @id @default(cuid())
+  name String
+  type GatewayType
+  mode GatewayMode @default(SANDBOX)
+  enabled Boolean @default(false)
+  sortOrder Int @default(0)
+  apiBaseUrl String?
+  publicConfig Json?
   encryptedSecrets String?
-  qrImageUrl       String?
-  qrMerchantName   String?
-  orders           Order[]
-  transactions     PaymentTransaction[]
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  qrImageUrl String?
+  qrMerchantName String?
+  orders Order[]
+  transactions PaymentTransaction[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Order {
-  id               String               @id @default(cuid())
-  orderNumber      String               @unique
-  userId           String?
-  user             User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
-  customerName     String
-  customerPhone    String
-  customerEmail    String?
-  shippingAddress  String
-  subtotal         Decimal              @db.Decimal(12, 2)
-  shippingFee      Decimal              @db.Decimal(12, 2)
-  discount         Decimal              @default(0) @db.Decimal(12, 2)
-  total            Decimal              @db.Decimal(12, 2)
-  status           OrderStatus          @default(PENDING)
-  paymentStatus    PaymentStatus        @default(PENDING)
+  id String @id @default(cuid())
+  orderNumber String @unique
+  idempotencyKey String? @unique
+  userId String?
+  user User? @relation(fields:[userId], references:[id], onDelete:SetNull)
+  customerName String
+  customerPhone String
+  customerEmail String?
+  shippingAddress String
+  subtotal Decimal @db.Decimal(12,2)
+  shippingFee Decimal @db.Decimal(12,2)
+  discount Decimal @default(0) @db.Decimal(12,2)
+  total Decimal @db.Decimal(12,2)
+  status OrderStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
   paymentReference String?
+  refundReference String?
+  refundReason String?
+  refundedAt DateTime?
   paymentGatewayId String?
-  paymentGateway   PaymentGateway?      @relation(fields: [paymentGatewayId], references: [id], onDelete: SetNull)
-  items            OrderItem[]
-  transactions     PaymentTransaction[]
-  reservations     StockReservation[]
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  paymentGateway PaymentGateway? @relation(fields:[paymentGatewayId], references:[id], onDelete:SetNull)
+  items OrderItem[]
+  transactions PaymentTransaction[]
+  reservations StockReservation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PaymentTransaction {
-  id                    String         @id @default(cuid())
-  orderId               String
-  order                 Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  gatewayId             String
-  gateway               PaymentGateway @relation(fields: [gatewayId], references: [id], onDelete: Restrict)
-  reference             String?
-  providerTransactionId String?        @unique
-  amount                Decimal        @db.Decimal(12, 2)
-  status                PaymentStatus  @default(PENDING)
-  rawResponse           Json?
-  verifiedAt            DateTime?
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
-
+  id String @id @default(cuid())
+  orderId String
+  order Order @relation(fields:[orderId], references:[id], onDelete:Cascade)
+  gatewayId String
+  gateway PaymentGateway @relation(fields:[gatewayId], references:[id], onDelete:Restrict)
+  reference String?
+  providerTransactionId String?
+  amount Decimal @db.Decimal(12,2)
+  status PaymentStatus @default(PENDING)
+  rawResponse Json?
+  verifiedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   @@index([orderId])
+  @@unique([gatewayId, providerTransactionId])
 }
 
 model StockReservation {
-  id        String   @id @default(cuid())
-  orderId   String
+  id String @id @default(cuid())
+  orderId String
   productId String
-  quantity  Int
-  status    String   @default("HELD")
+  quantity Int
+  status ReservationStatus @default(HELD)
   expiresAt DateTime
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  order Order @relation(fields:[orderId], references:[id], onDelete:Cascade)
+  product Product @relation(fields:[productId], references:[id], onDelete:Restrict)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   @@index([productId, status])
   @@index([expiresAt, status])
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id String @id @default(cuid())
+  orderId String
+  order Order @relation(fields:[orderId], references:[id], onDelete:Cascade)
   productId String
-  product   Product @relation(fields: [productId], references: [id])
-  name      String
-  unitPrice Decimal @db.Decimal(12, 2)
-  quantity  Int
-  lineTotal Decimal @db.Decimal(12, 2)
+  product Product @relation(fields:[productId], references:[id])
+  name String
+  unitPrice Decimal @db.Decimal(12,2)
+  quantity Int
+  lineTotal Decimal @db.Decimal(12,2)
 }
 
 model Coupon {
-  id        String    @id @default(cuid())
-  code      String    @unique
-  type      String
-  value     Decimal   @db.Decimal(12, 2)
-  minOrder  Decimal?  @db.Decimal(12, 2)
+  id String @id @default(cuid())
+  name String?
+  code String @unique
+  type CouponType
+  value Decimal @db.Decimal(12,2)
+  minOrder Decimal? @db.Decimal(12,2)
   expiresAt DateTime?
-  active    Boolean   @default(true)
+  active Boolean @default(true)
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  actorId   String?
-  action    String
-  entity    String
-  entityId  String?
-  metadata  Json?
+  id String @id @default(cuid())
+  actorId String?
+  action String
+  entity String
+  entityId String?
+  metadata Json?
   createdAt DateTime @default(now())
 }
