@@ -1,4 +1,4 @@
-generator client { provider = "prisma-client-js" }
+generator client { provider = "prisma-client-js" previewFeatures = ["driverAdapters"] }
 datasource db { provider = "postgresql" url = env("DATABASE_URL") }
 enum Role { CUSTOMER ADMIN }
 enum OrderStatus { PENDING CONFIRMED PROCESSING SHIPPED DELIVERED CANCELLED REFUNDED }
