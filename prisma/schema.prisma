@@ -8,13 +8,46 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {\n  CUSTOMER\n  ADMIN\n}
-enum OrderStatus {\n  PENDING\n  CONFIRMED\n  PROCESSING\n  SHIPPED\n  DELIVERED\n  CANCELLED\n  REFUNDED\n}
-enum PaymentStatus {\n  PENDING\n  PAID\n  FAILED\n  REFUNDED\n}
-enum GatewayMode {\n  SANDBOX\n  LIVE\n}
-enum GatewayType {\n  SSLCOMMERZ\n  BKASH\n  NAGAD\n  ROCKET\n  BANGLA_QR\n  CUSTOM\n}
-enum ReservationStatus {\n  HELD\n  CONFIRMED\n  RELEASED\n}
-enum CouponType {\n  PERCENT\n  FIXED\n}
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+enum GatewayMode {
+  SANDBOX
+  LIVE
+}
+enum GatewayType {
+  SSLCOMMERZ
+  BKASH
+  NAGAD
+  ROCKET
+  BANGLA_QR
+  CUSTOM
+}
+enum ReservationStatus {
+  HELD
+  CONFIRMED
+  RELEASED
+}
+enum CouponType {
+  PERCENT
+  FIXED
+}
 
 model User {
   id String @id @default(cuid())
