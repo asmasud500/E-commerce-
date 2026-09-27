@@ -1,4 +1,4 @@
 "use client";
 import Link from "next/link";import {useState} from "react";import {addToCart} from "@/lib/cart";
-type P={id:string;name:string;slug:string;sku:string;price:any;stock:number;description:string|null;compareAtPrice:any};
+type P={id:string;name:string;slug:string;sku:string;price:number;salePrice:any;stock:number;description:string|null;compareAtPrice:any};
 export default function ProductActions({p}:{p:P}){const [qty,setQty]=useState(1),[added,setAdded]=useState(false);function add(){addToCart({productId:p.id,name:p.name,price:Number(p.price),quantity:qty,sku:p.sku});setAdded(true)}return <div><div style={{display:"flex",gap:8,alignItems:"center"}}><button onClick={()=>setQty(Math.max(1,qty-1))}>-</button><span>{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))}>+</button></div><button disabled={!p.stock} onClick={add} style={{marginTop:14,padding:"12px 18px",background:"#111",color:"#fff",border:0,borderRadius:8}}>{added?"Added to cart":"Add to cart"}</button>{added&&<p><Link href="/cart">View cart →</Link></p>}</div>}
