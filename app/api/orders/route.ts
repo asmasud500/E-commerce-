@@ -5,6 +5,7 @@ import {sendNewOrderTelegram} from "@/lib/notifications/telegram-admin";
 import {verifyCustomerToken} from "@/lib/auth/customer";
 import {getEffectivePrice} from "@/lib/products/pricing";
 import {rateLimit} from "@/lib/security/rate-limit";
+import {createOrderAccessToken} from "@/lib/auth/order-access";
 
 const schema=z.object({customerName:z.string().trim().min(2).max(100),customerPhone:z.string().trim().min(6).max(30),customerEmail:z.string().email().optional().or(z.literal("")),shippingAddress:z.string().trim().min(5).max(1000),paymentGatewayId:z.string().min(1),couponCode:z.string().trim().max(50).optional(),items:z.array(z.object({productId:z.string().min(1),quantity:z.number().int().positive().max(100)})).min(1).max(100)});
 
@@ -21,7 +22,7 @@ export async function POST(req:NextRequest){
    if(existing){
     if((existing.userId||null)!==(session?.userId||null))return NextResponse.json({error:"Idempotency key is already in use."},{status:409});
     const expiry=existing.reservations.filter(r=>r.status==="HELD").reduce((min,r)=>r.expiresAt<min?r.expiresAt:min,new Date(8640000000000000));
-    return NextResponse.json({orderId:existing.id,orderNumber:existing.orderNumber,total:Number(existing.total),discount:Number(existing.discount),reservationExpiresAt:expiry.toISOString(),replayed:true},{status:200});
+    return NextResponse.json({orderId:existing.id,orderNumber:existing.orderNumber,total:Number(existing.total),discount:Number(existing.discount),reservationExpiresAt:expiry.toISOString(),paymentToken:await createOrderAccessToken(existing.id),replayed:true},{status:200});
    }
   }
   const unique=[...new Set(input.items.map(i=>i.productId))];if(unique.length!==input.items.length)return NextResponse.json({error:"Duplicate products are not allowed."},{status:400});
@@ -44,6 +45,6 @@ export async function POST(req:NextRequest){
    await tx.stockReservation.createMany({data:input.items.map(i=>({orderId:created.id,productId:i.productId,quantity:i.quantity,expiresAt}))});return created;
   });
   sendNewOrderTelegram(order.id).catch(()=>{});
-  return NextResponse.json({orderId:order.id,orderNumber:order.orderNumber,total:Number(order.total),discount:Number(order.discount),gateway:{id:gateway.id,type:gateway.type,mode:gateway.mode},reservationExpiresAt:expiresAt},{status:201});
+  return NextResponse.json({orderId:order.id,orderNumber:order.orderNumber,total:Number(order.total),discount:Number(order.discount),gateway:{id:gateway.id,type:gateway.type,mode:gateway.mode},reservationExpiresAt:expiresAt,paymentToken:await createOrderAccessToken(order.id)},{status:201});
  }catch{return NextResponse.json({error:"Unable to create order. Please check your information and try again."},{status:400});}
 }
