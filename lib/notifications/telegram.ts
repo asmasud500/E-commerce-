@@ -1,4 +1,3 @@
-const esc=(v:string)=>v.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-async function telegram(method:string,body:Record<string,unknown>){const token=process.env.TELEGRAM_BOT_TOKEN;if(!token)return {ok:false,skipped:true};const res=await fetch("https://api.telegram.org/bot"+token+"/"+method,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});return {ok:res.ok,data:await res.json().catch(()=>null)}}
-export async function sendTelegramOrderNotification(message:string,orderId?:string){const chatId=process.env.TELEGRAM_CHAT_ID;if(!chatId)return {ok:false,skipped:true};return telegram("sendMessage",{chat_id:chatId,text:message,parse_mode:"HTML",...(orderId?{reply_markup:{inline_keyboard:[[{text:"✅ Confirm Payment",callback_data:"confirm_payment:"+orderId}]]}}:{})})}
-export {esc};
+async function telegram(method:string,body:Record<string,unknown>){const token=process.env.TELEGRAM_BOT_TOKEN;if(!token)return {ok:false,skipped:true};const res=await fetch("https://api.telegram.org/bot"+token+"/"+method,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),cache:"no-store"});return {ok:res.ok,data:await res.json().catch(()=>null)}}
+export async function sendTelegramOrderNotification(message:string){const chatId=process.env.TELEGRAM_CHAT_ID;if(!chatId)return {ok:false,skipped:true};return telegram("sendMessage",{chat_id:chatId,text:message,parse_mode:"HTML"})}
+export const esc=(v:string)=>v.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
