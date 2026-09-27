@@ -9,6 +9,7 @@ enum PaymentStatus { PENDING PAID FAILED REFUNDED }
 enum GatewayMode { SANDBOX LIVE }
 enum GatewayType { SSLCOMMERZ BKASH NAGAD ROCKET BANGLA_QR CUSTOM }
 enum ReservationStatus { HELD CONFIRMED RELEASED }
+enum CouponType { PERCENT FIXED }
 
 enum CouponType { PERCENT FIXED }
 model User { id String @id @default(cuid()) name String email String @unique passwordHash String? role Role @default(CUSTOMER) orders Order[] wishlist WishlistItem[] reviews Review[] createdAt DateTime @default(now()) updatedAt DateTime @updatedAt }
@@ -22,5 +23,5 @@ model Order { id String @id @default(cuid()) orderNumber String @unique idempote
 model PaymentTransaction { id String @id @default(cuid()) orderId String order Order @relation(fields:[orderId],references:[id],onDelete:Cascade) gatewayId String gateway PaymentGateway @relation(fields:[gatewayId],references:[id],onDelete:Restrict) reference String? providerTransactionId String? amount Decimal @db.Decimal(12,2) status PaymentStatus @default(PENDING) rawResponse Json? verifiedAt DateTime? createdAt DateTime @default(now()) updatedAt DateTime @updatedAt @@index([orderId]) @@unique([gatewayId, providerTransactionId]) }
 model StockReservation { id String @id @default(cuid()) orderId String productId String quantity Int status ReservationStatus @default(HELD) expiresAt DateTime order Order @relation(fields:[orderId],references:[id],onDelete:Cascade) product Product @relation(fields:[productId],references:[id],onDelete:Restrict) createdAt DateTime @default(now()) updatedAt DateTime @updatedAt @@index([productId,status]) @@index([expiresAt,status]) }
 model OrderItem { id String @id @default(cuid()) orderId String order Order @relation(fields:[orderId],references:[id],onDelete:Cascade) productId String product Product @relation(fields:[productId],references:[id]) name String unitPrice Decimal @db.Decimal(12,2) quantity Int lineTotal Decimal @db.Decimal(12,2) }
-model Coupon { id String @id @default(cuid()) name String? code String @unique type String value Decimal @db.Decimal(12,2) minOrder Decimal? @db.Decimal(12,2) expiresAt DateTime? active Boolean @default(true) }
+model Coupon { id String @id @default(cuid()) name String? code String @unique type CouponType value Decimal @db.Decimal(12,2) minOrder Decimal? @db.Decimal(12,2) expiresAt DateTime? active Boolean @default(true) }
 model AuditLog { id String @id @default(cuid()) actorId String? action String entity String entityId String? metadata Json? createdAt DateTime @default(now()) }
