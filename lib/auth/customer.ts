@@ -1,5 +1,5 @@
 const enc=new TextEncoder();
-function b64(bytes:Uint8Array){let s="";for(const b of bytes)s+=String.fromCharCode(b);return btoa(s).replace(/\\+/g,"-").replace(/\\//g,"_").replace(/=+$/,"")}
+function b64(bytes:Uint8Array){let s="";for(const b of bytes)s+=String.fromCharCode(b);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
 function unb64(s:string){const pad=s.length%4===0?"":"=".repeat(4-s.length%4);return Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")+pad),c=>c.charCodeAt(0))}
 async function derive(password:string,salt:Uint8Array){const key=await crypto.subtle.importKey("raw",enc.encode(password),"PBKDF2",false,["deriveBits"]);return new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations:120000,hash:"SHA-256"},key,256))}
 export async function hashPassword(password:string){const salt=crypto.getRandomValues(new Uint8Array(16));const hash=await derive(password,salt);return "v1$"+b64(salt)+"$"+b64(hash)}
