@@ -1,11 +1,2 @@
-import {NextResponse} from "next/server";
-import {db} from "@/lib/prisma";
-
-export async function GET(){
- const products=await db.product.findMany({
-  where:{published:true,stock:{gt:0}},
-  include:{category:true},
-  orderBy:{createdAt:"desc"}
- });
- return NextResponse.json(products);
-}
+import {NextRequest,NextResponse} from "next/server";import {db} from "@/lib/prisma";
+export async function GET(req:NextRequest){const q=req.nextUrl.searchParams.get("q")?.trim()||"",category=req.nextUrl.searchParams.get("category")||"",featured=req.nextUrl.searchParams.get("featured")==="true",page=Math.max(1,Number(req.nextUrl.searchParams.get("page")||1)),limit=Math.min(50,Math.max(1,Number(req.nextUrl.searchParams.get("limit")||20)));const where:any={published:true,stock:{gt:0},...(q?{OR:[{name:{contains:q,mode:"insensitive"}},{description:{contains:q,mode:"insensitive"}},{sku:{contains:q,mode:"insensitive"}}]}:{}),...(category?{category:{slug:category}}:{}),...(featured?{featured:true}:{})};const [items,total]=await Promise.all([db.product.findMany({where,include:{category:true,images:{orderBy:{sortOrder:"asc"}}},orderBy:[{featured:"desc"},{createdAt:"desc"}],skip:(page-1)*limit,take:limit}),db.product.count({where})]);return NextResponse.json({items:items.map(p=>({...p,price:Number(p.price),compareAtPrice:p.compareAtPrice?Number(p.compareAtPrice):null,salePrice:p.salePrice?Number(p.salePrice):null})),page,limit,total,pages:Math.ceil(total/limit)})}
