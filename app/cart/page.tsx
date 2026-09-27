@@ -1,15 +1,3 @@
 "use client";
-import Link from "next/link";
-import {useState} from "react";
-
-export default function Cart(){
- const [items]=useState<{name:string;price:number;qty:number}[]>([]);
- const subtotal=items.reduce((s,i)=>s+i.price*i.qty,0);
- return <main style={{maxWidth:900,margin:"auto",padding:32}}>
-  <Link href="/products">← Continue shopping</Link><h1>Shopping Cart</h1>
-  {items.length===0?<p>Your cart is empty. Products added from the catalog will appear here.</p>:<>
-   {items.map((i,n)=><div key={n}>{i.name} × {i.qty} — ৳{i.price*i.qty}</div>)}
-   <h2>Subtotal: ৳{subtotal}</h2><Link href="/checkout">Checkout</Link>
-  </>}
- </main>
-}
+import {useEffect,useState} from "react";import Link from "next/link";import {getCart,removeFromCart,saveCart,type CartItem} from "@/lib/cart";
+export default function Cart(){const [items,setItems]=useState<CartItem[]>([]);useEffect(()=>setItems(getCart()),[]);function update(id:string,q:number){const next=items.map(i=>i.productId===id?{...i,quantity:Math.max(1,q)}:i);setItems(next);saveCart(next)}function remove(id:string){const next=removeFromCart(id);setItems(next)}const subtotal=items.reduce((s,i)=>s+i.price*i.quantity,0);return <main style={{maxWidth:900,margin:"auto",padding:32}}><Link href="/products">← Continue shopping</Link><h1>Shopping Cart</h1>{!items.length?<p>Your cart is empty. <Link href="/products">Shop products</Link></p>:<><div>{items.map(i=><div key={i.productId} style={{padding:"18px 0",borderBottom:"1px solid #ddd"}}><b>{i.name}</b><small style={{display:"block"}}>{i.sku}</small><span>৳{i.price.toLocaleString("en-BD")}</span><div><button onClick={()=>update(i.productId,i.quantity-1)}>-</button><span style={{margin:"0 12px"}}>{i.quantity}</span><button onClick={()=>update(i.productId,i.quantity+1)}>+</button><button onClick={()=>remove(i.productId)} style={{marginLeft:20}}>Remove</button></div></div>)}</div><h2>Subtotal: ৳{subtotal.toLocaleString("en-BD")}</h2><Link href="/checkout" style={{display:"inline-block",padding:"12px 18px",background:"#111",color:"#fff",borderRadius:8}}>Checkout</Link></>}</main>}
