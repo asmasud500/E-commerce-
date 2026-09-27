@@ -10,8 +10,6 @@ enum GatewayMode { SANDBOX LIVE }
 enum GatewayType { SSLCOMMERZ BKASH NAGAD ROCKET BANGLA_QR CUSTOM }
 enum ReservationStatus { HELD CONFIRMED RELEASED }
 enum CouponType { PERCENT FIXED }
-
-enum CouponType { PERCENT FIXED }
 model User { id String @id @default(cuid()) name String email String @unique passwordHash String? role Role @default(CUSTOMER) orders Order[] wishlist WishlistItem[] reviews Review[] createdAt DateTime @default(now()) updatedAt DateTime @updatedAt }
 model Category { id String @id @default(cuid()) name String slug String @unique products Product[] createdAt DateTime @default(now()) }
 model Product { id String @id @default(cuid()) name String slug String @unique description String? sku String @unique price Decimal @db.Decimal(12,2) compareAtPrice Decimal? @db.Decimal(12,2) salePrice Decimal? @db.Decimal(12,2) stock Int @default(0) lowStockThreshold Int @default(5) featured Boolean @default(false) published Boolean @default(false) categoryId String? category Category? @relation(fields:[categoryId],references:[id],onDelete:SetNull) images ProductImage[] items OrderItem[] reservations StockReservation[] wishlist WishlistItem[] reviews Review[] createdAt DateTime @default(now()) updatedAt DateTime @updatedAt }
