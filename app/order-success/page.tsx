@@ -1,12 +1,2 @@
 import Link from "next/link";
-
-export default async function OrderSuccess({searchParams}:{searchParams:Promise<{order?:string}>}){
- const params=await searchParams;
- return <main style={{maxWidth:700,margin:"80px auto",padding:32,textAlign:"center"}}>
-  <h1>Order received</h1>
-  <p>Your order has been created successfully.</p>
-  {params.order&&<p><strong>Order: {params.order}</strong></p>}
-  <p>Payment can now be completed through the configured payment gateway.</p>
-  <Link href="/products">Continue shopping</Link>
- </main>;
-}
+export default async function OrderSuccess({searchParams}:{searchParams:Promise<{order?:string;paid?:string}>}){const p=await searchParams;const paid=p.paid==="true";return <main style={{maxWidth:700,margin:"80px auto",padding:32,textAlign:"center"}}><h1>{paid?"Payment successful":"Order received"}</h1>{p.order&&<p><strong>Order: {p.order}</strong></p>}<p>{paid?"Your payment has been verified.":"Your order has been created. Complete payment through the selected gateway or wait for admin confirmation for manual payment."}</p><p><Link href="/account">My Account</Link> · <Link href="/products">Continue shopping</Link></p></main>}
