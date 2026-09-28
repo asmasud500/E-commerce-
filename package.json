@@ -12,7 +12,8 @@
     "db:studio": "prisma studio",
     "cf:build": "opennextjs-cloudflare build",
     "cf:deploy": "opennextjs-cloudflare deploy",
-    "cf:preview": "opennextjs-cloudflare preview"
+    "cf:preview": "opennextjs-cloudflare preview",
+    "db:migrate-firestore": "node --experimental-strip-types scripts/migrate-postgres-to-firestore.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.16.0",
