@@ -1,14 +1,22 @@
 /* Firestore REST data layer. Cloudflare/Workers compatible; no firebase-admin dependency. */
 
 type AnyObj=Record<string,any>;
-const PROJECT=process.env.FIREBASE_PROJECT_ID||"e-commerce-bb2af";
-const SA_EMAIL=process.env.FIREBASE_CLIENT_EMAIL||"";
-const SA_KEY=(process.env.FIREBASE_PRIVATE_KEY||"").replace(/\\n/g,"\n");
+function envValue(name:string){return String(process.env[name]||"").trim().replace(/^"(.*)"$/s,"$1").replace(/^'(.*)'$/s,"$1");}
+function serviceAccountValue(name:string,field:string){
+  const raw=envValue(name);
+  if(raw.startsWith("{")){
+    try{return String(JSON.parse(raw)[field]||"").trim();}catch{}
+  }
+  return raw;
+}
+const PROJECT=serviceAccountValue("FIREBASE_PROJECT_ID","project_id")||"e-commerce-bb2af";
+const SA_EMAIL=serviceAccountValue("FIREBASE_CLIENT_EMAIL","client_email");
+const SA_KEY=serviceAccountValue("FIREBASE_PRIVATE_KEY","private_key").replace(/\\n/g,"\n").replace(/\\r/g,"\r").replace(/\r/g,"");
 const BASE=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 let cachedToken:{token:string;exp:number}|null=null;
 
 function b64url(input:ArrayBuffer|string){const bytes=typeof input==="string"?new TextEncoder().encode(input):new Uint8Array(input);let s="";for(const b of bytes)s+=String.fromCharCode(b);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
-function pemBytes(pem:string){const b64=pem.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g,"");const bin=atob(b64);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return a;}
+function pemBytes(pem:string){const normalized=pem.trim().replace(/\\n/g,"\n").replace(/\\r/g,"\r");const b64=normalized.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g,"");const bin=atob(b64);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return a;}
 async function accessToken(){const now=Math.floor(Date.now()/1000);if(cachedToken&&cachedToken.exp>now+60)return cachedToken.token;if(!SA_EMAIL||!SA_KEY)throw new Error("Firebase service account is not configured");const header=b64url(JSON.stringify({alg:"RS256",typ:"JWT"}));const payload=b64url(JSON.stringify({iss:SA_EMAIL,scope:"https://www.googleapis.com/auth/datastore",aud:"https://oauth2.googleapis.com/token",iat:now,exp:now+3600}));const key=await crypto.subtle.importKey("pkcs8",pemBytes(SA_KEY),{name:"RSASSA-PKCS1-v1_5",hash:"SHA-256"},false,["sign"]);const sig=await crypto.subtle.sign("RSASSA-PKCS1-v1_5",key,new TextEncoder().encode(`${header}.${payload}`));const assertion=`${header}.${payload}.${b64url(sig)}`;const r=await fetch("https://oauth2.googleapis.com/token",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body:`grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${encodeURIComponent(assertion)}`});if(!r.ok)throw new Error(`Google token error ${r.status}`);const j:any=await r.json();cachedToken={token:j.access_token,exp:now+Number(j.expires_in||3600)};return j.access_token;}
 async function req(path:string,init:RequestInit={}){const token=await accessToken();const r=await fetch(`${BASE}${path}`,{...init,headers:{authorization:`Bearer ${token}`,"content-type":"application/json",...(init.headers||{})}});if(!r.ok){const t=await r.text();throw new Error(`Firestore ${r.status}: ${t}`)}return r.status===204?null:r.json();}
 function enc(v:any):any{if(v===null||v===undefined)return {nullValue:null};if(v instanceof Date)return {timestampValue:v.toISOString()};if(typeof v==="string")return {stringValue:v};if(typeof v==="boolean")return {booleanValue:v};if(typeof v==="number")return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};if(Array.isArray(v))return {arrayValue:{values:v.map(enc)}};if(typeof v==="object")return {mapValue:{fields:Object.fromEntries(Object.entries(v).map(([k,x])=>[k,enc(x)]))}};return {stringValue:String(v)};}
