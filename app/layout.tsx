@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://example.com"),
-  title: {default:"Store — Quality products, simple shopping",template:"%s | Store"},
+  title:{default:"Store — Quality products, simple shopping",template:"%s | Store"},
   description:"Shop quality products with a smooth catalog, secure checkout, flexible payment options and reliable order tracking.",
   keywords:["ecommerce","online store","shopping","Bangladesh"],
   robots:{index:true,follow:true},
