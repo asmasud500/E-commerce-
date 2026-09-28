@@ -1,2 +1,29 @@
-import Link from"next/link";import{db}from"@/lib/prisma";import StoreHeader from"@/components/StoreHeader";import StoreFooter from"@/components/StoreFooter";
-export default async function ProductsPage({searchParams}:{searchParams:Promise<{q?:string;category?:string;featured?:string}>}){const sp=await searchParams,q=sp.q?.trim()||"",category=sp.category||"",featured=sp.featured==="true";const[products,categories]=await Promise.all([db.product.findMany({where:{published:true,stock:{gt:0},...(q?{OR:[{name:{contains:q,mode:"insensitive"}},{description:{contains:q,mode:"insensitive"}},{sku:{contains:q,mode:"insensitive"}}]}:{}),...(category?{category:{slug:category}}:{}),...(featured?{featured:true}:{})},include:{category:true,images:{orderBy:{sortOrder:"asc"}}},orderBy:[{featured:"desc"},{createdAt:"desc"}]}),db.category.findMany({orderBy:{name:"asc"}})]);return <><StoreHeader/><main style={{maxWidth:1180,margin:"auto",padding:"48px 28px 80px"}}><div style={{maxWidth:720,marginBottom:30}}><small>CATALOG</small><h1 style={{fontSize:50,margin:"8px 0"}}>Products</h1><p>Find products that fit your needs.</p></div><form style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:30}}><input name="q" defaultValue={q} placeholder="Search products..." style={{minWidth:280}}/><select name="category" defaultValue={category}><option value="">All categories</option>{categories.map(c=><option key={c.id} value={c.slug}>{c.name}</option>)}</select><label style={{display:"flex",alignItems:"center",gap:7,padding:"0 8px"}}><input type="checkbox" name="featured" value="true" defaultChecked={featured}/> Featured</label><button>Search</button></form>{products.length===0?<section style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:18,padding:40,textAlign:"center"}}><h2>No products found</h2><p>Try another search or category.</p></section>:<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(235px,1fr))",gap:20}}>{products.map(p=>{const price=p.salePrice??p.price;return <article key={p.id} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:18,padding:14,overflow:"hidden"}}>{p.images[0]&&<img src={p.images[0].url} alt={p.images[0].alt||p.name} style={{width:"100%",aspectRatio:"1",objectFit:"cover",borderRadius:14}}/>}<small style={{display:"block",marginTop:14}}>{p.category?.name||"Product"}</small><h2 style={{fontSize:19,margin:"6px 0"}}><Link href={"/products/"+p.slug}>{p.name}</Link></h2><strong style={{fontSize:18}}>৳{Number(price).toLocaleString("en-BD")}</strong>{p.salePrice&&<span style={{marginLeft:8,color:"#9ca3af"}}><s>৳{Number(p.price).toLocaleString("en-BD")}</s></span>}<p style={{fontSize:14}}>{p.description||"Premium quality product."}</p><Link href={"/products/"+p.slug} style={{fontWeight:700}}>View details →</Link></article>})}</div>}</main><StoreFooter/></>}
+import Link from "next/link";
+import { db } from "@/lib/prisma";
+import StoreHeader from "@/components/StoreHeader";
+import StoreFooter from "@/components/StoreFooter";
+
+export default async function ProductsPage({searchParams}:{searchParams:Promise<{q?:string;category?:string;featured?:string}>}) {
+  const sp=await searchParams, q=sp.q?.trim()||"", category=sp.category||"", featured=sp.featured==="true";
+  const [products,categories]=await Promise.all([
+    db.product.findMany({where:{published:true,stock:{gt:0},...(q?{OR:[{name:{contains:q,mode:"insensitive"}},{description:{contains:q,mode:"insensitive"}},{sku:{contains:q,mode:"insensitive"}}]}:{}),...(category?{category:{slug:category}}:{}),...(featured?{featured:true}:{})},include:{category:true,images:{orderBy:{sortOrder:"asc"}}},orderBy:[{featured:"desc"},{createdAt:"desc"}]}),
+    db.category.findMany({orderBy:{name:"asc"}})
+  ]);
+  return <>
+    <StoreHeader />
+    <main className="catalog-page">
+      <div className="catalog-head"><div><span className="eyebrow">CATALOG</span><h1>Products</h1><p>Find products that fit your needs.</p></div><span className="catalog-count">{products.length} available</span></div>
+      <form className="catalog-filters">
+        <label className="search-field"><span aria-hidden="true">⌕</span><input name="q" defaultValue={q} placeholder="Search products..." aria-label="Search products" /></label>
+        <select name="category" defaultValue={category} aria-label="Filter by category"><option value="">All categories</option>{categories.map(c=><option key={c.id} value={c.slug}>{c.name}</option>)}</select>
+        <label className="featured-filter"><input type="checkbox" name="featured" value="true" defaultChecked={featured}/> Featured only</label>
+        <button className="filter-button">Apply filters</button>
+      </form>
+      {products.length===0 ? <section className="empty-state"><div className="empty-icon">⌕</div><h2>No products found</h2><p>Try another search or category.</p><Link href="/products" className="primary-cta">Clear filters</Link></section> :
+      <div className="product-grid">{products.map(p=>{const price=p.salePrice??p.price;return <article className="product-card" key={p.id}>
+        <Link href={"/products/"+p.slug} className="product-media">{p.images[0]?<img src={p.images[0].url} alt={p.images[0].alt||p.name} loading="lazy" decoding="async"/>:<div className="image-placeholder">No image</div>}{p.salePrice&&<span className="sale-badge">SALE</span>}</Link>
+        <div className="product-card-body"><small>{p.category?.name||"Product"}</small><h2><Link href={"/products/"+p.slug}>{p.name}</Link></h2><div className="product-card-price"><strong>৳{Number(price).toLocaleString("en-BD")}</strong>{p.salePrice&&<s>৳{Number(p.price).toLocaleString("en-BD")}</s>}</div><p>{p.description||"Premium quality product."}</p><Link href={"/products/"+p.slug} className="product-link">View details <span>→</span></Link></div>
+      </article>})}</div>}
+    </main><StoreFooter />
+  </>;
+}
