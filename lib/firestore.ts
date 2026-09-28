@@ -1,7 +1,7 @@
 /* Firestore REST data layer. Cloudflare/Workers compatible; no firebase-admin dependency. */
 
 type AnyObj=Record<string,any>;
-function envValue(name:string){return String(process.env[name]||"").trim().replace(/^"(.*)"$/s,"$1").replace(/^'(.*)'$/s,"$1");}
+function envValue(name:string){return String(process.env[name]||"").trim().replace(/^"([\\s\\S]*)"$/,"$1").replace(/^\'([\\s\\S]*)\'$/,"$1");}
 function serviceAccountValue(name:string,field:string){
   const raw=envValue(name);
   if(raw.startsWith("{")){
