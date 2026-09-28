@@ -1,4 +1,5 @@
 "use client";
+import AdminSidebar from "@/components/AdminSidebar";
 import {useEffect,useState}from"react";import Link from"next/link";
 export default function Reviews(){
  const[r,setR]=useState<any[]>([]),[e,setE]=useState("");
@@ -6,5 +7,5 @@ export default function Reviews(){
  useEffect(()=>{load()},[]);
  async function moderate(id:string,approved:boolean){const x=await fetch("/api/admin/reviews",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,approved})});if(x.ok)load();else setE("Update failed")}
  async function del(id:string){if(!confirm("Delete review?"))return;await fetch("/api/admin/reviews?id="+encodeURIComponent(id),{method:"DELETE"});load()}
- return <main style={{maxWidth:1100,margin:"auto",padding:32}}><Link href="/admin">← Dashboard</Link><h1>Reviews</h1>{e&&<p>{e}</p>}{r.map(x=><article key={x.id} style={{border:"1px solid #ddd",padding:18,margin:"12px 0",borderRadius:12}}><b>{x.product?.name}</b><p>By {x.user?.name} ({x.user?.email}) · Rating: {x.rating}/5</p><p>{x.comment||"No comment"}</p><p>Status: {x.approved?"Approved":"Pending"}</p><button onClick={()=>moderate(x.id,!x.approved)}>{x.approved?"Unapprove":"Approve"}</button>{" "}<button onClick={()=>del(x.id)}>Delete</button></article>)}{!r.length&&<p>No reviews.</p>}</main>
+ return <div className="admin-layout"><AdminSidebar/><main className="admin-content" style={{maxWidth:1100,margin:"auto",padding:32}}><Link href="/admin">← Dashboard</Link><h1>Reviews</h1>{e&&<p>{e}</p>}{r.map(x=><article key={x.id} style={{border:"1px solid #ddd",padding:18,margin:"12px 0",borderRadius:12}}><b>{x.product?.name}</b><p>By {x.user?.name} ({x.user?.email}) · Rating: {x.rating}/5</p><p>{x.comment||"No comment"}</p><p>Status: {x.approved?"Approved":"Pending"}</p><button onClick={()=>moderate(x.id,!x.approved)}>{x.approved?"Unapprove":"Approve"}</button>{" "}<button onClick={()=>del(x.id)}>Delete</button></article>)}{!r.length&&<p>No reviews.</p>}</main></div>
 }
