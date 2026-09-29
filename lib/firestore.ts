@@ -1,13 +1,13 @@
 /* Firestore REST data layer. Cloudflare/Workers compatible; no firebase-admin dependency. */
 
-type AnyObj=Record<string,any>;
+function envValue(name:string){const value=String(process.env[name]||"").trim();if(!value)return "";if((value.startsWith("\"")&&value.endsWith("\""))||(value.startsWith("\'")&&value.endsWith("\'")))return value.slice(1,-1).trim();return value;}
 function envValue(name:string){return String(process.env[name]||"").trim().replace(/^"([\\s\\S]*)"$/,"$1").replace(/^\'([\\s\\S]*)\'$/,"$1");}
 function serviceAccountValue(name:string,field:string){
   const raw=envValue(name);
   if(raw.startsWith("{")){try{return String(JSON.parse(raw)[field]||"").trim();}catch{}}
   return raw;
 }
-const PROJECT=serviceAccountValue("FIREBASE_PROJECT_ID","project_id")||"e-commerce-bb2af";
+const SA_KEY=serviceAccountValue("FIREBASE_PRIVATE_KEY","private_key").replace(/^"([\s\S]*)"$/,"$1").replace(/^\'([\s\S]*)\'$/,"$1").replace(/\\n/g,"\n").replace(/\\r/g,"\r").replace(/\r/g,"").trim();
 const SA_EMAIL=serviceAccountValue("FIREBASE_CLIENT_EMAIL","client_email");
 const SA_KEY=serviceAccountValue("FIREBASE_PRIVATE_KEY","private_key").replace(/^"([\\s\\S]*)"$/,"$1").replace(/^\'([\\s\\S]*)[\']$/,"$1").replace(/\\n/g,"\n").replace(/\\r/g,"\r").replace(/\r/g,"").trim();
 const BASE=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
