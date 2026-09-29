@@ -37,10 +37,13 @@ jobs:
           cp /tmp/tail.log debug-output/tail.log
           cp /tmp/response.json debug-output/response.json
       - name: Commit debug output
+        env:
+          GH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
         run: |
           git config user.email "bot@debug.dev"
           git config user.name "Debug Bot"
           git checkout -B debug-logs
           git add debug-output
           git commit -m "debug: capture tail output" || true
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/asmasud500/E-commerce-.git"
           git push -f origin debug-logs
