@@ -1,35 +1,67 @@
-/* Firestore REST data layer. Cloudflare/Workers compatible; no firebase-admin dependency. */
+import {getCloudflareContext} from "@opennextjs/cloudflare";
 
 type AnyObj=Record<string,any>;
-function envValue(name:string){
-  const value=String(process.env[name]||"").trim();
-  if(!value)return "";
-  if((value.startsWith("\"")&&value.endsWith("\""))||(value.startsWith("\'")&&value.endsWith("\'")))return value.slice(1,-1).trim();
-  return value;
+
+function cleanEnvValue(value:unknown){
+  const s=String(value??"").trim();
+  if(!s)return "";
+  if((s.startsWith("\"")&&s.endsWith("\""))||(s.startsWith("\'")&&s.endsWith("\'")))return s.slice(1,-1).trim();
+  return s;
 }
-function serviceAccountValue(name:string,field:string){
-  const raw=envValue(name);
+
+async function envValue(name:string){
+  try{
+    const ctx=await getCloudflareContext({async:true});
+    const bound=(ctx.env as Record<string,unknown>)[name];
+    const value=cleanEnvValue(bound);
+    if(value)return value;
+  }catch{}
+  try{return cleanEnvValue(process.env[name]);}catch{return "";}
+}
+
+async function serviceAccountValue(name:string,field:string){
+  const raw=await envValue(name);
   if(raw.startsWith("{")){
     try{return String(JSON.parse(raw)[field]||"").trim();}catch{}
   }
   return raw;
 }
-const PROJECT=serviceAccountValue("FIREBASE_PROJECT_ID","project_id")||"e-commerce-bb2af";
-const SA_EMAIL=serviceAccountValue("FIREBASE_CLIENT_EMAIL","client_email");
-const SA_KEY=serviceAccountValue("FIREBASE_PRIVATE_KEY","private_key")
-  .replace(/^"([\s\S]*)"$/,"$1")
-  .replace(/^\'([\s\S]*)\'$/,"$1")
-  .replace(/\\n/g,"\n")
-  .replace(/\\r/g,"\r")
-  .replace(/\r/g,"")
-  .trim();
-const BASE=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
+
 let cachedToken:{token:string;exp:number}|null=null;
 
 function b64url(input:ArrayBuffer|string){const bytes=typeof input==="string"?new TextEncoder().encode(input):new Uint8Array(input);let s="";for(const b of bytes)s+=String.fromCharCode(b);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
 function pemBytes(pem:string){const normalized=pem.trim().replace(/\\n/g,"\n").replace(/\\r/g,"\r");const b64=normalized.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g,"");const bin=atob(b64);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return a;}
-async function accessToken(){const now=Math.floor(Date.now()/1000);if(cachedToken&&cachedToken.exp>now+60)return cachedToken.token;if(!SA_EMAIL||!SA_KEY)throw new Error("Firebase service account is not configured");const header=b64url(JSON.stringify({alg:"RS256",typ:"JWT"}));const payload=b64url(JSON.stringify({iss:SA_EMAIL,scope:"https://www.googleapis.com/auth/datastore",aud:"https://oauth2.googleapis.com/token",iat:now,exp:now+3600}));const key=await crypto.subtle.importKey("pkcs8",pemBytes(SA_KEY),{name:"RSASSA-PKCS1-v1_5",hash:"SHA-256"},false,["sign"]);const sig=await crypto.subtle.sign("RSASSA-PKCS1-v1_5",key,new TextEncoder().encode(`${header}.${payload}`));const assertion=`${header}.${payload}.${b64url(sig)}`;const r=await fetch("https://oauth2.googleapis.com/token",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body:`grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${encodeURIComponent(assertion)}`});if(!r.ok)throw new Error(`Google token error ${r.status}`);const j:any=await r.json();cachedToken={token:j.access_token,exp:now+Number(j.expires_in||3600)};return j.access_token;}
-async function req(path:string,init:RequestInit={}){const token=await accessToken();const r=await fetch(`${BASE}${path}`,{...init,headers:{authorization:`Bearer ${token}`,"content-type":"application/json",...(init.headers||{})}});if(!r.ok){const t=await r.text();throw new Error(`Firestore ${r.status}: ${t}`)}return r.status===204?null:r.json();}
+async function accessToken(){
+  const now=Math.floor(Date.now()/1000);
+  if(cachedToken&&cachedToken.exp>now+60)return cachedToken.token;
+  const email=await serviceAccountValue("FIREBASE_CLIENT_EMAIL","client_email");
+  const keyPem=(await serviceAccountValue("FIREBASE_PRIVATE_KEY","private_key")).replace(/\\n/g,"\n").replace(/\\r/g,"\r").replace(/\r/g,"").trim();
+  if(!email||!keyPem)throw new Error("Firebase service account is not configured");
+  const header=b64url(JSON.stringify({alg:"RS256",typ:"JWT"}));
+  const payload=b64url(JSON.stringify({iss:email,scope:"https://www.googleapis.com/auth/datastore",aud:"https://oauth2.googleapis.com/token",iat:now,exp:now+3600}));
+  let key:CryptoKey;
+  try{
+    key=await crypto.subtle.importKey("pkcs8",pemBytes(keyPem),{name:"RSASSA-PKCS1-v1_5",hash:"SHA-256"},false,["sign"]);
+  }catch(error){
+    throw new Error("Firebase private key is invalid: "+String(error));
+  }
+  const sig=await crypto.subtle.sign("RSASSA-PKCS1-v1_5",key,new TextEncoder().encode(`${header}.${payload}`));
+  const assertion=`${header}.${payload}.${b64url(sig)}`;
+  const r=await fetch("https://oauth2.googleapis.com/token",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body:`grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${encodeURIComponent(assertion)}`});
+  if(!r.ok){const detail=await r.text();throw new Error(`Google token error ${r.status}: ${detail.slice(0,300)}`);}
+  const j:any=await r.json();
+  if(!j.access_token)throw new Error("Google token response did not contain access_token");
+  cachedToken={token:j.access_token,exp:now+Number(j.expires_in||3600)};
+  return j.access_token;
+}
+async function req(path:string,init:RequestInit={}){
+  const token=await accessToken();
+  const project=(await serviceAccountValue("FIREBASE_PROJECT_ID","project_id"))||"e-commerce-bb2af";
+  const base=`https://firestore.googleapis.com/v1/projects/${project}/databases/(default)/documents`;
+  const r=await fetch(`${base}${path}`,{...init,headers:{authorization:`Bearer ${token}`,"content-type":"application/json",...(init.headers||{})}});
+  if(!r.ok){const t=await r.text();throw new Error(`Firestore ${r.status}: ${t.slice(0,1000)}`)}
+  return r.status===204?null:r.json();
+}
 function enc(v:any):any{if(v===null||v===undefined)return {nullValue:null};if(v instanceof Date)return {timestampValue:v.toISOString()};if(typeof v==="string")return {stringValue:v};if(typeof v==="boolean")return {booleanValue:v};if(typeof v==="number")return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};if(Array.isArray(v))return {arrayValue:{values:v.map(enc)}};if(typeof v==="object")return {mapValue:{fields:Object.fromEntries(Object.entries(v).map(([k,x])=>[k,enc(x)]))}};return {stringValue:String(v)};}
 function dec(v:any):any{if(!v)return null;if("nullValue"in v)return null;if("stringValue"in v)return v.stringValue;if("booleanValue"in v)return v.booleanValue;if("integerValue"in v)return Number(v.integerValue);if("doubleValue"in v)return v.doubleValue;if("timestampValue"in v)return new Date(v.timestampValue);if("arrayValue"in v)return (v.arrayValue.values||[]).map(dec);if("mapValue"in v)return Object.fromEntries(Object.entries(v.mapValue.fields||{}).map(([k,x])=>[k,dec(x)]));return null;}
 function docToObj(d:any){return d?{id:d.name.split("/").pop(),...Object.fromEntries(Object.entries(d.fields||{}).map(([k,v])=>[k,dec(v)]))}:null;}
