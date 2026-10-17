@@ -21,7 +21,7 @@ jobs:
           curl -s -X POST "$B/api/customer/auth/register" -H 'content-type: application/json' -d '{"name":"Debug Test","email":"debug-test-x1@example.com","password":"DebugPass12345"}' > /tmp/resp.txt; echo >> /tmp/resp.txt
           sleep 20
           wait || true
-          { head -c 300 /tmp/resp.txt; jq -r '.logs[]?.message|map(tostring)|join(" ")' /tmp/tail.jsonl 2>/dev/null | head -c 1800; } > /tmp/sum.txt
+          { head -c 300 /tmp/resp.txt; sed -n "/^{/,\$p" /tmp/tail.jsonl | jq -r '.logs[]?.message|map(tostring)|join(" ")' 2>/dev/null | head -c 1800; } > /tmp/sum.txt
           echo "::error::$(tr '\n' '|' < /tmp/sum.txt | sed 's/%/%25/g')"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
