@@ -1,32 +1,28 @@
 name: Temporary Cloudflare error capture
 
 on:
-  workflow_run:
-    workflows: ["Deploy to Cloudflare Workers"]
-    types: [completed]
-    branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   tail:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
-      actions: read
       contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Capture Worker exceptions for 5 minutes
+      - name: Hit pages while tailing
         run: |
-          mkdir -p debug-output
-          timeout 300s npx wrangler tail ecommerce-platform --format json --status error --sampling-rate 1 > debug-output/cloudflare-tail.jsonl 2>&1 || true
-          date -u > debug-output/capture-finished.txt
+          B=https://ecommerce-platform.masud50003.workers.dev
+          (timeout 60s npx wrangler tail ecommerce-platform --format json --sampling-rate 1 > /tmp/tail.jsonl 2>&1 || true) &
+          sleep 20
+          for p in /products "/products?q=a" /; do echo "$p -> $(curl -s -o /tmp/r.html -w '%{http_code}' "$B$p") app-error=$(grep -c 'Application error' /tmp/r.html || true)"; done
+          curl -s -X POST "$B/api/customer/auth/login" -H 'content-type: application/json' -d '{"email":"nobody@example.com","password":"wrongpass123"}' ; echo
+          sleep 25
+          wait || true
+          grep -v '^$' /tmp/tail.jsonl | head -c 6000 | while IFS= read -r l; do echo "::notice::$(echo "$l" | head -c 1500)"; done
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cloudflare-error-capture-${{ github.event.workflow_run.id }}
-          path: debug-output/
