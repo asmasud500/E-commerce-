@@ -23,7 +23,8 @@ jobs:
           sleep 25
           wait || true
           jq -c 'select(.event.request.url!=null)|{u:.event.request.url,s:.event.response.status,l:[.logs[]?.message],e:[.exceptions[]?.message]}' /tmp/tail.jsonl 2>/dev/null | head -c 3000 > /tmp/sum.txt || true
-          curl -s "$B/products" | grep -o '[0-9]* available' | head -1 >> /tmp/sum.txt || true
+          curl -s "$B/products" > /tmp/p.html; echo "cards=$(grep -o 'product-card"' /tmp/p.html | wc -l) empty=$(grep -c 'No products found' /tmp/p.html) cats=$(grep -o '<option' /tmp/p.html | wc -l)" >> /tmp/sum.txt
+          head -c 1500 /tmp/tail.jsonl | tr '\n' ' ' >> /tmp/sum.txt
           echo "::error::$(tr '\n' '|' < /tmp/sum.txt | sed 's/%/%25/g')"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
