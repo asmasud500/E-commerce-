@@ -11,7 +11,7 @@ async function runtimeSecret(name:string){
   }catch{}
   try{return String(process.env[name]||"").trim()}catch{return ""}
 }
-async function derive(password:string,salt:Uint8Array){const key=await crypto.subtle.importKey("raw",enc.encode(password),"PBKDF2",false,["deriveBits"]);return new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:salt as unknown as BufferSource,iterations:120000,hash:"SHA-256"},key,256))}
+async function derive(password:string,salt:Uint8Array){const key=await crypto.subtle.importKey("raw",enc.encode(password),"PBKDF2",false,["deriveBits"]);return new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:salt as unknown as BufferSource,iterations:100000,hash:"SHA-256"},key,256))}
 export async function hashPassword(password:string){const salt=crypto.getRandomValues(new Uint8Array(16));const hash=await derive(password,salt);return "v1$"+b64(salt)+"$"+b64(hash)}
 export async function verifyPassword(password:string,stored:string){try{const [v,s,h]=stored.split("$");if(v!=="v1"||!s||!h)return false;const hash=await derive(password,unb64(s));return b64(hash)===h}catch{return false}}
 async function sign(secret:string,payload:string){const key=await crypto.subtle.importKey("raw",enc.encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);return b64(new Uint8Array(await crypto.subtle.sign("HMAC",key,enc.encode(payload))))}
