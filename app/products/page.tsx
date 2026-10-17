@@ -11,11 +11,13 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
 
   // Firestore compatibility layer performs relations in application code.
   // Fetch the three collections once to avoid an N+1 request explosion.
-  const [categories,images]=await Promise.all([
+  let categories:any[]=[],images:any[]=[],products:any[]=[],selectedCategory:any=null;
+  try{
+  [categories,images]=await Promise.all([
     db.category.findMany({orderBy:{name:"asc"}}),
     db.productImage.findMany({orderBy:{sortOrder:"asc"}})
   ]);
-  const selectedCategory=category?categories.find((c:any)=>c.slug===category):null;
+  selectedCategory=category?categories.find((c:any)=>c.slug===category):null;
 
   const where:any={
     published:true,
@@ -29,10 +31,14 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
     ...(featured?{featured:true}:{})
   };
 
-  const products=await db.product.findMany({
+  products=await db.product.findMany({
     where,
     orderBy:[{featured:"desc"},{createdAt:"desc"}]
   });
+
+  }catch(error){
+    console.error("Products page data error:",error instanceof Error?error.message:String(error));
+  }
 
   const categoryById=new Map(categories.map((c:any)=>[c.id,c]));
   const imagesByProduct=new Map<string,any[]>();
