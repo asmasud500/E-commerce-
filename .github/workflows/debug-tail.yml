@@ -16,10 +16,10 @@ jobs:
       - name: Hit pages while tailing
         run: |
           B=https://ecommerce-platform.masud50003.workers.dev
-          (timeout 60s npx wrangler tail ecommerce-platform --format json --sampling-rate 1 > /tmp/tail.jsonl 2>&1 || true) &
+          (timeout 60s npx wrangler tail ecommerce-platform --format json > /tmp/tail.jsonl 2>&1 || true) &
           sleep 20
-          for p in /products "/products?q=a" /; do echo "$p -> $(curl -s -o /tmp/r.html -w '%{http_code}' "$B$p") app-error=$(grep -c 'Application error' /tmp/r.html || true)"; done
-          curl -s -X POST "$B/api/customer/auth/login" -H 'content-type: application/json' -d '{"email":"nobody@example.com","password":"wrongpass123"}' ; echo
+          for p in /products "/products?q=a" /; do echo "::notice::$p -> $(curl -s -o /tmp/r.html -w '%{http_code}' "$B$p") app-error=$(grep -c 'Application error' /tmp/r.html || true)"; done
+          curl -s -X POST "$B/api/customer/auth/login" -H 'content-type: application/json' -d '{"email":"nobody@example.com","password":"wrongpass123"}' | head -c 500 | sed "s/^/::notice::login: /"; echo
           sleep 25
           wait || true
           grep -v '^$' /tmp/tail.jsonl | head -c 6000 | while IFS= read -r l; do echo "::notice::$(echo "$l" | head -c 1500)"; done
