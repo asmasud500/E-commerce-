@@ -1,0 +1,28 @@
+name: Temporary Cloudflare error capture
+
+on:
+  workflow_dispatch:
+
+jobs:
+  tail:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Register while tailing
+        run: |
+          B=https://ecommerce-platform.masud50003.workers.dev
+          (timeout 60s npx wrangler tail ecommerce-platform --format json > /tmp/tail.jsonl 2>&1 || true) &
+          sleep 20
+          curl -s -X POST "$B/api/customer/auth/register" -H 'content-type: application/json' -d '{"name":"Debug Test","email":"debug-test-x1@example.com","password":"DebugPass12345"}' > /tmp/resp.txt; echo >> /tmp/resp.txt
+          sleep 20
+          wait || true
+          { head -c 300 /tmp/resp.txt; jq -r '.logs[]?.message|map(tostring)|join(" ")' /tmp/tail.jsonl 2>/dev/null | head -c 1800; } > /tmp/sum.txt
+          echo "::error::$(tr '\n' '|' < /tmp/sum.txt | sed 's/%/%25/g')"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
