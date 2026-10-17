@@ -3,7 +3,7 @@
 // the Edge Runtime that Next.js middleware always runs under.
 
 export function adminCredentials() {
-  return { email: process.env.ADMIN_EMAIL || "", password: process.env.ADMIN_PASSWORD || "" };
+  return { email: (process.env.ADMIN_EMAIL || "").trim().toLowerCase(), password: (process.env.ADMIN_PASSWORD || "").trim() };
 }
 
 function base64UrlEncode(bytes: Uint8Array): string {
