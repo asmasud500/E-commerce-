@@ -82,7 +82,7 @@ async function loadHome(){
     return {id:c.id,name:c.name,slug:c.slug,count:items.length,cover:items.find(p=>p.image)?.image||null};
   }).filter(s=>s.count>0).sort((a,b)=>b.count-a.count).slice(0,6);
 
-  return {categories,flash,forYou,stores,
+  return {categories,flash,forYou,stores,banners,
     flashImages:flash.map(p=>p.image).filter(Boolean) as string[],
     newImages:newest.map(p=>p.image).filter(Boolean) as string[]};
 }
