@@ -12,7 +12,10 @@ const modules=[
  {title:"Categories",desc:"Maintain the store taxonomy used by product listings.",href:"/admin/categories",icon:"▦",tag:"Live data"},
  {title:"Reports & Activity",desc:"Seven-day sales activity, order status breakdown, low-stock alerts and CSV export.",href:"/admin/reports",icon:"▥",tag:"Live analytics"},
  {title:"Activity Log",desc:"Search recent audit records for order and store operations.",href:"/admin/activity",icon:"◷",tag:"Audit trail"},
- {title:"Store Settings",desc:"Review runtime readiness and the store configuration checklist.",href:"/admin/settings",icon:"⚙",tag:"Operations"},
+ {title:"Store Settings",desc:"Edit store profile, delivery defaults, tax preferences and announcements.",href:"/admin/settings",icon:"⚙",tag:"Live settings"},
+ {title:"Delivery Zones",desc:"Configure district delivery charges and estimated delivery times.",href:"/admin/delivery-zones",icon:"⌁",tag:"Firestore"},
+ {title:"Store Banners",desc:"Manage banner images, links, order and visibility.",href:"/admin/banners",icon:"▧",tag:"Firestore"},
+ {title:"Flash Sales",desc:"Schedule discounts against selected product IDs.",href:"/admin/flash-sales",icon:"✦",tag:"Firestore"},
 ];
 export default async function AdminPage(){
  let orders=0,products=0,customers=0,pending=0,paidRevenue=0,recent:any[]=[];
