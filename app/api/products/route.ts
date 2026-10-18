@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {db} from "@/lib/prisma";
+import {getEffectivePrice} from "@/lib/products/pricing";
 
 export async function GET(req:NextRequest){
   try{
@@ -24,9 +25,10 @@ export async function GET(req:NextRequest){
       ...(featured?{featured:true}:{})
     };
 
-    const [allProducts,images]=await Promise.all([
+    const [allProducts,images,flashSales]=await Promise.all([
       db.product.findMany({where,orderBy:[{featured:"desc"},{createdAt:"desc"}]}),
-      db.productImage.findMany({orderBy:{sortOrder:"asc"}})
+      db.productImage.findMany({orderBy:{sortOrder:"asc"}}),
+      db.flashSale.findMany({where:{active:true}})
     ]);
 
     const imagesByProduct=new Map<string,any[]>();
@@ -42,12 +44,19 @@ export async function GET(req:NextRequest){
       images:imagesByProduct.get(p.id)||[]
     }));
     const total=hydrated.length;
-    const items=hydrated.slice((page-1)*limit,page*limit).map((p:any)=>({
-      ...p,
-      price:Number(p.price),
-      compareAtPrice:p.compareAtPrice!=null?Number(p.compareAtPrice):null,
-      salePrice:p.salePrice!=null?Number(p.salePrice):null
-    }));
+    const now=new Date();
+    const items=hydrated.slice((page-1)*limit,page*limit).map((p:any)=>{
+      const regular=Number(p.price);
+      const currentSale=p.salePrice!=null?Number(p.salePrice):null;
+      const effective=getEffectivePrice(p,flashSales,now);
+      return {
+        ...p,
+        price:regular,
+        compareAtPrice:p.compareAtPrice!=null?Number(p.compareAtPrice):null,
+        salePrice:effective<regular?effective:null,
+        flashSaleActive:effective<(currentSale!=null&&currentSale>=0&&currentSale<regular?currentSale:regular)
+      };
+    });
 
     return NextResponse.json({items,page,limit,total,pages:Math.ceil(total/limit)});
   }catch(error){
