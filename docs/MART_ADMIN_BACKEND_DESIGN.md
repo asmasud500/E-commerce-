@@ -9,7 +9,7 @@ Make `/admin` the single primary administration entry point for the MART ecommer
 - Framework: Next.js App Router, TypeScript.
 - Database: PostgreSQL through Prisma (`prisma/schema.prisma`).
 - Authentication: `admin_session` HTTP-only cookie, `lib/auth/admin.ts`, login/logout API, and middleware protection for `/admin/*` and `/api/admin/*`.
-- Existing models include User, Category, Product, ProductImage, Order, OrderItem, PaymentGateway, PaymentTransaction, Coupon, Review, StockReservation and AuditLog.
+- Existing Firestore collections are mapped in `lib/firestore.ts`: users, categories, products, productImages, wishlistItems, reviews, paymentGateways, orders, paymentTransactions, stockReservations, orderItems, coupons and auditLogs.
 - Existing admin APIs/pages cover products, categories, orders, customers, gateways, transactions, coupons, reviews, reports and activity.
 
 ## One-panel navigation
@@ -36,9 +36,11 @@ Keep `/admin` as the home/overview and use the shared `components/AdminSidebar.t
 | Invoice print/download | Build invoice view from persisted order/customer/item snapshots; generate print-friendly HTML/PDF from server data. Never trust totals submitted by the browser. |
 | Dark mode / UI preferences | Client-only preference is acceptable; it must not be used for business data. |
 
-## Proposed additive Prisma models
+## Proposed additive data models (Firestore first)
 
-The exact names may be aligned to existing naming conventions before migration.
+Implement the following as Firestore collection/document shapes and add collection mappings plus validation in `lib/firestore.ts`. If/when the project intentionally returns to PostgreSQL, create equivalent Prisma models and a reviewed migration. Do not assume a Prisma schema edit alone creates Firestore collections.
+
+The exact names may be aligned to existing naming conventions. Prefer stable IDs, timestamps, explicit indexes where Firestore queries require them, and server-side transactional writes where supported.
 
 - `AdminStaff`: id, userId (unique), roleId, active, createdAt, updatedAt.
 - `AdminRole`: id, name (unique), isSystem, createdAt, updatedAt.
@@ -85,7 +87,7 @@ Existing endpoints should be reused where they already provide the feature; do n
 6. Add AuditLog records for staff changes, customer blocking, payment decisions, order status changes, settings changes, refunds and inventory adjustments.
 7. Use server pagination, bounded filters, rate limits on sensitive operations, and safe CSV escaping.
 8. Add tests for unauthorized access, insufficient permissions, invalid transitions, duplicate webhooks, concurrent stock changes and refund idempotency.
-9. Apply additive Prisma migrations in a staging environment first; back up production data before production migration.
+9. For Firestore, deploy collection shape and security/authorization code together, validate required composite indexes, and test on a staging project before production rollout. For a future PostgreSQL migration, apply additive Prisma migrations in staging first and back up production data.
 10. Treat seed/demo values in the original HTML as examples only. Never import those fake orders/customers/payments into the live database.
 
 ## Implementation order
