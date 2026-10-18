@@ -5,7 +5,7 @@ function asTime(value: unknown): number {
   const raw = value && typeof value === "object" && "toDate" in value
     ? (value as { toDate: () => Date }).toDate()
     : value;
-  const time = new Date(raw as string | number | Date).getTime();
+  const time = raw instanceof Date ? raw.getTime() : new Date(raw as string | number).getTime();
   return Number.isFinite(time) ? time : 0;
 }
 
