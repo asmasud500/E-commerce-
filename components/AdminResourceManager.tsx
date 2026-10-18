@@ -33,10 +33,32 @@ export default function AdminResourceManager({kind}:{kind:Kind}){
  }catch(e){setNotice(e instanceof Error?e.message:"Request failed");}finally{setBusy(false);}};
  const patch=async(row:Row,data:Record<string,any>)=>{setNotice("");try{const r=await fetch(m.endpoint+"/"+encodeURIComponent(row.id),{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const j=await r.json();if(!r.ok)throw new Error(j.error||"Update failed");setNotice("Updated.");await load();}catch(e){setNotice(e instanceof Error?e.message:"Update failed");}};
  const remove=async(row:Row)=>{if(!window.confirm("Delete this record?"))return;try{const r=await fetch(m.endpoint+"/"+encodeURIComponent(row.id),{method:"DELETE"});const j=await r.json();if(!r.ok)throw new Error(j.error||"Delete failed");setNotice("Deleted.");await load();}catch(e){setNotice(e instanceof Error?e.message:"Delete failed");}};
+ const edit=async(row:Row)=>{
+  let data:Record<string,any>={};
+  if(kind==="delivery-zones"){
+   const name=window.prompt("Zone name",row.name);if(name===null)return;
+   const district=window.prompt("District",row.district);if(district===null)return;
+   const fee=window.prompt("Delivery fee (BDT)",String(row.fee));if(fee===null)return;
+   const estimatedDays=window.prompt("Estimated delivery days",String(row.estimatedDays??3));if(estimatedDays===null)return;
+   data={name,district,fee:Number(fee),estimatedDays:Number(estimatedDays)};
+  }else if(kind==="banners"){
+   const title=window.prompt("Banner title",row.title);if(title===null)return;
+   const imageUrl=window.prompt("Image URL",row.imageUrl);if(imageUrl===null)return;
+   const href=window.prompt("Destination URL (blank for none)",row.href||"");if(href===null)return;
+   const sortOrder=window.prompt("Sort order",String(row.sortOrder??0));if(sortOrder===null)return;
+   data={title,imageUrl,href,sortOrder:Number(sortOrder)};
+  }else{
+   const title=window.prompt("Flash sale title",row.title);if(title===null)return;
+   const productIds=window.prompt("Product IDs separated by commas",(row.productIds||[]).join(", "));if(productIds===null)return;
+   const discountPercent=window.prompt("Discount percent (1–90)",String(row.discountPercent));if(discountPercent===null)return;
+   data={title,productIds:productIds.split(",").map((x:string)=>x.trim()).filter(Boolean),discountPercent:Number(discountPercent)};
+  }
+  await patch(row,data);
+ };
  const label=(row:Row)=>String(row.title||row.name||"Untitled");
  return <div className="admin-layout"><AdminSidebar/><main className="admin-content"><div className="admin-kicker">MART · STORE CONTROL</div><div className="admin-heading-row"><div><h1>{m.title}</h1><p>{m.description}</p></div></div>
   {notice&&<p role="status" className="admin-notice">{notice}</p>}
   <section className="admin-recent"><h2>Create new</h2><form className="admin-resource-form" onSubmit={submit}>{fields.map(f=><label key={f.key}>{f.label}<input required={f.required} type={f.type} min={f.type==="number"?"0":undefined} value={form[f.key]||""} onChange={e=>setForm(old=>({...old,[f.key]:e.target.value}))}/></label>)}<button disabled={busy} type="submit">{busy?"Saving…":"Save"}</button></form>{kind==="flash-sales"&&<p className="admin-footnote">Product IDs must match existing product document IDs. Sales are stored here; storefront pricing/automatic activation is a separate integration step.</p>}</section>
-  <section className="admin-recent"><div className="admin-section-heading"><div><h2>Saved records</h2><p>{rows.length} record(s)</p></div><button type="button" onClick={()=>void load()}>Refresh</button></div>{rows.length===0?<p className="admin-empty">No records yet.</p>:<div className="admin-table-wrap"><table><thead><tr><th>Name</th><th>Status</th><th>Details</th><th>Actions</th></tr></thead><tbody>{rows.map(row=><tr key={row.id}><td>{label(row)}</td><td><span className="admin-status">{row.active?"Active":"Inactive"}</span></td><td>{kind==="delivery-zones"?row.district+" · ৳"+row.fee+" · "+row.estimatedDays+" day(s)":kind==="banners"?(row.imageUrl||"No image URL"):(row.discountPercent+"% · "+(row.productIds||[]).length+" product(s)")}</td><td><div className="admin-row-actions"><button type="button" onClick={()=>void patch(row,{active:!row.active})}>{row.active?"Disable":"Enable"}</button><button type="button" onClick={()=>void remove(row)}>Delete</button></div></td></tr>)}</tbody></table></div>}</section>
+  <section className="admin-recent"><div className="admin-section-heading"><div><h2>Saved records</h2><p>{rows.length} record(s)</p></div><button type="button" onClick={()=>void load()}>Refresh</button></div>{rows.length===0?<p className="admin-empty">No records yet.</p>:<div className="admin-table-wrap"><table><thead><tr><th>Name</th><th>Status</th><th>Details</th><th>Actions</th></tr></thead><tbody>{rows.map(row=><tr key={row.id}><td>{label(row)}</td><td><span className="admin-status">{row.active?"Active":"Inactive"}</span></td><td>{kind==="delivery-zones"?row.district+" · ৳"+row.fee+" · "+row.estimatedDays+" day(s)":kind==="banners"?(row.imageUrl||"No image URL"):(row.discountPercent+"% · "+(row.productIds||[]).length+" product(s)")}</td><td><div className="admin-row-actions"><button type="button" onClick={()=>void edit(row)}>Edit</button><button type="button" onClick={()=>void patch(row,{active:!row.active})}>{row.active?"Disable":"Enable"}</button><button type="button" onClick={()=>void remove(row)}>Delete</button></div></td></tr>)}</tbody></table></div>}</section>
  </main></div>;
 }
