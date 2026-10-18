@@ -1,11 +1,10 @@
 "use client";
 
-import {useCallback,useEffect,useState} from "react";
+import {useCallback,useEffect,useState,type FormEvent} from "react";
 import AdminSidebar from "@/components/AdminSidebar";
 
 type Kind="delivery-zones"|"banners"|"flash-sales";
 type Row=Record<string,any>&{id:string};
-const config:Record<Kind,{title:string;description:string;endpoint:string}>{} as any;
 
 export default function AdminResourceManager({kind}:{kind:Kind}){
  const meta:Record<Kind,{title:string;description:string;endpoint:string}>={
@@ -25,7 +24,7 @@ export default function AdminResourceManager({kind}:{kind:Kind}){
   :kind==="banners"
   ?[{key:"title",label:"Banner title",type:"text",required:true},{key:"imageUrl",label:"Image URL (https)",type:"url",required:true},{key:"href",label:"Destination URL",type:"text",required:false},{key:"sortOrder",label:"Sort order",type:"number",required:true}]
   :[{key:"title",label:"Flash sale title",type:"text",required:true},{key:"productIds",label:"Product IDs (comma separated)",type:"text",required:true},{key:"discountPercent",label:"Discount percent (1–90)",type:"number",required:true},{key:"startsAt",label:"Start time",type:"datetime-local",required:true},{key:"endsAt",label:"End time",type:"datetime-local",required:true}];
- const submit=async(e:React.FormEvent)=>{e.preventDefault();setBusy(true);setNotice("");try{
+ const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setNotice("");try{
   const body:Record<string,any>={...form};
   if(kind==="delivery-zones"){body.fee=Number(body.fee);body.estimatedDays=Number(body.estimatedDays);body.active=true;}
   if(kind==="banners"){body.sortOrder=Number(body.sortOrder||0);body.active=false;}
