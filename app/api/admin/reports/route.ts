@@ -1,26 +1,65 @@
 import {NextResponse} from "next/server";
 import {db} from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
-  const now = new Date();
-  const today = new Date(now); today.setHours(0,0,0,0);
-  const start = new Date(today); start.setDate(start.getDate()-6);
-  const [orders, products, customers, pending, paid, dailyOrders, lowStock, statuses, transactions] = await Promise.all([
-    db.order.count(),
-    db.product.count(),
-    db.user.count({where:{role:"CUSTOMER"}}),
-    db.order.count({where:{status:"PENDING"}}),
-    db.order.aggregate({where:{paymentStatus:"PAID"},_sum:{total:true}}),
-    db.order.findMany({where:{createdAt:{gte:start}},select:{createdAt:true,total:true,paymentStatus:true,status:true},orderBy:{createdAt:"asc"}}),
-    db.product.findMany({where:{stock:{lte:5}},select:{id:true,name:true,sku:true,stock:true,lowStockThreshold:true},orderBy:{stock:"asc"},take:20}),
-    db.order.groupBy({by:["status"],_count:{_all:true}}),
-    db.paymentTransaction.count()
-  ]);
-  const days = Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return {date:d.toISOString().slice(0,10),orders:0,paidRevenue:0};});
-  for (const o of dailyOrders) {const day=days.find(x=>x.date===o.createdAt.toISOString().slice(0,10));if(day){day.orders++;if(o.paymentStatus==="PAID")day.paidRevenue+=Number(o.total);}}
-  return NextResponse.json({
-    summary:{orders,products,customers,pending,paidRevenue:Number(paid._sum.total||0),transactions},
-    daily:days, lowStock,
-    statuses:statuses.map(s=>({status:s.status,count:s._count._all}))
-  });
+  try {
+    const now = new Date();
+    const today = new Date(now); today.setHours(0, 0, 0, 0);
+    const start = new Date(today); start.setDate(start.getDate() - 6);
+
+    const [allOrders, products, customers, lowStock, transactions] = await Promise.all([
+      db.order.findMany({
+        select: { id: true, createdAt: true, total: true, paymentStatus: true, status: true }
+      }),
+      db.product.findMany({ select: { id: true } }),
+      db.user.findMany({ where: { role: "CUSTOMER" }, select: { id: true } }),
+      db.product.findMany({
+        where: { stock: { lte: 5 } },
+        select: { id: true, name: true, sku: true, stock: true, lowStockThreshold: true },
+        orderBy: { stock: "asc" },
+        take: 20
+      }),
+      db.paymentTransaction.findMany({ select: { id: true } })
+    ]);
+
+    const paidOrders = allOrders.filter((o: any) => o.paymentStatus === "PAID");
+    const pending = allOrders.filter((o: any) => o.status === "PENDING").length;
+    const daily = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return { date: d.toISOString().slice(0, 10), orders: 0, paidRevenue: 0 };
+    });
+
+    const statuses = new Map<string, number>();
+    for (const order of allOrders as any[]) {
+      statuses.set(order.status || "UNKNOWN", (statuses.get(order.status || "UNKNOWN") || 0) + 1);
+      const created = order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt);
+      if (created >= start) {
+        const day = daily.find(item => item.date === created.toISOString().slice(0, 10));
+        if (day) {
+          day.orders += 1;
+          if (order.paymentStatus === "PAID") day.paidRevenue += Number(order.total || 0);
+        }
+      }
+    }
+
+    return NextResponse.json({
+      summary: {
+        orders: allOrders.length,
+        products: products.length,
+        customers: customers.length,
+        pending,
+        paidRevenue: paidOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+        transactions: transactions.length
+      },
+      daily,
+      lowStock,
+      statuses: Array.from(statuses, ([status, count]) => ({ status, count }))
+    });
+  } catch (error) {
+    console.error("Admin reports API failed:", error instanceof Error ? error.message : String(error));
+    return NextResponse.json({ error: "Unable to generate reports" }, { status: 500 });
+  }
 }
