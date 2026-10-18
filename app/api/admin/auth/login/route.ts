@@ -27,7 +27,7 @@ export async function POST(req:NextRequest){
     await db.staffAccount.update({where:{id:staff.id},data:{lastLoginAt:new Date()}});
   }
   const res=NextResponse.json({ok:true,role});
-  res.cookies.set("admin_session",await createAdminToken(email,role,staffId),{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:60*60*12});
+  res.cookies.set("admin_session",await createAdminToken(email,role,staffId),{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:role==="SUPER_ADMIN"?60*60*12:60*60});
   try{await db.auditLog.create({data:{actorId:staffId||email,action:"ADMIN_LOGIN",entity:"staffAccount",entityId:staffId||null,metadata:{role}}});}catch{}
   return res;
  }catch(error){
