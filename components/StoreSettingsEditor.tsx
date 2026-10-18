@@ -2,7 +2,7 @@
 import {useEffect,useState,type FormEvent} from "react";
 
 type Settings={storeName:string;supportEmail:string;supportPhone:string;currency:string;defaultDeliveryFee:number;freeShippingThreshold:number|null;taxEnabled:boolean;taxRate:number;announcement:string};
-const initial:Settings={storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:60,freeShippingThreshold:null,taxEnabled:false,taxRate:0,announcement:""};
+const initial:Settings={storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:""};
 export default function StoreSettingsEditor(){
  const [value,setValue]=useState<Settings>(initial);const [busy,setBusy]=useState(false);const [notice,setNotice]=useState("");
  useEffect(()=>{let live=true;fetch("/api/admin/store-settings",{cache:"no-store"}).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||"Could not load settings");if(live)setValue({...initial,...j});}).catch(e=>{if(live)setNotice(e instanceof Error?e.message:"Could not load settings");});return()=>{live=false};},[]);
