@@ -14,7 +14,7 @@ const schema=z.object({
   announcement:z.string().trim().max(500).optional()
 }).strict();
 
-const defaults={id:"store",storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:60,freeShippingThreshold:null,taxEnabled:false,taxRate:0,announcement:""};
+const defaults={id:"store",storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:""};
 
 export async function GET(){
   try{
