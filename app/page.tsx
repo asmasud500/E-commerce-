@@ -14,7 +14,7 @@ const num=(v:any)=>v==null||v===""?null:Number(v);
 const time=(v:any)=>{const t=new Date(v?.toDate?.()??v).getTime();return Number.isFinite(t)?t:0};
 
 async function loadHome(){
-  let categories:any[]=[],products:any[]=[],images:any[]=[];
+  let categories:any[]=[],products:any[]=[],images:any[]=[],banners:any[]=[];
   let reviews:any[]=[],paidOrders:any[]=[],orderItems:any[]=[];
   try{
     [categories,products,images]=await Promise.all([
@@ -25,6 +25,13 @@ async function loadHome(){
   }catch(error){
     console.error("Home catalog error:",error instanceof Error?error.message:String(error));
   }
+  // Store banners are optional merchandising content; a failure must not break the catalog.
+  try{
+    const rows=await db.banner.findMany({where:{active:true},orderBy:{sortOrder:"asc"}});
+    const now=Date.now();
+    banners=rows.filter((b:any)=>(!b.startsAt||time(b.startsAt)<=now)&&(!b.endsAt||time(b.endsAt)>=now)&&typeof b.imageUrl==="string"&&b.imageUrl)
+      .sort((a:any,b:any)=>Number(a.sortOrder||0)-Number(b.sortOrder||0)).slice(0,6);
+  }catch(error){console.error("Home banners error:",error instanceof Error?error.message:String(error));}
   // Ratings and sales only decorate the cards, so a failure here must not break the page.
   try{
     [reviews,paidOrders,orderItems]=await Promise.all([
@@ -89,7 +96,7 @@ const QUICK=[
 ];
 
 export default async function Home(){
-  const {categories,flash,forYou,stores,flashImages,newImages}=await loadHome();
+  const {categories,flash,forYou,stores,banners,flashImages,newImages}=await loadHome();
   const hasFlash=flash.length>0,hasStores=stores.length>0;
   const quickHref=(q:typeof QUICK[number])=>q.fallback&&!((q.label==="Flash Deals"&&hasFlash)||(q.label==="Official Stores"&&hasStores))?q.fallback:q.href;
 
@@ -116,6 +123,12 @@ export default async function Home(){
           <HeroSlider flashImages={flashImages} newImages={newImages} flashHref={hasFlash?"#flash-sale":"/products"}/>
         </div>
 
+        {banners.length>0&&<section aria-label="Store promotions" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12,margin:"20px 0"}}>
+          {banners.map((b:any)=><Link key={b.id} href={typeof b.href==="string"&&b.href.startsWith("/")?b.href:"/products"} style={{display:"block",position:"relative",minHeight:120,overflow:"hidden",borderRadius:14,background:"var(--card,#f3f4f6)",border:"1px solid var(--border,#e5e7eb)"}}>
+            <img src={b.imageUrl} alt={b.title||"Store promotion"} loading="lazy" decoding="async" style={{width:"100%",height:160,objectFit:"cover",display:"block"}}/>
+            <span style={{display:"block",padding:"10px 12px",fontWeight:700}}>{b.title}</span>
+          </Link>)}
+        </section>}
         <nav className="hp-quick" aria-label="Shortcuts">
           <div className="hp-quick-in">
             {QUICK.map(q=>(
