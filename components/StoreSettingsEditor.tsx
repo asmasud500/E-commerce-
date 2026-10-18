@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useState} from "react";
+import {useEffect,useState,type FormEvent} from "react";
 
 type Settings={storeName:string;supportEmail:string;supportPhone:string;currency:string;defaultDeliveryFee:number;freeShippingThreshold:number|null;taxEnabled:boolean;taxRate:number;announcement:string};
 const initial:Settings={storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:60,freeShippingThreshold:null,taxEnabled:false,taxRate:0,announcement:""};
@@ -7,7 +7,7 @@ export default function StoreSettingsEditor(){
  const [value,setValue]=useState<Settings>(initial);const [busy,setBusy]=useState(false);const [notice,setNotice]=useState("");
  useEffect(()=>{let live=true;fetch("/api/admin/store-settings",{cache:"no-store"}).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||"Could not load settings");if(live)setValue({...initial,...j});}).catch(e=>{if(live)setNotice(e instanceof Error?e.message:"Could not load settings");});return()=>{live=false};},[]);
  const set=(key:keyof Settings,v:any)=>setValue(old=>({...old,[key]:v}));
- async function save(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setNotice("");try{const body={...value,defaultDeliveryFee:Number(value.defaultDeliveryFee),freeShippingThreshold:value.freeShippingThreshold==null||String(value.freeShippingThreshold)===""?null:Number(value.freeShippingThreshold),taxRate:Number(value.taxRate)};const r=await fetch("/api/admin/store-settings",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error||"Could not save settings");setValue({...initial,...j});setNotice("Store settings saved.");}catch(e){setNotice(e instanceof Error?e.message:"Could not save settings");}finally{setBusy(false);}}
+ async function save(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setNotice("");try{const body={...value,defaultDeliveryFee:Number(value.defaultDeliveryFee),freeShippingThreshold:value.freeShippingThreshold==null||String(value.freeShippingThreshold)===""?null:Number(value.freeShippingThreshold),taxRate:Number(value.taxRate)};const r=await fetch("/api/admin/store-settings",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error||"Could not save settings");setValue({...initial,...j});setNotice("Store settings saved.");}catch(e){setNotice(e instanceof Error?e.message:"Could not save settings");}finally{setBusy(false);}}
  return <section className="admin-recent"><h2>Editable store settings</h2><p>These values are saved in Firestore. Payment credentials and other secrets remain in the hosting secret manager.</p>{notice&&<p role="status" className="admin-notice">{notice}</p>}<form className="admin-resource-form" onSubmit={save}>
  <label>Store name<input required maxLength={120} value={value.storeName} onChange={e=>set("storeName",e.target.value)}/></label>
  <label>Support email<input type="email" value={value.supportEmail} onChange={e=>set("supportEmail",e.target.value)}/></label>
