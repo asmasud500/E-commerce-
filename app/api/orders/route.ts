@@ -27,9 +27,12 @@ export async function POST(req:NextRequest){
   }
   const unique=[...new Set(input.items.map(i=>i.productId))];if(unique.length!==input.items.length)return NextResponse.json({error:"Duplicate products are not allowed."},{status:400});
   const gateway=await db.paymentGateway.findFirst({where:{id:input.paymentGatewayId,enabled:true}});if(!gateway)return NextResponse.json({error:"Selected payment gateway is unavailable."},{status:400});
-  const products=await db.product.findMany({where:{id:{in:unique},published:true}});if(products.length!==unique.length)return NextResponse.json({error:"One or more products are unavailable."},{status:400});
+  const [products,flashSales]=await Promise.all([
+   db.product.findMany({where:{id:{in:unique},published:true}}),
+   db.flashSale.findMany({where:{active:true}})
+  ]);if(products.length!==unique.length)return NextResponse.json({error:"One or more products are unavailable."},{status:400});
   const byId=new Map<string, any>(products.map((p:any)=>[p.id,p] as [string, any]));let subtotal=0;const orderItems:Array<{productId:string;name:string;unitPrice:number;quantity:number;lineTotal:number}>=[];
-  for(const item of input.items){const p=byId.get(item.productId)!;const unitPrice=getEffectivePrice(p),lineTotal=unitPrice*item.quantity;subtotal+=lineTotal;orderItems.push({productId:p.id,name:p.name,unitPrice,quantity:item.quantity,lineTotal});}
+  for(const item of input.items){const p=byId.get(item.productId)!;const unitPrice=getEffectivePrice(p,flashSales),lineTotal=unitPrice*item.quantity;subtotal+=lineTotal;orderItems.push({productId:p.id,name:p.name,unitPrice,quantity:item.quantity,lineTotal});}
   let discount=0;
   if(input.couponCode){
    const c=await db.coupon.findFirst({where:{code:input.couponCode.toUpperCase(),active:true}});
