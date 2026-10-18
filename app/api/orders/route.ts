@@ -7,7 +7,7 @@ import {getEffectivePrice} from "@/lib/products/pricing";
 import {rateLimit} from "@/lib/security/rate-limit";
 import {createOrderAccessToken} from "@/lib/auth/order-access";
 
-const schema=z.object({customerName:z.string().trim().min(2).max(100),customerPhone:z.string().trim().min(6).max(30),customerEmail:z.string().email().optional().or(z.literal("")),shippingAddress:z.string().trim().min(5).max(1000),paymentGatewayId:z.string().min(1),couponCode:z.string().trim().max(50).optional(),items:z.array(z.object({productId:z.string().min(1),quantity:z.number().int().positive().max(100)})).min(1).max(100)});
+const schema=z.object({customerName:z.string().trim().min(2).max(100),customerPhone:z.string().trim().min(6).max(30),customerEmail:z.string().email().optional().or(z.literal("")),shippingAddress:z.string().trim().min(5).max(1000),shippingDistrict:z.string().trim().min(2).max(100),paymentGatewayId:z.string().min(1),couponCode:z.string().trim().max(50).optional(),items:z.array(z.object({productId:z.string().min(1),quantity:z.number().int().positive().max(100)})).min(1).max(100)});
 
 export async function POST(req:NextRequest){
  try{
@@ -37,14 +37,26 @@ export async function POST(req:NextRequest){
    discount=c.type==="PERCENT"?Math.min(subtotal,subtotal*Number(c.value)/100):c.type==="FIXED"?Math.min(subtotal,Number(c.value)):0;
    if(c.type!=="PERCENT"&&c.type!=="FIXED")return NextResponse.json({error:"Unsupported coupon type."},{status:400});
   }
-  const shippingFee=Math.max(0,subtotal-discount)>=3000?0:120,total=Math.max(0,subtotal-discount)+shippingFee;
+  const [storedSettings,activeZones]=await Promise.all([
+   db.storeSetting.findUnique({where:{id:"store"}}),
+   db.deliveryZone.findMany({where:{active:true}})
+  ]);
+  const settings={defaultDeliveryFee:60,freeShippingThreshold:null,taxEnabled:false,taxRate:0,...(storedSettings||{})};
+  const normalizedDistrict=input.shippingDistrict.trim().toLocaleLowerCase();
+  const zone=activeZones.find((z:any)=>String(z.district||"").trim().toLocaleLowerCase()===normalizedDistrict);
+  const deliveryFee=zone?Number(zone.fee||0):Number(settings.defaultDeliveryFee||0);
+  const freeThreshold=zone?.freeAbove!=null?Number(zone.freeAbove):settings.freeShippingThreshold==null?null:Number(settings.freeShippingThreshold);
+  const taxableAmount=Math.max(0,subtotal-discount);
+  const shippingFee=freeThreshold!=null&&taxableAmount>=freeThreshold?0:deliveryFee;
+  const taxAmount=settings.taxEnabled?Math.round(taxableAmount*Number(settings.taxRate||0))/100:0;
+  const total=taxableAmount+shippingFee+taxAmount;
   const orderNumber="ORD-"+Date.now().toString(36).toUpperCase()+"-"+crypto.randomUUID().slice(0,5).toUpperCase(),expiresAt=new Date(Date.now()+30*60*1000);
   const order=await db.$transaction(async tx=>{
    for(const item of input.items){const held=await tx.product.updateMany({where:{id:item.productId,published:true,stock:{gte:item.quantity}},data:{stock:{decrement:item.quantity}}});if(held.count!==1)throw new Error("Stock changed during checkout");}
-   const created=await tx.order.create({data:{orderNumber,idempotencyKey:idempotencyKey||null,userId:session?.userId||null,customerName:input.customerName,customerPhone:input.customerPhone,customerEmail:input.customerEmail||null,shippingAddress:input.shippingAddress,subtotal,shippingFee,discount,total,paymentGatewayId:gateway.id,items:{create:orderItems}}});
+   const created=await tx.order.create({data:{orderNumber,idempotencyKey:idempotencyKey||null,userId:session?.userId||null,customerName:input.customerName,customerPhone:input.customerPhone,customerEmail:input.customerEmail||null,shippingAddress:input.shippingAddress,shippingDistrict:input.shippingDistrict,subtotal,shippingFee,taxAmount,discount,total,paymentGatewayId:gateway.id,items:{create:orderItems}}});
    await tx.stockReservation.createMany({data:input.items.map(i=>({orderId:created.id,productId:i.productId,quantity:i.quantity,expiresAt}))});return created;
   });
   sendNewOrderTelegram(order.id).catch(()=>{});
-  return NextResponse.json({orderId:order.id,orderNumber:order.orderNumber,total:Number(order.total),discount:Number(order.discount),gateway:{id:gateway.id,type:gateway.type,mode:gateway.mode},reservationExpiresAt:expiresAt,paymentToken:await createOrderAccessToken(order.id)},{status:201});
+  return NextResponse.json({orderId:order.id,orderNumber:order.orderNumber,total:Number(order.total),discount:Number(order.discount),shippingFee,taxAmount,gateway:{id:gateway.id,type:gateway.type,mode:gateway.mode},reservationExpiresAt:expiresAt,paymentToken:await createOrderAccessToken(order.id)},{status:201});
  }catch(error){console.error("Order creation error:",error instanceof Error?error.message:String(error));return NextResponse.json({error:"Unable to create order. Please check your information and try again."},{status:400});}
 }
