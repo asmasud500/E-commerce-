@@ -19,6 +19,7 @@ const items = [
   ["/admin/delivery-zones","Delivery Zones"],
   ["/admin/banners","Banners"],
   ["/admin/flash-sales","Flash Sales"],
+  ["/admin/staff","Staff & Permissions"],
 ];
 
 export default function AdminSidebar() {
