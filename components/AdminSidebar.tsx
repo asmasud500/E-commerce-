@@ -5,13 +5,16 @@ import {usePathname} from "next/navigation";
 
 const items = [
   ["/admin","Overview"],
+  ["/admin/reports","Reports & Activity"],
   ["/admin/products","Products & Inventory"],
   ["/admin/categories","Categories"],
   ["/admin/orders","Orders & Invoices"],
+  ["/admin/customers","Customers"],
   ["/admin/payment-gateways","Payments & Shipping"],
   ["/admin/payment-transactions","Transactions"],
   ["/admin/coupons","Coupons & Marketing"],
   ["/admin/reviews","Reviews & Moderation"],
+  ["/admin/settings","Store Settings"],
 ];
 
 export default function AdminSidebar() {
