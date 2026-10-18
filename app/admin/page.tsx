@@ -5,11 +5,13 @@ const money=(n:number)=>"৳"+Number(n||0).toLocaleString("en-BD");
 const modules=[
  {title:"Products & Inventory",desc:"Create/edit products, categories, price, stock and publish status.",href:"/admin/products",icon:"▣",tag:"Live data"},
  {title:"Orders & Invoices",desc:"Order queue, fulfilment status, payment proof, confirm/reject and refunds.",href:"/admin/orders",icon:"▤",tag:"Live data"},
- {title:"Customers & Reviews",desc:"Review customer activity through order records and moderate product reviews.",href:"/admin/reviews",icon:"♙",tag:"Reviews live"},
+ {title:"Customers",desc:"Search customer records, review purchase totals and export the customer directory.",href:"/admin/customers",icon:"♙",tag:"Live data"},
+ {title:"Reviews & Moderation",desc:"Approve, unapprove or remove customer product reviews.",href:"/admin/reviews",icon:"☆",tag:"Live data"},
  {title:"Payments & Shipping",desc:"Configure payment gateways and inspect transaction verification records.",href:"/admin/payment-gateways",icon:"৳",tag:"Live data"},
  {title:"Coupons & Marketing",desc:"Create discount codes and manage active coupon rules.",href:"/admin/coupons",icon:"✦",tag:"Live data"},
  {title:"Categories",desc:"Maintain the store taxonomy used by product listings.",href:"/admin/categories",icon:"▦",tag:"Live data"},
- {title:"Reports & Activity",desc:"Review orders and transactions from live tables; export/reporting tools are planned.",href:"/admin/orders",icon:"▥",tag:"Operational view"},
+ {title:"Reports & Activity",desc:"Seven-day sales activity, order status breakdown, low-stock alerts and CSV export.",href:"/admin/reports",icon:"▥",tag:"Live analytics"},
+ {title:"Store Settings",desc:"Review runtime readiness and the store configuration checklist.",href:"/admin/settings",icon:"⚙",tag:"Operations"},
 ];
 export default async function AdminPage(){
  let orders=0,products=0,customers=0,pending=0,paidRevenue=0,recent:any[]=[];
