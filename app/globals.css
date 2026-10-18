@@ -467,3 +467,17 @@ button.pg-btn[disabled]{opacity:.5;cursor:not-allowed;transform:none;box-shadow:
 .admin-settings-note{margin-top:18px;background:#fafbfc}
 @media(max-width:1000px){.admin-settings-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.admin-report-bars{gap:5px}.admin-report-bar-track{height:100px;padding:3px}.admin-report-day small{font-size:9px}.admin-settings-grid{grid-template-columns:1fr}.admin-settings-card,.admin-settings-note{padding:16px}}
+
+
+/* Admin resource manager forms and actions */
+.admin-resource-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0 6px}
+.admin-resource-form label{display:grid;gap:6px;color:#475569;font-size:13px;font-weight:700}
+.admin-resource-form input{width:100%;min-width:0;padding:11px 12px;border:1px solid #d7dce5;border-radius:9px;background:#fff;color:#111827}
+.admin-resource-form button,.admin-section-heading button,.admin-row-actions button{border:0;border-radius:9px;background:#172033;color:#fff;padding:10px 14px;font-weight:750;cursor:pointer}
+.admin-resource-form button{justify-self:start;align-self:end}
+.admin-resource-form button:disabled{opacity:.6;cursor:wait}
+.admin-row-actions{display:flex;gap:7px}
+.admin-row-actions button{padding:7px 9px;font-size:12px;white-space:nowrap}
+.admin-row-actions button:last-child{background:#fff1f2;color:#be123c}
+.admin-notice{padding:12px 14px;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed;color:#9a3412}
+@media(max-width:640px){.admin-resource-form{grid-template-columns:1fr}.admin-resource-form button{width:100%}.admin-row-actions{flex-wrap:wrap}}
