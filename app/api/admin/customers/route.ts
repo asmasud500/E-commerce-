@@ -16,8 +16,7 @@ export async function GET() {
         select: { id: true, name: true, email: true, createdAt: true }
       }),
       db.order.findMany({
-        where: { paymentStatus: "PAID" },
-        select: { id: true, userId: true, total: true }
+        select: { id: true, userId: true, total: true, paymentStatus: true }
       }),
       db.review.findMany({ select: { id: true, userId: true } })
     ]);
@@ -28,8 +27,10 @@ export async function GET() {
 
     for (const order of orders) {
       if (!order.userId) continue;
-      spendByUser.set(order.userId, (spendByUser.get(order.userId) || 0) + Number(order.total || 0));
       orderCountByUser.set(order.userId, (orderCountByUser.get(order.userId) || 0) + 1);
+      if (order.paymentStatus === "PAID") {
+        spendByUser.set(order.userId, (spendByUser.get(order.userId) || 0) + Number(order.total || 0));
+      }
     }
     for (const review of reviews) {
       if (review.userId) reviewCountByUser.set(review.userId, (reviewCountByUser.get(review.userId) || 0) + 1);
