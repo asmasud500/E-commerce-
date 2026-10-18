@@ -29,7 +29,7 @@ export async function middleware(req:NextRequest){
   const token=req.cookies.get("admin_session")?.value;
   const session=token?await readAdminSession(token):null;
   if(!session)return NextResponse.json({error:"Unauthorized"},{status:401});
-  if(!allowed(session.role,path))return NextResponse.json({error:"Forbidden: your staff role cannot access this resource."},{status:403});
+  if(!allowed(session.role,path,req.method))return NextResponse.json({error:"Forbidden: your staff role cannot access this resource."},{status:403});
  }
  return NextResponse.next();
 }
