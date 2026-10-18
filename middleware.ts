@@ -1,21 +1,15 @@
 import {NextRequest,NextResponse} from "next/server";
 import {readAdminSession} from "@/lib/auth/admin";
 
-const ROLE_PATHS: Record<string,string[]> = {
-  MANAGER: ["/admin", "/api/admin"],
-  ORDER_MANAGER: ["/admin", "/api/admin"],
-  PRODUCT_MANAGER: ["/admin", "/api/admin"],
-  SUPPORT: ["/admin", "/api/admin"]
-};
-
 function allowed(role: string, path: string) {
   if (role === "SUPER_ADMIN") return true;
+  if (path === "/admin" || path === "/admin/unauthorized") return true;
   if (path.startsWith("/admin/staff") || path.startsWith("/api/admin/staff") ||
       path.startsWith("/admin/settings") || path.startsWith("/api/admin/store-settings") ||
       path.startsWith("/admin/activity") || path.startsWith("/api/admin/activity")) return false;
   if (role === "MANAGER") return true;
   const rules: Record<string,string[]> = {
-    ORDER_MANAGER: ["/admin/orders","/admin/payment-transactions","/admin/reports","/api/admin/orders","/api/admin/payment-transactions","/api/admin/reports","/api/admin/activity"],
+    ORDER_MANAGER: ["/admin/orders","/admin/payment-transactions","/admin/reports","/api/admin/orders","/api/admin/payment-transactions","/api/admin/reports"],
     PRODUCT_MANAGER: ["/admin/products","/admin/categories","/admin/banners","/admin/flash-sales","/admin/delivery-zones","/api/admin/products","/api/admin/categories","/api/admin/banners","/api/admin/flash-sales","/api/admin/delivery-zones"],
     SUPPORT: ["/admin/customers","/admin/reviews","/admin/orders","/api/admin/customers","/api/admin/reviews","/api/admin/orders"]
   };
