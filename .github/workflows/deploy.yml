@@ -54,3 +54,15 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Register store Telegram webhook and commands
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
+          URL="https://ecommerce-platform.masud50003.workers.dev/api/telegram/webhook"
+          curl -sS -X POST "$API/setWebhook" -H 'content-type: application/json' \
+            -d "{\"url\":\"$URL\",\"secret_token\":\"${TELEGRAM_WEBHOOK_SECRET}\",\"allowed_updates\":[\"message\",\"callback_query\"],\"drop_pending_updates\":true}" | jq -c '{ok,description}'
+          curl -sS -X POST "$API/setMyCommands" -H 'content-type: application/json' \
+            -d '{"commands":[{"command":"start","description":"Start"},{"command":"help","description":"Help"},{"command":"orders","description":"Recent orders"},{"command":"pending","description":"Pending orders"},{"command":"today","description":"Today summary"},{"command":"sales","description":"Sales report"},{"command":"stock","description":"Low stock"},{"command":"search","description":"Search orders"}]}' | jq -c '{ok,description}'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
