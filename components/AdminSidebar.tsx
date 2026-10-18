@@ -16,6 +16,9 @@ const items = [
   ["/admin/coupons","Coupons & Marketing"],
   ["/admin/reviews","Reviews & Moderation"],
   ["/admin/settings","Store Settings"],
+  ["/admin/delivery-zones","Delivery Zones"],
+  ["/admin/banners","Banners"],
+  ["/admin/flash-sales","Flash Sales"],
 ];
 
 export default function AdminSidebar() {
