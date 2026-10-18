@@ -6,6 +6,7 @@ import HeroSlider from "@/components/home/HeroSlider";
 import FlashCountdown from "@/components/home/FlashCountdown";
 import {FlashCard,ProductCard,type HomeProduct} from "@/components/home/ProductCard";
 import {db} from "@/lib/prisma";
+import {getEffectivePrice} from "@/lib/products/pricing";
 
 // Prices, stock and sales change constantly, so this page is rendered per request.
 export const dynamic="force-dynamic";
@@ -14,13 +15,14 @@ const num=(v:any)=>v==null||v===""?null:Number(v);
 const time=(v:any)=>{const t=new Date(v?.toDate?.()??v).getTime();return Number.isFinite(t)?t:0};
 
 async function loadHome(){
-  let categories:any[]=[],products:any[]=[],images:any[]=[],banners:any[]=[];
+  let categories:any[]=[],products:any[]=[],images:any[]=[],banners:any[]=[],flashSales:any[]=[];
   let reviews:any[]=[],paidOrders:any[]=[],orderItems:any[]=[];
   try{
-    [categories,products,images]=await Promise.all([
+    [categories,products,images,flashSales]=await Promise.all([
       db.category.findMany({orderBy:{name:"asc"}}),
       db.product.findMany({where:{published:true,stock:{gt:0}},orderBy:[{featured:"desc"},{createdAt:"desc"}]}),
-      db.productImage.findMany({orderBy:{sortOrder:"asc"}})
+      db.productImage.findMany({orderBy:{sortOrder:"asc"}}),
+      db.flashSale.findMany({where:{active:true}})
     ]);
   }catch(error){
     console.error("Home catalog error:",error instanceof Error?error.message:String(error));
@@ -58,7 +60,7 @@ async function loadHome(){
   const list:HomeProduct[]=products.map((p:any)=>{
     const regular=Number(p.price);
     const sale=num(p.salePrice),compare=num(p.compareAtPrice);
-    const price=sale!=null&&sale>0&&sale<regular?sale:regular;
+    const price=getEffectivePrice(p,flashSales);
     const original=price<regular?regular:(compare&&compare>price?compare:null);
     const discount=original?Math.round((1-price/original)*100):0;
     const r=rating.get(p.id);
