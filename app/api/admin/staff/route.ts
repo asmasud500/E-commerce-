@@ -25,6 +25,8 @@ export async function GET(){
 
 export async function POST(req:NextRequest){
  try{
+  const session=await readAdminSession(req.cookies.get("admin_session")?.value||"");
+  const actorId=session?.staffId||session?.email||"SUPER_ADMIN";
   const parsed=createSchema.safeParse(await req.json());
   if(!parsed.success)return NextResponse.json({error:"Invalid staff details. Password must be at least 12 characters.",details:parsed.error.flatten()},{status:400});
   const existing=await db.staffAccount.findFirst({where:{email:parsed.data.email}});
