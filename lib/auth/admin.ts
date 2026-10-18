@@ -37,7 +37,7 @@ export async function createAdminToken(email: string, role = "SUPER_ADMIN", staf
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret) throw new Error("ADMIN_SESSION_SECRET is required");
   const payload = base64UrlEncode(
-    new TextEncoder().encode(JSON.stringify({ email, role, staffId, exp: Date.now() + 1000 * 60 * 60 * 12 }))
+    new TextEncoder().encode(JSON.stringify({ email, role, staffId, exp: Date.now() + 1000 * 60 * (role === "SUPER_ADMIN" ? 720 : 60) }))
   );
   const sig = await hmacSign(secret, payload);
   return payload + "." + sig;
