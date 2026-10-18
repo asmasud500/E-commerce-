@@ -1,8 +1,37 @@
-import {NextRequest,NextResponse} from "next/server";import {rateLimit} from "@/lib/security/rate-limit";
+import {NextRequest,NextResponse} from "next/server";
+import {rateLimit} from "@/lib/security/rate-limit";
 import {adminCredentials,createAdminToken} from "@/lib/auth/admin";
+import {verifyStaffPassword} from "@/lib/auth/staff-password";
+import {db} from "@/lib/prisma";
+
+const STAFF_ROLES=["MANAGER","ORDER_MANAGER","PRODUCT_MANAGER","SUPPORT"] as const;
 export async function POST(req:NextRequest){
- try{const ip=req.headers.get("cf-connecting-ip")||"unknown";const rl=rateLimit("admin-login:"+ip,10,60_000);if(!rl.ok)return NextResponse.json({error:"Too many attempts. Try again later."},{status:429});const body=await req.json();const email=String(body.email||"").trim().toLowerCase();const password=String(body.password||"").trim();const c=adminCredentials();
-  if(!c.email||!c.password||email!==c.email||password!==c.password)return NextResponse.json({error:"Invalid credentials"},{status:401});
-  const res=NextResponse.json({ok:true});res.cookies.set("admin_session",await createAdminToken(email),{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:60*60*12});return res;
- }catch(error){console.error("Admin login error:",error instanceof Error?error.message:String(error));return NextResponse.json({error:"Login failed"},{status:400})}
+ try{
+  const ip=req.headers.get("cf-connecting-ip")||"unknown";
+  const rl=rateLimit("admin-login:"+ip,10,60_000);
+  if(!rl.ok)return NextResponse.json({error:"Too many attempts. Try again later."},{status:429});
+  const body=await req.json();
+  const email=String(body.email||"").trim().toLowerCase();
+  const password=String(body.password||"");
+  if(!email||!password)return NextResponse.json({error:"Email and password are required."},{status:400});
+  const c=adminCredentials();
+  let role="";let staffId:string|undefined;
+  if(c.email&&c.password&&email===c.email&&password===c.password){
+    role="SUPER_ADMIN";
+  }else{
+    const staff=await db.staffAccount.findFirst({where:{email,active:true}});
+    if(!staff?.passwordHash||!(STAFF_ROLES as readonly string[]).includes(staff.role)||!(await verifyStaffPassword(password,String(staff.passwordHash)))){
+      return NextResponse.json({error:"Invalid credentials"},{status:401});
+    }
+    role=staff.role;staffId=staff.id;
+    await db.staffAccount.update({where:{id:staff.id},data:{lastLoginAt:new Date()}});
+  }
+  const res=NextResponse.json({ok:true,role});
+  res.cookies.set("admin_session",await createAdminToken(email,role,staffId),{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:60*60*12});
+  try{await db.auditLog.create({data:{actorId:staffId||email,action:"ADMIN_LOGIN",entity:"staffAccount",entityId:staffId||null,metadata:{role}}});}catch{}
+  return res;
+ }catch(error){
+  console.error("Admin login error:",error instanceof Error?error.message:String(error));
+  return NextResponse.json({error:"Login failed"},{status:400});
+ }
 }
