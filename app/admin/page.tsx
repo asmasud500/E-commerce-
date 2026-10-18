@@ -1,4 +1,39 @@
 export const dynamic="force-dynamic";
 import {db} from "@/lib/prisma";
 import AdminSidebar from "@/components/AdminSidebar";
-export default async function AdminPage(){let orders=0,products=0,customers=0,pending=0,revenue:any={_sum:{total:0}};try{[orders,products,customers,revenue,pending]=await Promise.all([db.order.count(),db.product.count(),db.user.count({where:{role:"CUSTOMER"}}),db.order.aggregate({where:{paymentStatus:"PAID"},_sum:{total:true}}),db.order.count({where:{status:"PENDING"}})]);}catch(error){console.error("Admin dashboard data error:",error instanceof Error?error.message:String(error));}return <div className="admin-layout"><AdminSidebar/><main className="admin-content"><div className="admin-kicker">Store management</div><div style={{display:"flex",justifyContent:"space-between",gap:20,alignItems:"end",flexWrap:"wrap"}}><div><h1 style={{fontSize:"clamp(40px,5vw,60px)",margin:"8px 0"}}>Dashboard</h1><p>Overview of your store performance and operations.</p></div><div style={{padding:"10px 14px",borderRadius:999,background:"#ecfdf5",color:"#047857",fontWeight:700,fontSize:13}}>● System ready</div></div><div className="stat-grid">{[["Orders",String(orders)],["Products",String(products)],["Customers",String(customers)],["Paid revenue","৳"+Number(revenue._sum.total||0).toLocaleString("en-BD")]].map(([a,b])=><div className="stat-card" key={a}><span>{a}</span><strong>{b}</strong></div>)}</div><section style={{background:"#111827",color:"#fff",borderRadius:22,padding:26,marginBottom:26}}><small style={{color:"#94a3b8"}}>ATTENTION</small><h2 style={{margin:"7px 0",color:"#fff"}}>{pending} pending order{pending===1?"":"s"}</h2><p style={{color:"#cbd5e1",margin:"0 0 18px"}}>Review new orders and keep fulfilment moving.</p><a href="/admin/orders" style={{display:"inline-block",background:"#fff",color:"#111827",padding:"11px 16px",borderRadius:11,fontWeight:800}}>Open orders →</a></section><section style={{border:"1px solid #e5e7eb",borderRadius:20,padding:22,marginBottom:26,background:"linear-gradient(120deg,#fff7ed,#fff)"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:18,flexWrap:"wrap"}}><div><div style={{fontSize:12,fontWeight:800,letterSpacing:1,color:"#ea580c"}}>NEW ADMIN EXPERIENCE</div><h2 style={{fontSize:24,fontWeight:800,margin:"6px 0"}}>MART Admin Command Center</h2><p style={{margin:0,color:"#475569"}}>Responsive UI preview with inventory, order, payment, marketing and reporting shortcuts.</p></div><a href="/admin-command-center.html" style={{display:"inline-block",background:"#ff6801",color:"#fff",padding:"12px 16px",borderRadius:11,fontWeight:800}}>Open Command Center ↗</a></div><p style={{fontSize:12,color:"#64748b",marginTop:12}}>Note: preview-only controls use browser demo data. Live data and secure operations remain in the existing admin modules below.</p></section><div className="admin-quick">{[["Products","Catalog, pricing and stock","/admin/products"],["Orders","Review and update fulfilment","/admin/orders"],["Payments","Gateways and transactions","/admin/payment-gateways"],["Customer feedback","Reviews and coupons","/admin/reviews"]].map(([t,d,h])=><a href={h} key={t}>{t}<span>{d} →</span></a>)}</div></main></div>}
+const money=(n:number)=>"৳"+Number(n||0).toLocaleString("en-BD");
+const modules=[
+ {title:"Products & Inventory",desc:"Create/edit products, categories, price, stock and publish status.",href:"/admin/products",icon:"▣",tag:"Live data"},
+ {title:"Orders & Invoices",desc:"Order queue, fulfilment status, payment proof, confirm/reject and refunds.",href:"/admin/orders",icon:"▤",tag:"Live data"},
+ {title:"Customers & Reviews",desc:"Review customer activity through order records and moderate product reviews.",href:"/admin/reviews",icon:"♙",tag:"Reviews live"},
+ {title:"Payments & Shipping",desc:"Configure payment gateways and inspect transaction verification records.",href:"/admin/payment-gateways",icon:"৳",tag:"Live data"},
+ {title:"Coupons & Marketing",desc:"Create discount codes and manage active coupon rules.",href:"/admin/coupons",icon:"✦",tag:"Live data"},
+ {title:"Categories",desc:"Maintain the store taxonomy used by product listings.",href:"/admin/categories",icon:"▦",tag:"Live data"},
+ {title:"Reports & Activity",desc:"Review orders and transactions from live tables; export/reporting tools are planned.",href:"/admin/orders",icon:"▥",tag:"Operational view"},
+];
+export default async function AdminPage(){
+ let orders=0,products=0,customers=0,pending=0,paidRevenue=0,recent:any[]=[];
+ try{
+  const result=await Promise.all([
+   db.order.count(),db.product.count(),db.user.count({where:{role:"CUSTOMER"}}),
+   db.order.count({where:{status:"PENDING"}}),
+   db.order.aggregate({where:{paymentStatus:"PAID"},_sum:{total:true}}),
+   db.order.findMany({orderBy:{createdAt:"desc"},take:5,select:{id:true,orderNumber:true,customerName:true,total:true,status:true,paymentStatus:true,createdAt:true}})
+  ]);
+  orders=result[0];products=result[1];customers=result[2];pending=result[3];paidRevenue=Number(result[4]?._sum?.total||0);recent=result[5]||[];
+ }catch(error){console.error("Admin dashboard data error:",error instanceof Error?error.message:String(error));}
+ return <div className="admin-layout"><AdminSidebar/><main className="admin-content">
+  <div className="admin-kicker">MART · STORE CONTROL</div>
+  <div className="admin-heading-row"><div><h1>Admin Command Center</h1><p>One primary workspace for your store operations.</p></div><a className="admin-primary-action" href="/">View storefront ↗</a></div>
+  <div className="admin-stat-grid">
+   {[["Total orders",String(orders),"All orders"],["Products",String(products),"Catalog inventory"],["Customers",String(customers),"Registered customers"],["Paid revenue",money(paidRevenue),"Verified paid orders"]].map(([label,value,note])=><article className="admin-stat" key={label}><span>{label}</span><strong>{value}</strong><small>{note}</small></article>)}
+  </div>
+  <section className="admin-alert"><div><span className="admin-alert-eyebrow">NEEDS ATTENTION</span><h2>{pending} pending order{pending===1?"":"s"}</h2><p>Open the order manager to review payments, proofs and fulfilment.</p></div><a href="/admin/orders">Review orders →</a></section>
+  <div className="admin-section-heading"><div><h2>All admin modules</h2><p>Use one dashboard; existing secure tools and database-backed operations are retained.</p></div></div>
+  <div className="admin-module-grid">{modules.map(m=><a className="admin-module-card" href={m.href} key={m.title}><div className="admin-module-top"><span className="admin-module-icon">{m.icon}</span><span className="admin-module-tag">{m.tag}</span></div><h3>{m.title}</h3><p>{m.desc}</p><span className="admin-module-link">Open module <b>→</b></span></a>)}</div>
+  <section className="admin-recent"><div className="admin-section-heading"><div><h2>Recent orders</h2><p>Latest orders from the live database.</p></div><a href="/admin/orders">View all →</a></div>
+   <div className="admin-table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th><th></th></tr></thead><tbody>{recent.map(o=><tr key={o.id}><td><b>{o.orderNumber||o.id}</b></td><td>{o.customerName||"Customer"}</td><td>{money(Number(o.total))}</td><td>{o.paymentStatus||"—"}</td><td><span className="admin-status">{o.status||"—"}</span></td><td><a href="/admin/orders">Open</a></td></tr>)}</tbody></table>{!recent.length&&<p className="admin-empty">No recent orders found, or the database is currently unavailable.</p>}</div>
+  </section>
+  <p className="admin-footnote">This is the primary admin entry point. Product, order, gateway, transaction, coupon, category and review tools use the existing backend routes. Features without a production backend are not simulated as real operations.</p>
+ </main></div>
+}
