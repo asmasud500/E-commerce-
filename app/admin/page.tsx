@@ -11,6 +11,7 @@ const modules=[
  {title:"Coupons & Marketing",desc:"Create discount codes and manage active coupon rules.",href:"/admin/coupons",icon:"✦",tag:"Live data"},
  {title:"Categories",desc:"Maintain the store taxonomy used by product listings.",href:"/admin/categories",icon:"▦",tag:"Live data"},
  {title:"Reports & Activity",desc:"Seven-day sales activity, order status breakdown, low-stock alerts and CSV export.",href:"/admin/reports",icon:"▥",tag:"Live analytics"},
+ {title:"Activity Log",desc:"Search recent audit records for order and store operations.",href:"/admin/activity",icon:"◷",tag:"Audit trail"},
  {title:"Store Settings",desc:"Review runtime readiness and the store configuration checklist.",href:"/admin/settings",icon:"⚙",tag:"Operations"},
 ];
 export default async function AdminPage(){
