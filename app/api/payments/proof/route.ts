@@ -69,7 +69,10 @@ export async function POST(req: NextRequest) {
         });
       }
     }
-    return NextResponse.json({ ok: true });
+    try {
+      await db.auditLog.create({ data: { action: "PAYMENT_PROOF_SUBMITTED", entity: "Order", entityId: o.id, metadata: { transactionId, senderLast4 } } });
+    } catch {}
+    return NextResponse.json({ ok: true, orderNumber: o.orderNumber });
   } catch {
     return NextResponse.json({ error: "Unable to submit payment proof." }, { status: 400 });
   }
