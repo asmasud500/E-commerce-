@@ -31,26 +31,33 @@ async function hmacSign(secret: string, payload: string): Promise<string> {
   return base64UrlEncode(new Uint8Array(sigBuffer));
 }
 
-export async function createAdminToken(email: string): Promise<string> {
+export type AdminSession = { email: string; exp: number; role: string; staffId?: string };
+
+export async function createAdminToken(email: string, role = "SUPER_ADMIN", staffId?: string): Promise<string> {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret) throw new Error("ADMIN_SESSION_SECRET is required");
   const payload = base64UrlEncode(
-    new TextEncoder().encode(JSON.stringify({ email, exp: Date.now() + 1000 * 60 * 60 * 12 }))
+    new TextEncoder().encode(JSON.stringify({ email, role, staffId, exp: Date.now() + 1000 * 60 * 60 * 12 }))
   );
   const sig = await hmacSign(secret, payload);
   return payload + "." + sig;
 }
 
-export async function verifyAdminToken(token: string): Promise<boolean> {
+export async function readAdminSession(token: string): Promise<AdminSession | null> {
   try {
     const [payload, sig] = token.split(".");
     const secret = process.env.ADMIN_SESSION_SECRET;
-    if (!secret || !payload || !sig) return false;
+    if (!secret || !payload || !sig) return null;
     const expected = await hmacSign(secret, payload);
-    if (expected !== sig) return false;
-    const data = JSON.parse(base64UrlDecodeToString(payload)) as { email: string; exp: number };
-    return !!data.email && data.exp > Date.now();
+    if (expected !== sig) return null;
+    const data = JSON.parse(base64UrlDecodeToString(payload)) as Partial<AdminSession>;
+    if (!data.email || !data.exp || data.exp <= Date.now()) return null;
+    return { email: data.email, exp: data.exp, role: data.role || "SUPER_ADMIN", staffId: data.staffId };
   } catch {
-    return false;
+    return null;
   }
+}
+
+export async function verifyAdminToken(token: string): Promise<boolean> {
+  return !!(await readAdminSession(token));
 }
