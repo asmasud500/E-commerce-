@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {db} from "@/lib/prisma";
 import {hashStaffPassword} from "@/lib/auth/staff-password";
+import {readAdminSession} from "@/lib/auth/admin";
 
 const roles=["MANAGER","ORDER_MANAGER","PRODUCT_MANAGER","SUPPORT"] as const;
 const createSchema=z.object({
@@ -32,7 +33,7 @@ export async function POST(req:NextRequest){
    name:parsed.data.name,email:parsed.data.email,role:parsed.data.role,
    passwordHash:await hashStaffPassword(parsed.data.password),active:true,createdAt:new Date()
   }});
-  try{await db.auditLog.create({data:{actorId:"SUPER_ADMIN",action:"STAFF_CREATED",entity:"staffAccount",entityId:row.id,metadata:{email:row.email,role:row.role}}});}catch{}
+  try{await db.auditLog.create({data:{actorId,action:"STAFF_CREATED",entity:"staffAccount",entityId:row.id,metadata:{email:row.email,role:row.role}}});}catch{}
   return NextResponse.json(safe(row),{status:201});
  }catch(error){
   console.error("Staff create failed:",error instanceof Error?error.message:String(error));
