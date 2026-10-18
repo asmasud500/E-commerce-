@@ -18,6 +18,7 @@ export function getCart(): CartItem[] {
 export function saveCart(items: CartItem[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem(KEY, JSON.stringify(items));
+  window.dispatchEvent(new Event("cart:updated"));
 }
 export function addToCart(item: CartItem) {
   const items = getCart();
