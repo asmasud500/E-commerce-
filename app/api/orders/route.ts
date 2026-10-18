@@ -46,5 +46,5 @@ export async function POST(req:NextRequest){
   });
   sendNewOrderTelegram(order.id).catch(()=>{});
   return NextResponse.json({orderId:order.id,orderNumber:order.orderNumber,total:Number(order.total),discount:Number(order.discount),gateway:{id:gateway.id,type:gateway.type,mode:gateway.mode},reservationExpiresAt:expiresAt,paymentToken:await createOrderAccessToken(order.id)},{status:201});
- }catch{return NextResponse.json({error:"Unable to create order. Please check your information and try again."},{status:400});}
+ }catch(error){console.error("Order creation error:",error instanceof Error?error.message:String(error));return NextResponse.json({error:"Unable to create order. Please check your information and try again."},{status:400});}
 }
