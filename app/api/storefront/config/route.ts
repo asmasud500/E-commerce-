@@ -9,7 +9,7 @@ export async function GET(){
     ]);
     const settings={
       storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",
-      defaultDeliveryFee:60,freeShippingThreshold:null,taxEnabled:false,taxRate:0,announcement:"",
+      defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:"",
       ...(stored||{})
     };
     return NextResponse.json({settings,zones:zones.map((z:any)=>({
