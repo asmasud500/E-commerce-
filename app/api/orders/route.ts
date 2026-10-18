@@ -41,7 +41,7 @@ export async function POST(req:NextRequest){
    db.storeSetting.findUnique({where:{id:"store"}}),
    db.deliveryZone.findMany({where:{active:true}})
   ]);
-  const settings={defaultDeliveryFee:60,freeShippingThreshold:null,taxEnabled:false,taxRate:0,...(storedSettings||{})};
+  const settings={defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,...(storedSettings||{})};
   const normalizedDistrict=input.shippingDistrict.trim().toLocaleLowerCase();
   const zone=activeZones.find((z:any)=>String(z.district||"").trim().toLocaleLowerCase()===normalizedDistrict);
   const deliveryFee=zone?Number(zone.fee||0):Number(settings.defaultDeliveryFee||0);
