@@ -21,6 +21,29 @@ jobs:
           node-version: "22"
       - name: Install dependencies
         run: npm ci
+      - name: Validate required production secrets
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_SESSION_SECRET: ${{ secrets.ADMIN_SESSION_SECRET }}
+          PAYMENT_ENCRYPTION_KEY: ${{ secrets.PAYMENT_ENCRYPTION_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for key in FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY ADMIN_EMAIL ADMIN_PASSWORD ADMIN_SESSION_SECRET PAYMENT_ENCRYPTION_KEY CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+            if [ -z "${!key:-}" ]; then echo "::error::Required repository secret is missing: $key"; missing=1; fi
+          done
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+          echo "Required production secrets are present (values are not printed)."
+      - name: Run security and type checks
+        run: |
+          npm run test:security
+          npx tsc --noEmit
       - name: Build for Cloudflare
         run: npm run cf:build
         env:
@@ -53,13 +76,22 @@ jobs:
           printf '%s' "$ADMIN_PASSWORD" | npx wrangler secret put ADMIN_PASSWORD
           printf '%s' "$ADMIN_SESSION_SECRET" | npx wrangler secret put ADMIN_SESSION_SECRET
           printf '%s' "$PAYMENT_ENCRYPTION_KEY" | npx wrangler secret put PAYMENT_ENCRYPTION_KEY
-          printf '%s' "$TELEGRAM_BOT_TOKEN" | npx wrangler secret put TELEGRAM_BOT_TOKEN
-          printf '%s' "$TELEGRAM_CHAT_ID" | npx wrangler secret put TELEGRAM_CHAT_ID
-          printf '%s' "$TELEGRAM_ADMIN_USER_IDS" | npx wrangler secret put TELEGRAM_ADMIN_USER_IDS
-          printf '%s' "$TELEGRAM_WEBHOOK_SECRET" | npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
-          printf '%s' "$PAYMENT_WEBHOOK_SECRET" | npx wrangler secret put PAYMENT_WEBHOOK_SECRET
-          if [ -n "$MOBILE_MONEY_SMS_WEBHOOK_SECRET" ]; then printf '%s' "$MOBILE_MONEY_SMS_WEBHOOK_SECRET" | npx wrangler secret put MOBILE_MONEY_SMS_WEBHOOK_SECRET; else echo "MOBILE_MONEY_SMS_WEBHOOK_SECRET not configured; SMS auto-confirmation remains disabled."; fi
-          printf '%s' "$CRON_SECRET" | npx wrangler secret put CRON_SECRET
+          put_optional_secret() {
+            name="$1"
+            value="$2"
+            if [ -n "$value" ]; then
+              printf '%s' "$value" | npx wrangler secret put "$name"
+            else
+              echo "$name not configured; related integration remains disabled."
+            fi
+          }
+          put_optional_secret TELEGRAM_BOT_TOKEN "$TELEGRAM_BOT_TOKEN"
+          put_optional_secret TELEGRAM_CHAT_ID "$TELEGRAM_CHAT_ID"
+          put_optional_secret TELEGRAM_ADMIN_USER_IDS "$TELEGRAM_ADMIN_USER_IDS"
+          put_optional_secret TELEGRAM_WEBHOOK_SECRET "$TELEGRAM_WEBHOOK_SECRET"
+          put_optional_secret PAYMENT_WEBHOOK_SECRET "$PAYMENT_WEBHOOK_SECRET"
+          put_optional_secret MOBILE_MONEY_SMS_WEBHOOK_SECRET "$MOBILE_MONEY_SMS_WEBHOOK_SECRET"
+          put_optional_secret CRON_SECRET "$CRON_SECRET"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
