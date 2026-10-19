@@ -53,6 +53,21 @@ export function canAccessAdminPath(role: string, path: string, method: string): 
     return productPaths.some(prefix => path === prefix || path.startsWith(prefix + "/"));
   }
 
-  // Managers may operate the store, but not manage staff, global settings or audit history.
-  return role === "MANAGER";
+  // Managers may operate explicitly supported store modules. Fail closed for new or unknown routes.
+  if (role === "MANAGER") {
+    const managerPaths = [
+      "/admin/products", "/admin/categories", "/admin/banners",
+      "/admin/flash-sales", "/admin/delivery-zones", "/admin/coupons",
+      "/admin/customers", "/admin/reviews", "/admin/orders",
+      "/admin/payment-transactions", "/admin/reports", "/admin/marketing",
+      "/api/admin/products", "/api/admin/categories", "/api/admin/banners",
+      "/api/admin/flash-sales", "/api/admin/delivery-zones", "/api/admin/coupons",
+      "/api/admin/customers", "/api/admin/reviews", "/api/admin/orders",
+      "/api/admin/payment-transactions", "/api/admin/reports"
+    ];
+    return managerPaths.some(prefix => path === prefix || path.startsWith(prefix + "/"));
+  }
+
+  // Unknown roles and routes are denied by default.
+  return false;
 }
