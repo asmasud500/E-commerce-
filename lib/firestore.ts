@@ -77,6 +77,10 @@ async function remove(model:string,id:string){await req(`/${collections[model]}/
 const DEFAULTS:AnyObj={user:{role:"CUSTOMER"},product:{stock:0,lowStockThreshold:5,featured:false,published:false},productImage:{sortOrder:0},review:{approved:false},paymentGateway:{mode:"SANDBOX",enabled:false,sortOrder:0},order:{discount:0,status:"PENDING",paymentStatus:"PENDING"},paymentTransaction:{status:"PENDING"},stockReservation:{status:"HELD"},coupon:{active:true},deliveryZone:{active:true},banner:{active:false,sortOrder:0},flashSale:{active:false},staffAccount:{active:true}};
 function withDefaults(model:string,data:AnyObj){const out={...data};for(const [k,v] of Object.entries(DEFAULTS[model]||{}))if(out[k]===undefined)out[k]=v;return out;}
 function id(){return crypto.randomUUID().replace(/-/g,"").slice(0,24);}
+async function deterministicId(value:string){
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,24);
+}
 async function applyData(model:string,idv:string,data:any){const current=await rawGet(model,idv);const next:AnyObj={...(current||{}),...stripData(data)};for(const [k,v] of Object.entries(data)){if(v&&typeof v==="object"&&"increment"in v)next[k]=Number(current?.[k]||0)+Number((v as any).increment);if(v&&typeof v==="object"&&"decrement"in v)next[k]=Number(current?.[k]||0)-Number((v as any).decrement);}next.id=idv;return write(model,idv,next);}
 const relationMap:any={user:{orders:["order","userId"],wishlist:["wishlistItem","userId"],reviews:["review","userId"]},category:{products:["product","categoryId"]},product:{category:["category","categoryId"],images:["productImage","productId"],items:["orderItem","productId"],reservations:["stockReservation","productId"],wishlist:["wishlistItem","productId"],reviews:["review","productId"]},productImage:{product:["product","productId"]},wishlistItem:{user:["user","userId"],product:["product","productId"]},review:{user:["user","userId"],product:["product","productId"]},paymentGateway:{orders:["order","paymentGatewayId"],transactions:["paymentTransaction","gatewayId"]},order:{user:["user","userId"],paymentGateway:["paymentGateway","paymentGatewayId"],items:["orderItem","orderId"],transactions:["paymentTransaction","orderId"],reservations:["stockReservation","orderId"]},paymentTransaction:{order:["order","orderId"],gateway:["paymentGateway","gatewayId"]},stockReservation:{order:["order","orderId"],product:["product","productId"]},orderItem:{order:["order","orderId"],product:["product","productId"]}};
 function modelFor(obj:any){return obj?.__model||"";}
@@ -101,7 +105,7 @@ export async function createOrderWithStockReservation(args: {
   items: Array<{ productId: string; name: string; unitPrice: number; quantity: number; lineTotal: number }>;
   expiresAt: Date;
 }) {
-  const orderId = id();
+  const orderId = args.orderData.idempotencyKey ? await deterministicId("order:" + String(args.orderData.idempotencyKey)) : id();
   const now = new Date();
   const order = { ...withDefaults("order", args.orderData), id: orderId, createdAt: now, updatedAt: now };
   const txResponse: any = await req(":beginTransaction", {
