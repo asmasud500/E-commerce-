@@ -8,8 +8,13 @@ const slugify=(s:string)=>s.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").repl
 async function audit(action:string,entity:string,entityId:string|null,metadata:Record<string,unknown>){
   try{await db.auditLog.create({data:{actorId:"telegram",action,entity,entityId,metadata,createdAt:new Date()}})}catch{}
 }
-export async function reply(text:string,extra:Record<string,unknown>={}){
-  // Telegram caps messages at 4096 chars; split on line breaks.
+export async function reply(text:string,extra:Record<string,unknown>={},messageId?:number){
+  if(messageId){
+    const body=text.length>3800?text.slice(0,3780)+"…\n<i>Output shortened to keep this task in one message.</i>":text;
+    const edited=await telegramApi("editMessageText",{chat_id:process.env.TELEGRAM_CHAT_ID,message_id:messageId,text:body,parse_mode:"HTML",disable_web_page_preview:true,...extra});
+    if(edited?.ok)return edited;
+    return telegramApi("sendMessage",{chat_id:process.env.TELEGRAM_CHAT_ID,text:body,parse_mode:"HTML",disable_web_page_preview:true,...extra});
+  }
   const chunks:string[]=[];let cur="";
   for(const line of text.split("\n")){if((cur+line).length>3800){chunks.push(cur);cur=""}cur+=line+"\n"}
   if(cur.trim())chunks.push(cur);
@@ -34,7 +39,8 @@ Photo পাঠিয়ে caption এ <code>/photo SKU</code> দিলে ছ
 <b>Flash sale</b>: /flash PERCENT HOURS SKU1,SKU2 · /flashlist · /flashoff
 <b>Payment</b>: /gateways · /paynumber ID NUMBER · /payinfo ID text · /gatewayon ID · /gatewayoff ID`;
 
-export async function handleTextCommand(text:string,photo?:{fileId:string}):Promise<boolean>{
+export async function handleTextCommand(text:string,photo?:{fileId:string},messageId?:number):Promise<boolean>{
+  const respond=(body:string,extra:Record<string,unknown>={})=>reply(body,extra,messageId);
   const trimmed=text.trim();
   const m=/^(\/\S+)\s*([\s\S]*)$/.exec(trimmed);
   if(!m)return false;
@@ -42,153 +48,153 @@ export async function handleTextCommand(text:string,photo?:{fileId:string}):Prom
   const args=arg.split(/\s+/).filter(Boolean);
 
   if(cmd==="/photo"||(cmd==="/newproduct"&&photo)){
-    if(!photo&&cmd==="/photo"){await reply("ছবি পাঠিয়ে caption এ লিখুন: <code>/photo SKU</code>");return true}
+    if(!photo&&cmd==="/photo"){await respond("ছবি পাঠিয়ে caption এ লিখুন: <code>/photo SKU</code>");return true}
   }
   if(cmd==="/photo"&&photo){
-    const p=await findProduct(args[0]||"");if(!p){await reply("Product পাওয়া যায়নি। Caption: <code>/photo SKU</code>");return true}
-    await attachPhoto(p,photo.fileId);return true;
+    const p=await findProduct(args[0]||"");if(!p){await respond("Product পাওয়া যায়নি। Caption: <code>/photo SKU</code>");return true}
+    await attachPhoto(p,photo.fileId,messageId);return true;
   }
 
   if(cmd==="/stock"||cmd==="/lowstock"){
     const ps=await db.product.findMany({orderBy:{stock:"asc"},take:cmd==="/lowstock"?50:25});
     const list=cmd==="/lowstock"?ps.filter((p:any)=>p.stock<=Number(p.lowStockThreshold??5)):ps;
-    await reply("<b>📦 "+(cmd==="/lowstock"?"Low stock":"Stock")+"</b>\n"+(list.length?list.map(productLine).join("\n"):"কিছু নেই"));return true;
+    await respond("<b>📦 "+(cmd==="/lowstock"?"Low stock":"Stock")+"</b>\n"+(list.length?list.map(productLine).join("\n"):"কিছু নেই"));return true;
   }
   if(cmd==="/addstock"||cmd==="/removestock"||cmd==="/setstock"){
-    const qty=num(args[1]);if(!args[0]||!Number.isInteger(qty)||qty<0||(cmd!=="/setstock"&&qty===0)){await reply("ব্যবহার: <code>"+cmd+" SKU QTY</code>");return true}
-    const p=await findProduct(args[0]);if(!p){await reply("Product পাওয়া যায়নি: "+esc(args[0]));return true}
+    const qty=num(args[1]);if(!args[0]||!Number.isInteger(qty)||qty<0||(cmd!=="/setstock"&&qty===0)){await respond("ব্যবহার: <code>"+cmd+" SKU QTY</code>");return true}
+    const p=await findProduct(args[0]);if(!p){await respond("Product পাওয়া যায়নি: "+esc(args[0]));return true}
     const old=Number(p.stock||0);const next=cmd==="/addstock"?old+qty:cmd==="/removestock"?old-qty:qty;
-    if(next<0){await reply("❌ Stock এর চেয়ে বেশি বাদ দেওয়া যাবে না (এখন "+old+")");return true}
+    if(next<0){await respond("❌ Stock এর চেয়ে বেশি বাদ দেওয়া যাবে না (এখন "+old+")");return true}
     await db.product.update({where:{id:p.id},data:{stock:next}});
     await audit("STOCK_CHANGED_TELEGRAM","Product",p.id,{from:old,to:next,cmd});
-    await reply("✅ "+esc(p.name)+"\nStock: "+old+" → <b>"+next+"</b>");return true;
+    await respond("✅ "+esc(p.name)+"\nStock: "+old+" → <b>"+next+"</b>");return true;
   }
   if(cmd==="/product"){
-    const p=await findProduct(arg);if(!p){await reply("ব্যবহার: <code>/product SKU</code> (পাওয়া যায়নি)");return true}
+    const p=await findProduct(arg);if(!p){await respond("ব্যবহার: <code>/product SKU</code> (পাওয়া যায়নি)");return true}
     const s=await db.storeSetting.findUnique({where:{id:"store"}});
-    await reply("<b>"+esc(p.name)+"</b>\nSKU: <code>"+esc(p.sku)+"</code>\nদাম: "+tk(p.price)+(p.salePrice!=null?" · sale "+tk(p.salePrice):"")+"\nStock: "+p.stock+"\nStatus: "+(p.published?"Published":"Draft")+"\nDelivery: "+esc(deliveryLabel(p,Number(s?.defaultDeliveryFee??120),s?.freeShippingThreshold==null?null:Number(s.freeShippingThreshold)))+"\n\n"+esc((p.description||"").slice(0,600)));return true;
+    await respond("<b>"+esc(p.name)+"</b>\nSKU: <code>"+esc(p.sku)+"</code>\nদাম: "+tk(p.price)+(p.salePrice!=null?" · sale "+tk(p.salePrice):"")+"\nStock: "+p.stock+"\nStatus: "+(p.published?"Published":"Draft")+"\nDelivery: "+esc(deliveryLabel(p,Number(s?.defaultDeliveryFee??120),s?.freeShippingThreshold==null?null:Number(s.freeShippingThreshold)))+"\n\n"+esc((p.description||"").slice(0,600)));return true;
   }
   if(cmd==="/newproduct"){
     const parts=arg.split("|").map(x=>x.trim());const [name,priceS,stockS,catName,...d]=parts;const price=num(priceS),stock=stockS?num(stockS):0;
-    if(!name||!Number.isFinite(price)||price<0||!Number.isInteger(stock)||stock<0){await reply("ব্যবহার:\n<code>/newproduct নাম | দাম | stock | category | description</code>\n(ছবি সহ পাঠাতে ছবির caption এ লিখুন)");return true}
+    if(!name||!Number.isFinite(price)||price<0||!Number.isInteger(stock)||stock<0){await respond("ব্যবহার:\n<code>/newproduct নাম | দাম | stock | category | description</code>\n(ছবি সহ পাঠাতে ছবির caption এ লিখুন)");return true}
     let categoryId:string|null=null;
     if(catName){const cats=await db.category.findMany({});const c=cats.find((x:any)=>String(x.name).toLowerCase()===catName.toLowerCase());categoryId=c?.id||null}
     const sku=(name.normalize("NFKD").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"").toUpperCase().slice(0,20)||"ITEM")+"-"+Math.random().toString(36).slice(2,7).toUpperCase();
     let slug=slugify(name);if(await db.product.findFirst({where:{slug}}))slug+="-"+Math.random().toString(36).slice(2,6);
     const p=await db.product.create({data:{name,slug,sku,description:d.join(" | ")||null,price,compareAtPrice:null,salePrice:null,stock,lowStockThreshold:5,featured:false,published:true,categoryId,freeShipping:false,shippingFee:null}});
     await audit("PRODUCT_CREATED_TELEGRAM","Product",p.id,{sku,name});
-    if(photo)await attachPhoto(p,photo.fileId);
-    await reply("✅ Product তৈরি ও Published\n"+productLine(p)+(catName&&!categoryId?"\n⚠️ Category '"+esc(catName)+"' পাওয়া যায়নি":"")+(photo?"":"\nছবি যোগ করতে ছবি পাঠিয়ে caption দিন: <code>/photo "+esc(sku)+"</code>"));return true;
+    if(photo)await attachPhoto(p,photo.fileId,messageId);
+    await respond("✅ Product তৈরি ও Published\n"+productLine(p)+(catName&&!categoryId?"\n⚠️ Category '"+esc(catName)+"' পাওয়া যায়নি":"")+(photo?"":"\nছবি যোগ করতে ছবি পাঠিয়ে caption দিন: <code>/photo "+esc(sku)+"</code>"));return true;
   }
   if(cmd==="/setprice"){
     const price=num(args[1]),sale=args[2]?num(args[2]):null;const p=await findProduct(args[0]||"");
-    if(!p||!Number.isFinite(price)||price<0||(sale!==null&&(!Number.isFinite(sale)||sale<0||sale>price))){await reply("ব্যবহার: <code>/setprice SKU PRICE [SALE]</code>");return true}
+    if(!p||!Number.isFinite(price)||price<0||(sale!==null&&(!Number.isFinite(sale)||sale<0||sale>price))){await respond("ব্যবহার: <code>/setprice SKU PRICE [SALE]</code>");return true}
     await db.product.update({where:{id:p.id},data:{price,salePrice:sale}});await audit("PRICE_CHANGED_TELEGRAM","Product",p.id,{price,sale});
-    await reply("✅ "+esc(p.name)+" → "+tk(price)+(sale!==null?" (sale "+tk(sale)+")":""));return true;
+    await respond("✅ "+esc(p.name)+" → "+tk(price)+(sale!==null?" (sale "+tk(sale)+")":""));return true;
   }
   if(cmd==="/describe"){
     const p=await findProduct(args[0]||"");const d=arg.slice((args[0]||"").length).trim();
-    if(!p||!d){await reply("ব্যবহার: <code>/describe SKU নতুন description</code>");return true}
+    if(!p||!d){await respond("ব্যবহার: <code>/describe SKU নতুন description</code>");return true}
     await db.product.update({where:{id:p.id},data:{description:d.slice(0,5000)}});await audit("PRODUCT_UPDATED_TELEGRAM","Product",p.id,{field:"description"});
-    await reply("✅ Description আপডেট: "+esc(p.name));return true;
+    await respond("✅ Description আপডেট: "+esc(p.name));return true;
   }
   if(cmd==="/publish"||cmd==="/unpublish"){
-    const p=await findProduct(args[0]||"");if(!p){await reply("ব্যবহার: <code>"+cmd+" SKU</code>");return true}
+    const p=await findProduct(args[0]||"");if(!p){await respond("ব্যবহার: <code>"+cmd+" SKU</code>");return true}
     await db.product.update({where:{id:p.id},data:{published:cmd==="/publish"}});await audit("PRODUCT_UPDATED_TELEGRAM","Product",p.id,{published:cmd==="/publish"});
-    await reply("✅ "+esc(p.name)+" → "+(cmd==="/publish"?"Published":"Draft"));return true;
+    await respond("✅ "+esc(p.name)+" → "+(cmd==="/publish"?"Published":"Draft"));return true;
   }
   if(cmd==="/delivery"){
     const p=await findProduct(args[0]||"");const mode=(args[1]||"").toLowerCase();
-    if(!p||!mode){await reply("ব্যবহার: <code>/delivery SKU free</code> | <code>default</code> | <code>FEE</code>");return true}
+    if(!p||!mode){await respond("ব্যবহার: <code>/delivery SKU free</code> | <code>default</code> | <code>FEE</code>");return true}
     let data:any;
     if(mode==="free")data={freeShipping:true,shippingFee:null};
     else if(mode==="default")data={freeShipping:false,shippingFee:null};
-    else{const f=num(mode);if(!Number.isFinite(f)||f<0){await reply("❌ ভুল মান");return true}data={freeShipping:false,shippingFee:f}}
+    else{const f=num(mode);if(!Number.isFinite(f)||f<0){await respond("❌ ভুল মান");return true}data={freeShipping:false,shippingFee:f}}
     await db.product.update({where:{id:p.id},data});await audit("DELIVERY_CHANGED_TELEGRAM","Product",p.id,data);
-    await reply("✅ "+esc(p.name)+" delivery: <b>"+(data.freeShipping?"Free":data.shippingFee!=null?tk(data.shippingFee):"Default")+"</b>");return true;
+    await respond("✅ "+esc(p.name)+" delivery: <b>"+(data.freeShipping?"Free":data.shippingFee!=null?tk(data.shippingFee):"Default")+"</b>");return true;
   }
   if(cmd==="/freelist"){
     const ps=(await db.product.findMany({where:{freeShipping:true},take:50}));
-    await reply("<b>🚚 Free delivery products</b>\n"+(ps.length?ps.map(productLine).join("\n"):"কোনো product নেই"));return true;
+    await respond("<b>🚚 Free delivery products</b>\n"+(ps.length?ps.map(productLine).join("\n"):"কোনো product নেই"));return true;
   }
   if(cmd==="/shipping"){
     const cur=await db.storeSetting.findUnique({where:{id:"store"}});
     if(args.length){
       const fee=num(args[0]),over=args[1]!==undefined?(args[1].toLowerCase()==="off"?null:num(args[1])):undefined;
-      if(!Number.isFinite(fee)||fee<0||(over!==undefined&&over!==null&&(!Number.isFinite(over)||over<0))){await reply("ব্যবহার: <code>/shipping FEE [FREE-OVER|off]</code>");return true}
+      if(!Number.isFinite(fee)||fee<0||(over!==undefined&&over!==null&&(!Number.isFinite(over)||over<0))){await respond("ব্যবহার: <code>/shipping FEE [FREE-OVER|off]</code>");return true}
       const data:any={defaultDeliveryFee:fee,updatedAt:new Date()};if(over!==undefined)data.freeShippingThreshold=over;
       if(cur)await db.storeSetting.update({where:{id:"store"},data});else await db.storeSetting.create({data:{id:"store",storeName:"MART Store",currency:"BDT",taxEnabled:false,taxRate:0,announcement:"",supportEmail:"",supportPhone:"",freeShippingThreshold:3000,...data}});
       await audit("SHIPPING_DEFAULTS_TELEGRAM","storeSetting","store",data);
     }
     const s=await db.storeSetting.findUnique({where:{id:"store"}});
-    await reply("<b>🚚 Delivery</b>\nDefault fee: "+tk(s?.defaultDeliveryFee??120)+"\nFree over: "+(s?.freeShippingThreshold==null?"off":tk(s.freeShippingThreshold)));return true;
+    await respond("<b>🚚 Delivery</b>\nDefault fee: "+tk(s?.defaultDeliveryFee??120)+"\nFree over: "+(s?.freeShippingThreshold==null?"off":tk(s.freeShippingThreshold)));return true;
   }
   if(cmd==="/vouchers"){
     const cs=await db.coupon.findMany({orderBy:{expiresAt:"asc"},take:30});
-    await reply("<b>🎟 Vouchers</b>\n"+(cs.length?cs.map((c:any)=>"<code>"+esc(c.code)+"</code> · "+(c.type==="PERCENT"?Number(c.value)+"%":tk(c.value))+(c.minOrder?" · min "+tk(c.minOrder):"")+(c.expiresAt?" · till "+new Date(c.expiresAt).toLocaleDateString("en-GB"):"")+" · "+(c.active?"ON":"OFF")).join("\n"):"কোনো voucher নেই"));return true;
+    await respond("<b>🎟 Vouchers</b>\n"+(cs.length?cs.map((c:any)=>"<code>"+esc(c.code)+"</code> · "+(c.type==="PERCENT"?Number(c.value)+"%":tk(c.value))+(c.minOrder?" · min "+tk(c.minOrder):"")+(c.expiresAt?" · till "+new Date(c.expiresAt).toLocaleDateString("en-GB"):"")+" · "+(c.active?"ON":"OFF")).join("\n"):"কোনো voucher নেই"));return true;
   }
   if(cmd==="/voucher"){
     const code=(args[0]||"").toUpperCase(),type=(args[1]||"").toLowerCase(),value=num(args[2]),min=args[3]?num(args[3]):null,days=args[4]?num(args[4]):null;
-    if(code.length<2||!["percent","fixed"].includes(type)||!Number.isFinite(value)||value<=0||(type==="percent"&&value>100)||(min!==null&&!Number.isFinite(min))||(days!==null&&!Number.isFinite(days))){await reply("ব্যবহার: <code>/voucher CODE percent|fixed VALUE [min-order] [days]</code>\nউদাহরণ: <code>/voucher EID10 percent 10 500 7</code>");return true}
-    if(await db.coupon.findFirst({where:{code}})){await reply("❌ এই code আগে থেকেই আছে");return true}
+    if(code.length<2||!["percent","fixed"].includes(type)||!Number.isFinite(value)||value<=0||(type==="percent"&&value>100)||(min!==null&&!Number.isFinite(min))||(days!==null&&!Number.isFinite(days))){await respond("ব্যবহার: <code>/voucher CODE percent|fixed VALUE [min-order] [days]</code>\nউদাহরণ: <code>/voucher EID10 percent 10 500 7</code>");return true}
+    if(await db.coupon.findFirst({where:{code}})){await respond("❌ এই code আগে থেকেই আছে");return true}
     const c=await db.coupon.create({data:{name:null,code,type:type==="percent"?"PERCENT":"FIXED",value,minOrder:min,expiresAt:days?new Date(Date.now()+days*86400000):null,active:true}});
     await audit("COUPON_CREATED_TELEGRAM","coupon",c.id,{code,type,value});
-    await reply("✅ Voucher <code>"+esc(code)+"</code> তৈরি: "+(type==="percent"?value+"%":tk(value))+(min?" · min "+tk(min):"")+(days?" · "+days+" দিন":""));return true;
+    await respond("✅ Voucher <code>"+esc(code)+"</code> তৈরি: "+(type==="percent"?value+"%":tk(value))+(min?" · min "+tk(min):"")+(days?" · "+days+" দিন":""));return true;
   }
   if(cmd==="/voucheroff"||cmd==="/voucheron"){
-    const c=await db.coupon.findFirst({where:{code:(args[0]||"").toUpperCase()}});if(!c){await reply("Voucher পাওয়া যায়নি");return true}
+    const c=await db.coupon.findFirst({where:{code:(args[0]||"").toUpperCase()}});if(!c){await respond("Voucher পাওয়া যায়নি");return true}
     await db.coupon.update({where:{id:c.id},data:{active:cmd==="/voucheron"}});await audit("COUPON_TOGGLED_TELEGRAM","coupon",c.id,{active:cmd==="/voucheron"});
-    await reply("✅ "+esc(c.code)+" → "+(cmd==="/voucheron"?"ON":"OFF"));return true;
+    await respond("✅ "+esc(c.code)+" → "+(cmd==="/voucheron"?"ON":"OFF"));return true;
   }
   if(cmd==="/flash"){
     const pct=num(args[0]),hrs=num(args[1]),skus=(args[2]||"").split(",").map(x=>x.trim()).filter(Boolean);
-    if(!Number.isInteger(pct)||pct<1||pct>90||!Number.isFinite(hrs)||hrs<=0||hrs>24*30||!skus.length){await reply("ব্যবহার: <code>/flash PERCENT HOURS SKU1,SKU2</code>\nউদাহরণ: <code>/flash 20 24 TSHIRT-1,SHOE-2</code>");return true}
+    if(!Number.isInteger(pct)||pct<1||pct>90||!Number.isFinite(hrs)||hrs<=0||hrs>24*30||!skus.length){await respond("ব্যবহার: <code>/flash PERCENT HOURS SKU1,SKU2</code>\nউদাহরণ: <code>/flash 20 24 TSHIRT-1,SHOE-2</code>");return true}
     const found:any[]=[],missing:string[]=[];for(const k of skus){const p=await findProduct(k);p?found.push(p):missing.push(k)}
-    if(!found.length){await reply("❌ কোনো product পাওয়া যায়নি");return true}
+    if(!found.length){await respond("❌ কোনো product পাওয়া যায়নি");return true}
     const now=new Date();const f=await db.flashSale.create({data:{title:"Flash Sale "+pct+"% OFF",productIds:found.map(p=>p.id),discountPercent:pct,startsAt:now,endsAt:new Date(now.getTime()+hrs*3600000),active:true}});
     await audit("FLASH_SALE_CREATED_TELEGRAM","flashSale",f.id,{pct,hours:hrs,count:found.length});
-    await reply("⚡ Flash sale চালু: "+pct+"% OFF, "+hrs+" ঘণ্টা\n"+found.map(p=>esc(p.name)).join(", ")+(missing.length?"\n⚠️ পাওয়া যায়নি: "+esc(missing.join(", ")):""));return true;
+    await respond("⚡ Flash sale চালু: "+pct+"% OFF, "+hrs+" ঘণ্টা\n"+found.map(p=>esc(p.name)).join(", ")+(missing.length?"\n⚠️ পাওয়া যায়নি: "+esc(missing.join(", ")):""));return true;
   }
   if(cmd==="/flashlist"){
     const fs=await db.flashSale.findMany({orderBy:{startsAt:"desc"},take:10});
-    await reply("<b>⚡ Flash sales</b>\n"+(fs.length?fs.map((f:any)=>esc(f.title)+" · "+f.discountPercent+"% · "+f.productIds.length+" products · till "+new Date(f.endsAt).toLocaleString("en-GB",{timeZone:"Asia/Dhaka"})+" · "+(f.active?"ON":"OFF")).join("\n"):"কোনো sale নেই"));return true;
+    await respond("<b>⚡ Flash sales</b>\n"+(fs.length?fs.map((f:any)=>esc(f.title)+" · "+f.discountPercent+"% · "+f.productIds.length+" products · till "+new Date(f.endsAt).toLocaleString("en-GB",{timeZone:"Asia/Dhaka"})+" · "+(f.active?"ON":"OFF")).join("\n"):"কোনো sale নেই"));return true;
   }
   if(cmd==="/flashoff"){
     const fs=(await db.flashSale.findMany({where:{active:true}}));for(const f of fs)await db.flashSale.update({where:{id:f.id},data:{active:false}});
-    await audit("FLASH_SALE_OFF_TELEGRAM","flashSale",null,{count:fs.length});await reply("✅ "+fs.length+"টি flash sale বন্ধ");return true;
+    await audit("FLASH_SALE_OFF_TELEGRAM","flashSale",null,{count:fs.length});await respond("✅ "+fs.length+"টি flash sale বন্ধ");return true;
   }
   if(cmd==="/order"){
-    if(!arg){await reply("ব্যবহার: <code>/order ORDER-NO</code>");return true}
+    if(!arg){await respond("ব্যবহার: <code>/order ORDER-NO</code>");return true}
     const o=await db.order.findFirst({where:{orderNumber:arg.toUpperCase()},include:{items:true,paymentGateway:true}})||await db.order.findFirst({where:{orderNumber:{contains:arg,mode:"insensitive"}},include:{items:true,paymentGateway:true}});
-    await reply(o?"<b>Order Details</b>\n"+orderDetailsText(o):"Order পাওয়া যায়নি");return true;
+    await respond(o?"<b>Order Details</b>\n"+orderDetailsText(o):"Order পাওয়া যায়নি");return true;
   }
   if(cmd==="/track"){
     const [no,courier,...t]=args;const o=no?await db.order.findFirst({where:{orderNumber:{equals:no.toUpperCase(),mode:"insensitive"}},include:{items:true,paymentGateway:true}}):null;
-    if(!o){await reply("ব্যবহার: <code>/track ORDER-NO</code> — বর্তমান tracking দেখুন\nঅথবা tracking সেট করতে: <code>/track ORDER-NO COURIER TRACKING-ID</code>");return true}
-    if(!courier){const lines=["<b>🚚 ORDER TRACKING</b>","Order: <code>"+esc(o.orderNumber)+"</code>","Status: <b>"+esc(o.status)+"</b>","Courier: "+esc(o.courierName||"এখনও সেট করা হয়নি"),"Tracking ID: "+(o.trackingNumber?"<code>"+esc(o.trackingNumber)+"</code>":"এখনও সেট করা হয়নি"),"Payment: <b>"+esc(o.paymentStatus)+"</b>"];await reply(lines.join("\\n"),{disable_web_page_preview:true});return true}
-    if(!t.length){await reply("Tracking ID দিন: <code>/track ORDER-NO COURIER TRACKING-ID</code>");return true}
-    if(!["PROCESSING","SHIPPED","DELIVERED"].includes(o.status)){await reply("❌ Order এখন "+esc(o.status)+" — Processing/Shipped হলে courier দিন");return true}
+    if(!o){await respond("ব্যবহার: <code>/track ORDER-NO</code> — বর্তমান tracking দেখুন\nঅথবা tracking সেট করতে: <code>/track ORDER-NO COURIER TRACKING-ID</code>");return true}
+    if(!courier){const lines=["<b>🚚 ORDER TRACKING</b>","Order: <code>"+esc(o.orderNumber)+"</code>","Status: <b>"+esc(o.status)+"</b>","Courier: "+esc(o.courierName||"এখনও সেট করা হয়নি"),"Tracking ID: "+(o.trackingNumber?"<code>"+esc(o.trackingNumber)+"</code>":"এখনও সেট করা হয়নি"),"Payment: <b>"+esc(o.paymentStatus)+"</b>"];await respond(lines.join("\\n"),{disable_web_page_preview:true});return true}
+    if(!t.length){await respond("Tracking ID দিন: <code>/track ORDER-NO COURIER TRACKING-ID</code>");return true}
+    if(!["PROCESSING","SHIPPED","DELIVERED"].includes(o.status)){await respond("❌ Order এখন "+esc(o.status)+" — Processing/Shipped হলে courier দিন");return true}
     await db.order.update({where:{id:o.id},data:{courierName:courier.slice(0,120),trackingNumber:t.join(" ").slice(0,160)}});await audit("TRACKING_SET_TELEGRAM","Order",o.id,{courier,trackingNumber:t.join(" ")});
-    await reply("✅ <b>TRACKING UPDATED</b>\\nOrder: <code>"+esc(o.orderNumber)+"</code>\\nCourier: "+esc(courier)+"\\nTracking ID: <code>"+esc(t.join(" "))+"</code>\\nStatus: "+esc(o.status));return true;
+    await respond("✅ <b>TRACKING UPDATED</b>\\nOrder: <code>"+esc(o.orderNumber)+"</code>\\nCourier: "+esc(courier)+"\\nTracking ID: <code>"+esc(t.join(" "))+"</code>\\nStatus: "+esc(o.status));return true;
   }
   if(cmd==="/gateways"){
     const gs=await db.paymentGateway.findMany({orderBy:{sortOrder:"asc"}});
-    await reply("<b>💳 Gateways</b>\n"+(gs.length?gs.map((g:any)=>"<code>"+esc(g.id)+"</code>\n"+esc(g.name)+" ("+g.type+") · "+(g.enabled?"ON":"OFF")+"\nNumber: "+esc(g.publicConfig?.merchantNumber||"—")+"\nInfo: "+esc(String(g.publicConfig?.instructions||"—").slice(0,200))).join("\n\n"):"কোনো gateway নেই"));return true;
+    await respond("<b>💳 Gateways</b>\n"+(gs.length?gs.map((g:any)=>"<code>"+esc(g.id)+"</code>\n"+esc(g.name)+" ("+g.type+") · "+(g.enabled?"ON":"OFF")+"\nNumber: "+esc(g.publicConfig?.merchantNumber||"—")+"\nInfo: "+esc(String(g.publicConfig?.instructions||"—").slice(0,200))).join("\n\n"):"কোনো gateway নেই"));return true;
   }
   if(cmd==="/paynumber"||cmd==="/payinfo"||cmd==="/gatewayon"||cmd==="/gatewayoff"){
     const g=await db.paymentGateway.findUnique({where:{id:args[0]||""}}).catch(()=>null);
-    if(!g){await reply("ব্যবহার: <code>"+cmd+" GATEWAY-ID ...</code> (ID পেতে /gateways)");return true}
+    if(!g){await respond("ব্যবহার: <code>"+cmd+" GATEWAY-ID ...</code> (ID পেতে /gateways)");return true}
     const val=arg.slice(args[0].length).trim();
     if(cmd==="/gatewayon"||cmd==="/gatewayoff"){
       await db.paymentGateway.update({where:{id:g.id},data:{enabled:cmd==="/gatewayon"}});await audit("GATEWAY_TOGGLED_TELEGRAM","paymentGateway",g.id,{enabled:cmd==="/gatewayon"});
-      await reply("✅ "+esc(g.name)+" → "+(cmd==="/gatewayon"?"ON":"OFF"));return true;
+      await respond("✅ "+esc(g.name)+" → "+(cmd==="/gatewayon"?"ON":"OFF"));return true;
     }
-    if(!val){await reply("মান দিন: <code>"+cmd+" "+esc(g.id)+" ...</code>");return true}
-    if(cmd==="/paynumber"&&!/^[0-9+\- ]{6,20}$/.test(val)){await reply("❌ Number ঠিক নয়");return true}
+    if(!val){await respond("মান দিন: <code>"+cmd+" "+esc(g.id)+" ...</code>");return true}
+    if(cmd==="/paynumber"&&!/^[0-9+\- ]{6,20}$/.test(val)){await respond("❌ Number ঠিক নয়");return true}
     const key=cmd==="/paynumber"?"merchantNumber":"instructions";const old=g.publicConfig?.[key]??null;
     await db.paymentGateway.update({where:{id:g.id},data:{publicConfig:{...(g.publicConfig||{}),[key]:val.slice(0,1500)}}});
     await audit("GATEWAY_"+(key==="merchantNumber"?"NUMBER":"INSTRUCTIONS")+"_CHANGED_TELEGRAM","paymentGateway",g.id,{from:old,to:val.slice(0,1500)});
-    await reply("⚠️ <b>Payment "+(key==="merchantNumber"?"number":"instructions")+" পরিবর্তন হয়েছে</b> ("+esc(g.name)+")\nআগে: "+esc(old||"—")+"\nএখন: "+esc(val));return true;
+    await respond("⚠️ <b>Payment "+(key==="merchantNumber"?"number":"instructions")+" পরিবর্তন হয়েছে</b> ("+esc(g.name)+")\nআগে: "+esc(old||"—")+"\nএখন: "+esc(val));return true;
   }
   return false;
 }
