@@ -46,7 +46,8 @@ export async function POST(req:NextRequest){
   ]);
   const settings={defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,...(storedSettings||{})};
   const normalizedDistrict=input.shippingDistrict.trim().toLocaleLowerCase();
-  const normalizedUpazila=input.shippingUpazila.trim().toLocaleLowerCase();\n  const zone=activeZones.find((z:any)=>String(z.district||"").trim().toLocaleLowerCase()===normalizedDistrict && (!z.upazila || String(z.upazila).trim().toLocaleLowerCase()===normalizedUpazila) && (!z.division || String(z.division).trim().toLocaleLowerCase()===input.shippingDivision.trim().toLocaleLowerCase()));
+  const normalizedUpazila=input.shippingUpazila.trim().toLocaleLowerCase();
+  const zone=activeZones.find((z:any)=>String(z.district||"").trim().toLocaleLowerCase()===normalizedDistrict && (!z.upazila || String(z.upazila).trim().toLocaleLowerCase()===normalizedUpazila) && (!z.division || String(z.division).trim().toLocaleLowerCase()===input.shippingDivision.trim().toLocaleLowerCase()));
   const deliveryFee=zone?Number(zone.fee||0):Number(settings.defaultDeliveryFee||0);
   const freeThreshold=zone?.freeAbove!=null?Number(zone.freeAbove):settings.freeShippingThreshold==null?null:Number(settings.freeShippingThreshold);
   const taxableAmount=Math.max(0,subtotal-discount);
