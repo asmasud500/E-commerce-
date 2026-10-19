@@ -33,3 +33,18 @@ test("admin payment confirmation checks duplicate transaction IDs before confirm
   assert.match(adminPayment, /duplicateOrderReference/);
   assert.match(adminPayment, /providerTransactionId: ref/);
 });
+
+const refundRoute = await readFile(new URL("../app/api/admin/orders/[id]/refund/route.ts", import.meta.url), "utf8");
+const adminPaymentRoute = await readFile(new URL("../app/api/admin/orders/[id]/payment/route.ts", import.meta.url), "utf8");
+
+test("refund uses a conditional paid-state transition and reports concurrent attempts as conflicts", () => {
+  assert.match(refundRoute, /where:\{id,paymentStatus:"PAID"\}/);
+  assert.match(refundRoute, /changed\.count!==1/);
+  assert.match(refundRoute, /Order state changed/);
+  assert.match(refundRoute, /status:409/);
+});
+
+test("admin payment route returns conflict for duplicate transaction database errors", () => {
+  assert.match(adminPaymentRoute, /e\.code === "P2002"/);
+  assert.match(adminPaymentRoute, /status: 409/);
+});
