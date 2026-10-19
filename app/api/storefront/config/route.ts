@@ -5,7 +5,7 @@ export async function GET(){
   try{
     const [stored,zones]=await Promise.all([
       db.storeSetting.findUnique({where:{id:"store"}}),
-      db.deliveryZone.findMany({where:{active:true},orderBy:[{district:"asc"},{name:"asc"}]})
+      db.deliveryZone.findMany({where:{active:true},orderBy:[{division:"asc"},{district:"asc"},{upazila:"asc"},{name:"asc"}]})
     ]);
     const settings={
       storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",
@@ -13,7 +13,9 @@ export async function GET(){
       ...(stored||{})
     };
     return NextResponse.json({settings,zones:zones.map((z:any)=>({
-      id:z.id,name:z.name,district:z.district,fee:Number(z.fee||0),
+      id:z.id,name:z.name,division:z.division||"",district:z.district,upazila:z.upazila||"",
+      postalCode:z.postalCode||"",locationDescription:z.locationDescription||"",
+      latitude:z.latitude??null,longitude:z.longitude??null,fee:Number(z.fee||0),
       freeAbove:z.freeAbove==null?null:Number(z.freeAbove),estimatedDays:Number(z.estimatedDays||3)
     }))},{headers:{"Cache-Control":"no-store"}});
   }catch(error){
