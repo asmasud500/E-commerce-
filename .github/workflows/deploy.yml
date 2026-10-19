@@ -58,7 +58,7 @@ jobs:
           printf '%s' "$TELEGRAM_ADMIN_USER_IDS" | npx wrangler secret put TELEGRAM_ADMIN_USER_IDS
           printf '%s' "$TELEGRAM_WEBHOOK_SECRET" | npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
           printf '%s' "$PAYMENT_WEBHOOK_SECRET" | npx wrangler secret put PAYMENT_WEBHOOK_SECRET
-          printf '%s' "$MOBILE_MONEY_SMS_WEBHOOK_SECRET" | npx wrangler secret put MOBILE_MONEY_SMS_WEBHOOK_SECRET
+          if [ -n "$MOBILE_MONEY_SMS_WEBHOOK_SECRET" ]; then printf '%s' "$MOBILE_MONEY_SMS_WEBHOOK_SECRET" | npx wrangler secret put MOBILE_MONEY_SMS_WEBHOOK_SECRET; else echo "MOBILE_MONEY_SMS_WEBHOOK_SECRET not configured; SMS auto-confirmation remains disabled."; fi
           printf '%s' "$CRON_SECRET" | npx wrangler secret put CRON_SECRET
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
