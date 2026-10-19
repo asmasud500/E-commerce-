@@ -744,3 +744,5 @@ button.pg-btn,a.pg-btn{min-height:44px}
 .sf-copyright{grid-column:1/-1;padding-top:20px;border-top:1px solid rgba(255,255,255,.1);color:#8b95a3}
 @media(max-width:820px){.sf-in{grid-template-columns:1fr 1fr}.sf-brand{grid-column:1/-1}.sf-copyright{grid-column:1/-1}}
 @media(max-width:700px){.sf-in{grid-template-columns:1fr 1fr}.sf-contact p{font-size:12px}}
+
+.sf-in .sf-trust-note{grid-column:auto;padding-top:0;border-top:0;margin-top:14px}
