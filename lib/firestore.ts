@@ -56,7 +56,7 @@ async function accessToken(){
 }
 async function req(path:string,init:RequestInit={}){
   const token=await accessToken();
-  const project=(await serviceAccountValue("FIREBASE_PROJECT_ID","project_id"))||"e-commerce-bb2af";
+  const project=await serviceAccountValue("FIREBASE_PROJECT_ID","project_id");if(!project)throw new Error("FIREBASE_PROJECT_ID is required");
   const base=`https://firestore.googleapis.com/v1/projects/${project}/databases/(default)/documents`;
   const r=await fetch(`${base}${path}`,{...init,headers:{authorization:`Bearer ${token}`,"content-type":"application/json",...(init.headers||{})}});
   if(!r.ok){const t=await r.text();throw new Error(`Firestore ${r.status}: ${t.slice(0,1000)}`)}
