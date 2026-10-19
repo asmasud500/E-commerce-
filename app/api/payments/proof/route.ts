@@ -33,6 +33,20 @@ export async function POST(req: NextRequest) {
     });
     if (prior) return NextResponse.json({ error: "This transaction ID has already been submitted." }, { status: 409 });
 
+    // A transaction reference must not be attached to a second order while the
+    // incoming SMS is still pending and no PaymentTransaction row exists yet.
+    const reusedReference = await db.order.findFirst({
+      where: {
+        id: { not: orderId },
+        paymentReference: transactionId,
+        paymentProvider: String(o.paymentGateway.type)
+      },
+      select: { id: true }
+    });
+    if (reusedReference) {
+      return NextResponse.json({ error: "This transaction ID is already linked to another order." }, { status: 409 });
+    }
+
     await db.order.update({
       where: { id: orderId },
       data: {
