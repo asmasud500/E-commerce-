@@ -125,3 +125,20 @@ test("manager permissions fail closed for unknown modules while preserving store
   assert.equal(canAccessAdminPath("MANAGER", "/admin/future-module", "GET"), false);
   assert.equal(canAccessAdminPath("MANAGER", "/api/admin/auth/login", "POST"), false);
 });
+
+import { readFile } from "node:fs/promises";
+
+const adminLoginRoute = await readFile(new URL("../app/api/admin/auth/login/route.ts", import.meta.url), "utf8");
+const adminLogoutRoute = await readFile(new URL("../app/api/admin/auth/logout/route.ts", import.meta.url), "utf8");
+
+test("admin login rejects cross-origin browser requests before credential checks", () => {
+  assert.match(adminLoginRoute, /sec-fetch-site/);
+  assert.match(adminLoginRoute, /Cross-origin admin login is not allowed/);
+  assert.match(adminLoginRoute, /new URL\(origin\)\.host === req\.nextUrl\.host/);
+});
+
+test("admin logout rejects cross-origin browser requests before clearing the session", () => {
+  assert.match(adminLogoutRoute, /sec-fetch-site/);
+  assert.match(adminLogoutRoute, /Cross-origin admin logout is not allowed/);
+  assert.match(adminLogoutRoute, /new URL\(origin\)\.host === req\.nextUrl\.host/);
+});
