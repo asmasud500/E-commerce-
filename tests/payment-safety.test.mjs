@@ -28,20 +28,19 @@ test("payment proof route rejects a transaction reference already attached to an
 
 const adminPayment = await readFile(new URL("../app/api/admin/orders/[id]/payment/route.ts", import.meta.url), "utf8");
 
-test("admin payment confirmation checks duplicate transaction IDs before confirming", () => {
-  assert.match(adminPayment, /duplicateTransaction/);
-  assert.match(adminPayment, /duplicateOrderReference/);
-  assert.match(adminPayment, /providerTransactionId: ref/);
+test("admin payment confirmation delegates duplicate transaction checks to the native transaction helper", () => {
+  assert.match(adminPayment, /confirmPaymentAtomically\(/);
+  assert.match(firestoreAdapter, /transactionQuery\("paymentTransactions"/);
+  assert.match(firestoreAdapter, /providerTransactionId: args\.providerTransactionId/);
 });
 
 const refundRoute = await readFile(new URL("../app/api/admin/orders/[id]/refund/route.ts", import.meta.url), "utf8");
 const adminPaymentRoute = await readFile(new URL("../app/api/admin/orders/[id]/payment/route.ts", import.meta.url), "utf8");
 
-test("refund uses a conditional paid-state transition and reports concurrent attempts as conflicts", () => {
-  assert.match(refundRoute, /where:\{id,paymentStatus:"PAID"\}/);
-  assert.match(refundRoute, /changed\.count!==1/);
-  assert.match(refundRoute, /Order state changed/);
-  assert.match(refundRoute, /status:409/);
+test("refund uses a native transaction with a paid-state check and reports concurrent attempts as conflicts", () => {
+  assert.match(refundRoute, /recordRefundAtomically\(/);
+  assert.match(firestoreAdapter, /order\.paymentStatus !== "PAID"/);
+  assert.match(refundRoute, /status: 409/);
 });
 
 test("admin payment route returns conflict for duplicate transaction database errors", () => {
@@ -50,7 +49,8 @@ test("admin payment route returns conflict for duplicate transaction database er
 });
 
 test("refund transaction stores the refund reference in the gateway-unique transaction ID field", () => {
-  assert.match(refundRoute, /providerTransactionId:input\.reference/);
+  assert.match(firestoreAdapter, /providerTransactionId: args\.reference/);
+  assert.match(firestoreAdapter, /deterministicId\("refund:" \+ args\.gatewayId \+ ":" \+ args\.reference\)/);
   assert.match(schema, /@@unique\(\[gatewayId, providerTransactionId\]\)/);
 });
 
