@@ -186,6 +186,7 @@ type AtomicPaymentArgs = {
   amount: number;
   rawResponse: AnyObj;
   expectedPaymentReference?: string;
+  requirePaymentEvidence?: boolean;
   expectedSenderLast4?: string;
   expectedProvider?: string;
   autoConfirmed?: boolean;
@@ -253,10 +254,10 @@ export async function confirmPaymentAtomically(args: AtomicPaymentArgs) {
       await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
       return { confirmed: false, reason: order.paymentStatus === "PAID" ? "duplicate" as const : "state_changed" as const };
     }
-    if (args.expectedPaymentReference !== undefined &&
-        (order.paymentReference !== args.expectedPaymentReference ||
-         order.paymentSenderLast4 !== args.expectedSenderLast4 ||
-         order.paymentProvider !== args.expectedProvider)) {
+    if ((args.expectedPaymentReference !== undefined && order.paymentReference !== args.expectedPaymentReference) ||
+        (args.expectedSenderLast4 !== undefined && order.paymentSenderLast4 !== args.expectedSenderLast4) ||
+        (args.expectedProvider !== undefined && order.paymentProvider !== args.expectedProvider) ||
+        (args.requirePaymentEvidence && !order.paymentProofSubmittedAt && !order.paymentProvider)) {
       await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
       return { confirmed: false, reason: "evidence_mismatch" as const };
     }
@@ -302,6 +303,68 @@ export async function confirmPaymentAtomically(args: AtomicPaymentArgs) {
     }
     await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
     return { confirmed: true, reason: "confirmed" as const };
+  } catch (error) {
+    await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+    throw error;
+  }
+}
+
+
+/**
+ * Atomically rejects a pending payment, releases held reservations, and restores
+ * product stock once. The order-state check and all stock writes share one commit.
+ */
+export async function rejectPendingOrderAtomically(orderId: string, auditAction = "ADMIN_PAYMENT_REJECTED") {
+  const now = new Date();
+  const started: any = await req(":beginTransaction", { method: "POST", body: JSON.stringify({ options: { readWrite: {} } }) });
+  const transaction = String(started?.transaction || "");
+  if (!transaction) throw new Error("Firestore did not create a payment rejection transaction");
+  try {
+    const orderDocument: any = await transactionGet("orders", orderId, transaction);
+    const order = docToObj(orderDocument) as AnyObj | null;
+    if (!order || order.paymentStatus !== "PENDING" || order.status !== "PENDING") {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { rejected: false };
+    }
+    const reservationDocs = await transactionQuery("stockReservations", [
+      { field: "orderId", value: orderId }, { field: "status", value: "HELD" }
+    ], transaction);
+    const products = new Map<string, { document: any; product: AnyObj }>();
+    for (const reservationDocument of reservationDocs) {
+      const reservation = docToObj(reservationDocument) as AnyObj;
+      const productId = String(reservation.productId);
+      if (products.has(productId)) continue;
+      const productDocument: any = await transactionGet("products", productId, transaction);
+      const product = docToObj(productDocument) as AnyObj | null;
+      if (!product) throw new Error("Reserved product is missing; rejection needs manual review");
+      products.set(productId, { document: productDocument, product });
+    }
+    const project = await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id");
+    if (!project) throw new Error("FIREBASE_PROJECT_ID is required");
+    const writes: AnyObj[] = [
+      firestorePatchWrite("orders", orderDocument, { paymentStatus: "FAILED", status: "CANCELLED", updatedAt: now }, project)
+    ];
+    for (const reservationDocument of reservationDocs) {
+      writes.push(firestorePatchWrite("stockReservations", reservationDocument, { status: "RELEASED", updatedAt: now }, project));
+    }
+    const increments = new Map<string, number>();
+    for (const reservationDocument of reservationDocs) {
+      const reservation = docToObj(reservationDocument) as AnyObj;
+      const productId = String(reservation.productId);
+      increments.set(productId, (increments.get(productId) || 0) + Number(reservation.quantity || 0));
+    }
+    for (const [productId, quantity] of increments) {
+      const snapshot = products.get(productId)!;
+      writes.push(firestorePatchWrite("products", snapshot.document, {
+        stock: Number(snapshot.product.stock || 0) + quantity, updatedAt: now
+      }, project));
+    }
+    writes.push(firestoreCreateWrite("auditLogs", {
+      id: id(), action: auditAction, entity: "Order", entityId: orderId,
+      metadata: { source: "atomic_payment_rejection" }, createdAt: now, updatedAt: now
+    }, project));
+    await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
+    return { rejected: true };
   } catch (error) {
     await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
     throw error;
