@@ -78,13 +78,15 @@ async function loadHome(){
   const flash=list.filter(p=>p.discount>0).sort((a,b)=>b.discount-a.discount).slice(0,12);
   const newest=[...list].sort((a,b)=>(createdAt.get(b.id)||0)-(createdAt.get(a.id)||0));
   const forYou=list.slice(0,20);
+  const trending=[...list].sort((a,b)=>b.sold-a.sold||b.rating-a.rating||b.reviews-a.reviews).slice(0,8);
+  const arrivals=newest.slice(0,8);
 
   const stores=categories.map((c:any)=>{
     const items=list.filter(p=>p.categoryId===c.id);
     return {id:c.id,name:c.name,slug:c.slug,count:items.length,cover:items.find(p=>p.image)?.image||null};
   }).filter(s=>s.count>0).sort((a,b)=>b.count-a.count).slice(0,6);
 
-  return {categories,flash,forYou,stores,banners,
+  return {categories,flash,forYou,trending,arrivals,stores,banners,
     flashImages:flash.map(p=>p.image).filter(Boolean) as string[],
     newImages:newest.map(p=>p.image).filter(Boolean) as string[]};
 }
@@ -98,7 +100,7 @@ const QUICK=[
 ];
 
 export default async function Home(){
-  const {categories,flash,forYou,stores,banners,flashImages,newImages}=await loadHome();
+  const {categories,flash,forYou,trending,arrivals,stores,banners,flashImages,newImages}=await loadHome();
   const hasFlash=flash.length>0,hasStores=stores.length>0;
   const quickHref=(q:typeof QUICK[number])=>q.fallback&&!((q.label==="Flash Deals"&&hasFlash)||(q.label==="Official Stores"&&hasStores))?q.fallback:q.href;
 
@@ -175,6 +177,26 @@ export default async function Home(){
                 </Link>
               ))}
             </div>
+          </section>
+        )}
+
+        {trending.length>0&&(
+          <section className="hp-sec" aria-labelledby="trending-h">
+            <div className="hp-sec-h hp-plain">
+              <h2 id="trending-h"><Icon name="trendingUp" size={22}/> Trending Now</h2>
+              <Link href="/products?sort=popular" className="hp-more">Explore popular <Icon name="chevronRight" size={16}/></Link>
+            </div>
+            <div className="hp-grid">{trending.map(p=><ProductCard key={p.id} p={p}/>)}</div>
+          </section>
+        )}
+
+        {arrivals.length>0&&(
+          <section className="hp-sec" aria-labelledby="arrivals-h">
+            <div className="hp-sec-h hp-plain">
+              <h2 id="arrivals-h">New Arrivals</h2>
+              <Link href="/products?sort=newest" className="hp-more">See what's new <Icon name="chevronRight" size={16}/></Link>
+            </div>
+            <div className="hp-grid">{arrivals.map(p=><ProductCard key={p.id} p={p}/>)}</div>
           </section>
         )}
 
