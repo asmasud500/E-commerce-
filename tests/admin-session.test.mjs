@@ -107,3 +107,12 @@ test("super admin can access administrative modules", () => {
 test("unknown roles fail closed", () => {
   assert.equal(canAccessAdminPath("UNKNOWN_ROLE", "/api/admin/products", "GET"), false);
 });
+
+test("non-super-admin roles cannot change gateway configuration or execute refunds", () => {
+  for (const role of ["MANAGER", "ORDER_MANAGER", "PRODUCT_MANAGER", "SUPPORT"]) {
+    assert.equal(canAccessAdminPath(role, "/api/admin/payment-gateways", "POST"), false);
+    assert.equal(canAccessAdminPath(role, "/admin/payment-gateways", "GET"), false);
+    assert.equal(canAccessAdminPath(role, "/api/admin/orders/order-1/refund", "POST"), false);
+  }
+  assert.equal(canAccessAdminPath("SUPER_ADMIN", "/api/admin/orders/order-1/refund", "POST"), true);
+});
