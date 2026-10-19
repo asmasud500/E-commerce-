@@ -13,7 +13,7 @@ export async function reply(text:string,extra:Record<string,unknown>={},messageI
     const body=text.length>3800?text.slice(0,3780)+"…\n<i>Output shortened to keep this task in one message.</i>":text;
     const edited=await telegramApi("editMessageText",{chat_id:process.env.TELEGRAM_CHAT_ID,message_id:messageId,text:body,parse_mode:"HTML",disable_web_page_preview:true,...extra});
     if(edited?.ok||String(edited?.description||"").toLowerCase().includes("message is not modified"))return edited;
-    return telegramApi("sendMessage",{chat_id:process.env.TELEGRAM_CHAT_ID,text:body,parse_mode:"HTML",disable_web_page_preview:true,...extra});
+    return edited;
   }
   const chunks:string[]=[];let cur="";
   for(const line of text.split("\n")){if((cur+line).length>3800){chunks.push(cur);cur=""}cur+=line+"\n"}
