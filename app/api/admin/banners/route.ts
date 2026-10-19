@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {db} from "@/lib/prisma";
+import {recordAdminAudit} from "@/lib/auth/audit";
 
 const schema=z.object({
   title:z.string().trim().min(1).max(120),
@@ -21,6 +22,8 @@ export async function POST(req:NextRequest){
     const parsed=schema.safeParse(await req.json());
     if(!parsed.success)return NextResponse.json({error:"Invalid banner.",details:parsed.error.flatten()},{status:400});
     const data={...parsed.data,startsAt:parsed.data.startsAt?new Date(parsed.data.startsAt):null,endsAt:parsed.data.endsAt?new Date(parsed.data.endsAt):null};
-    return NextResponse.json(await db.banner.create({data}),{status:201});
+    const row=await db.banner.create({data});
+    await recordAdminAudit(req,{action:"BANNER_CREATED",entity:"banner",entityId:row.id,metadata:{title:row.title,active:row.active}});
+    return NextResponse.json(row,{status:201});
   }catch(error){console.error("Admin banners POST failed:",error instanceof Error?error.message:String(error));return NextResponse.json({error:"Unable to create banner."},{status:500});}
 }
