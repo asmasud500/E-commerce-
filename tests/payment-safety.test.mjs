@@ -53,3 +53,21 @@ test("refund transaction stores the refund reference in the gateway-unique trans
   assert.match(refundRoute, /providerTransactionId:input\.reference/);
   assert.match(schema, /@@unique\(\[gatewayId, providerTransactionId\]\)/);
 });
+
+
+const paymentSettlement = await readFile(new URL("../lib/payments/settle.ts", import.meta.url), "utf8");
+const paymentAdapters = await readFile(new URL("../lib/payments/adapters.ts", import.meta.url), "utf8");
+
+test("provider settlement requires a finite verified amount and rejects amount mismatches", () => {
+  assert.match(paymentSettlement, /Number\\.isFinite\\(verifiedAmount\\)/);
+  assert.match(paymentSettlement, /Payment amount missing or mismatch/);
+});
+
+test("SSLCOMMERZ settlement requires the verified order reference and provider transaction ID", () => {
+  assert.match(paymentSettlement, /reference!==order\\.orderNumber/);
+  assert.match(paymentSettlement, /Verified provider transaction ID is missing/);
+});
+
+test("SSLCOMMERZ adapter refuses validation responses without a valid amount and transaction reference", () => {
+  assert.match(paymentAdapters, /validStatus&&transaction\\.length>0&&Number\\.isFinite\\(amount\\)&&amount>0/);
+});
