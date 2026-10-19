@@ -111,11 +111,16 @@ jobs:
       - name: Register store Telegram webhook and commands
         if: github.event_name == 'workflow_dispatch'
         run: |
+          set -euo pipefail
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_WEBHOOK_SECRET:-}" ]; then
+            echo "Telegram webhook registration skipped: TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET must both be configured."
+            exit 0
+          fi
           API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
           URL="https://ecommerce-platform.masud50003.workers.dev/api/telegram/webhook"
-          curl -sS -X POST "$API/setWebhook" -H 'content-type: application/json' \
-            -d "{\"url\":\"$URL\",\"secret_token\":\"${TELEGRAM_WEBHOOK_SECRET}\",\"allowed_updates\":[\"message\",\"callback_query\"],\"drop_pending_updates\":true}" | tee /dev/stderr | jq -e '.ok == true' > /dev/null
-          curl -sS -X POST "$API/setMyCommands" -H 'content-type: application/json' \
+          curl --fail --silent --show-error -X POST "$API/setWebhook" -H 'content-type: application/json' \
+            -d "{\"url\":\"$URL\",\"secret_token\":\"$TELEGRAM_WEBHOOK_SECRET\",\"allowed_updates\":[\"message\",\"callback_query\"],\"drop_pending_updates\":true}" | tee /dev/stderr | jq -e '.ok == true' > /dev/null
+          curl --fail --silent --show-error -X POST "$API/setMyCommands" -H 'content-type: application/json' \
             -d '{"commands":[{"command":"start","description":"Start"},{"command":"help","description":"Help"},{"command":"orders","description":"Recent orders"},{"command":"pending","description":"Pending orders"},{"command":"today","description":"Today summary"},{"command":"sales","description":"Sales report"},{"command":"stock","description":"Low stock"},{"command":"search","description":"Search orders"}]}' | tee /dev/stderr | jq -e '.ok == true' > /dev/null
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
