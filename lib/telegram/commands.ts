@@ -52,7 +52,7 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
   }
   if(cmd==="/photo"&&photo){
     const p=await findProduct(args[0]||"");if(!p){await respond("Product পাওয়া যায়নি। Caption: <code>/photo SKU</code>");return true}
-    await attachPhoto(p,photo.fileId,messageId);return true;
+    await attachPhoto(p,photo.fileId);return true;
   }
 
   if(cmd==="/stock"||cmd==="/lowstock"){
@@ -83,7 +83,7 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
     let slug=slugify(name);if(await db.product.findFirst({where:{slug}}))slug+="-"+Math.random().toString(36).slice(2,6);
     const p=await db.product.create({data:{name,slug,sku,description:d.join(" | ")||null,price,compareAtPrice:null,salePrice:null,stock,lowStockThreshold:5,featured:false,published:true,categoryId,freeShipping:false,shippingFee:null}});
     await audit("PRODUCT_CREATED_TELEGRAM","Product",p.id,{sku,name});
-    if(photo)await attachPhoto(p,photo.fileId,messageId);
+    if(photo)await attachPhoto(p,photo.fileId);
     await respond("✅ Product তৈরি ও Published\n"+productLine(p)+(catName&&!categoryId?"\n⚠️ Category '"+esc(catName)+"' পাওয়া যায়নি":"")+(photo?"":"\nছবি যোগ করতে ছবি পাঠিয়ে caption দিন: <code>/photo "+esc(sku)+"</code>"));return true;
   }
   if(cmd==="/setprice"){
