@@ -312,6 +312,81 @@ export async function confirmPaymentAtomically(args: AtomicPaymentArgs) {
 
 
 
+
+/**
+ * Atomically validates and applies an admin order status/tracking update with
+ * its audit records, preventing stale concurrent updates from overwriting state.
+ */
+export async function updateOrderAdminFieldsAtomically(args: {
+  orderId: string; actorId?: string | null; status?: string;
+  courierName?: string | null; trackingNumber?: string | null;
+}) {
+  const transitions: Record<string, string[]> = {
+    PENDING: ["CONFIRMED", "CANCELLED"], CONFIRMED: ["PROCESSING", "CANCELLED"],
+    PROCESSING: ["SHIPPED"], SHIPPED: ["DELIVERED"],
+    DELIVERED: [], CANCELLED: [], REFUNDED: []
+  };
+  const now = new Date();
+  const started: any = await req(":beginTransaction", { method: "POST", body: JSON.stringify({ options: { readWrite: {} } }) });
+  const transaction = String(started?.transaction || "");
+  if (!transaction) throw new Error("Firestore did not create an order-update transaction");
+  try {
+    const orderDocument: any = await transactionGet("orders", args.orderId, transaction);
+    const order = docToObj(orderDocument) as AnyObj | null;
+    if (!order) {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { updated: false, reason: "not_found" as const };
+    }
+    if (args.status && args.status !== order.status && !transitions[String(order.status)]?.includes(args.status)) {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { updated: false, reason: "invalid_transition" as const };
+    }
+    if (args.status === "CONFIRMED" && order.paymentStatus !== "PAID") {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { updated: false, reason: "payment_not_paid" as const };
+    }
+    const resultingStatus = args.status || String(order.status);
+    if ((args.courierName !== undefined || args.trackingNumber !== undefined) &&
+        !["PROCESSING", "SHIPPED", "DELIVERED"].includes(resultingStatus)) {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { updated: false, reason: "tracking_not_allowed" as const };
+    }
+    const patch: AnyObj = { updatedAt: now };
+    if (args.status && args.status !== order.status) {
+      patch.status = args.status;
+      if (args.status === "SHIPPED") patch.shippedAt = now;
+      if (args.status === "DELIVERED") patch.deliveredAt = now;
+    }
+    if (args.courierName !== undefined) patch.courierName = args.courierName;
+    if (args.trackingNumber !== undefined) patch.trackingNumber = args.trackingNumber;
+    const project = await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id");
+    if (!project) throw new Error("FIREBASE_PROJECT_ID is required");
+    const writes: AnyObj[] = [firestorePatchWrite("orders", orderDocument, patch, project)];
+    if (args.status && args.status !== order.status) {
+      writes.push(firestoreCreateWrite("auditLogs", {
+        id: id(), actorId: args.actorId || null, action: "ORDER_STATUS_CHANGED",
+        entity: "Order", entityId: args.orderId,
+        metadata: { from: order.status, to: args.status }, createdAt: now, updatedAt: now
+      }, project));
+    }
+    if (args.courierName !== undefined || args.trackingNumber !== undefined) {
+      writes.push(firestoreCreateWrite("auditLogs", {
+        id: id(), actorId: args.actorId || null, action: "SHIPMENT_TRACKING_UPDATED",
+        entity: "Order", entityId: args.orderId,
+        metadata: {
+          courierName: args.courierName !== undefined ? args.courierName : order.courierName,
+          trackingNumber: args.trackingNumber !== undefined ? args.trackingNumber : order.trackingNumber
+        }, createdAt: now, updatedAt: now
+      }, project));
+    }
+    await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
+    return { updated: true, status: resultingStatus };
+  } catch (error) {
+    await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+    throw error;
+  }
+}
+
 /**
  * Atomically records a manual refund after verifying the order is still paid.
  * This records the refund; it does not call a payment provider's refund API.
