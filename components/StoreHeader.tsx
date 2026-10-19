@@ -9,6 +9,8 @@ type Cat={name:string;slug:string};
 export default function StoreHeader({categories}:{categories?:Cat[]}){
   const [count,setCount]=useState(0);
   const [cats,setCats]=useState<Cat[]>(categories||[]);
+  const [storeName,setStoreName]=useState("MART Store");
+  const [announcement,setAnnouncement]=useState("");
 
   useEffect(()=>{
     const sync=()=>setCount(getCart().reduce((n,i)=>n+i.quantity,0));
@@ -19,6 +21,12 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
   },[]);
 
   useEffect(()=>{
+    let off=false;
+    fetch("/api/storefront/config",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(off||!d?.settings)return;const name=typeof d.settings.storeName==="string"?d.settings.storeName.trim():"";if(name)setStoreName(name);if(typeof d.settings.announcement==="string")setAnnouncement(d.settings.announcement.trim())}).catch(()=>{});
+    return()=>{off=true};
+  },[]);
+
+  useEffect(()=>{
     if(categories?.length)return;
     let off=false;
     fetch("/api/categories").then(r=>r.ok?r.json():[]).then(d=>{if(!off&&Array.isArray(d))setCats(d)}).catch(()=>{});
@@ -26,9 +34,11 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
   },[categories]);
 
   return (
+    <>
+    {announcement&&<div className="sh-announcement"><span aria-hidden="true">✦</span>{announcement}</div>}
     <header className="sh">
       <div className="sh-in">
-        <Link href="/" className="sh-logo" aria-label="Store home">STORE<span>.</span></Link>
+        <Link href="/" className="sh-logo" aria-label={`${storeName} home`}><span className="sh-logo-name">{storeName}</span><span className="sh-logo-dot">.</span></Link>
         <form action="/products" method="get" role="search" className="sh-search">
           <select name="category" defaultValue="" aria-label="Search category">
             <option value="">All categories</option>
@@ -47,5 +57,5 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
         </nav>
       </div>
     </header>
-  );
+    </>\n  );
 }
