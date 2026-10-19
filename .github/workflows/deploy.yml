@@ -30,12 +30,14 @@ jobs:
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           ADMIN_SESSION_SECRET: ${{ secrets.ADMIN_SESSION_SECRET }}
           PAYMENT_ENCRYPTION_KEY: ${{ secrets.PAYMENT_ENCRYPTION_KEY }}
+          PAYMENT_WEBHOOK_SECRET: ${{ secrets.PAYMENT_WEBHOOK_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
           missing=0
-          for key in FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY ADMIN_EMAIL ADMIN_PASSWORD ADMIN_SESSION_SECRET PAYMENT_ENCRYPTION_KEY CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+          for key in FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY ADMIN_EMAIL ADMIN_PASSWORD ADMIN_SESSION_SECRET PAYMENT_ENCRYPTION_KEY PAYMENT_WEBHOOK_SECRET CRON_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
             if [ -z "${!key:-}" ]; then echo "::error::Required repository secret is missing: $key"; missing=1; fi
           done
           if [ "$missing" -ne 0 ]; then exit 1; fi
@@ -89,9 +91,9 @@ jobs:
           put_optional_secret TELEGRAM_CHAT_ID "$TELEGRAM_CHAT_ID"
           put_optional_secret TELEGRAM_ADMIN_USER_IDS "$TELEGRAM_ADMIN_USER_IDS"
           put_optional_secret TELEGRAM_WEBHOOK_SECRET "$TELEGRAM_WEBHOOK_SECRET"
-          put_optional_secret PAYMENT_WEBHOOK_SECRET "$PAYMENT_WEBHOOK_SECRET"
+          printf '%s' "$PAYMENT_WEBHOOK_SECRET" | npx wrangler secret put PAYMENT_WEBHOOK_SECRET
           put_optional_secret MOBILE_MONEY_SMS_WEBHOOK_SECRET "$MOBILE_MONEY_SMS_WEBHOOK_SECRET"
-          put_optional_secret CRON_SECRET "$CRON_SECRET"
+          printf '%s' "$CRON_SECRET" | npx wrangler secret put CRON_SECRET
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
