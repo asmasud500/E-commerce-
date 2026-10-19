@@ -23,7 +23,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
   if((input.courierName!==undefined||input.trackingNumber!==undefined)&&!["PROCESSING","SHIPPED","DELIVERED"].includes(input.status||before.status))return NextResponse.json({error:"Courier and tracking details can be saved after an order enters fulfilment."},{status:409});
   const data:Record<string,unknown>={};
   if(input.status&&input.status!==before.status){data.status=input.status;if(input.status==="SHIPPED")data.shippedAt=new Date();if(input.status==="DELIVERED")data.deliveredAt=new Date();}
-  if(input.courierName!==undefined)data.courierName||=input.courierName||null;
+  if(input.courierName!==undefined)data.courierName=input.courierName||null;
   if(input.trackingNumber!==undefined)data.trackingNumber=input.trackingNumber||null;
   const updated=await db.$transaction(async tx=>{
    const order=await tx.order.update({where:{id},data});
