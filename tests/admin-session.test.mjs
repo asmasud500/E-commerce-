@@ -142,3 +142,45 @@ test("admin logout rejects cross-origin browser requests before clearing the ses
   assert.match(adminLogoutRoute, /Cross-origin admin logout is not allowed/);
   assert.match(adminLogoutRoute, /new URL\(origin\)\.host === req\.nextUrl\.host/);
 });
+
+
+test("role permission matrix protects sensitive modules across all staff roles", () => {
+  const staffRoles = ["MANAGER", "ORDER_MANAGER", "PRODUCT_MANAGER", "SUPPORT", "UNKNOWN_ROLE"];
+  for (const role of staffRoles) {
+    assert.equal(canAccessAdminPath(role, "/api/admin/staff", "GET"), false, `${role} must not read staff records`);
+    assert.equal(canAccessAdminPath(role, "/api/admin/store-settings", "PATCH"), false, `${role} must not change global settings`);
+    assert.equal(canAccessAdminPath(role, "/api/admin/activity", "GET"), false, `${role} must not read audit history`);
+    assert.equal(canAccessAdminPath(role, "/api/admin/payment-gateways", "POST"), false, `${role} must not change gateway credentials`);
+    assert.equal(canAccessAdminPath(role, "/api/admin/orders/order-1/refund", "POST"), false, `${role} must not execute refunds`);
+  }
+  for (const method of ["GET", "HEAD", "OPTIONS", "POST", "PATCH", "PUT", "DELETE"]) {
+    assert.equal(canAccessAdminPath("SUPER_ADMIN", "/api/admin/staff", method), true);
+  }
+});
+
+test("role permissions use path boundaries and do not leak into similarly named modules", () => {
+  assert.equal(canAccessAdminPath("SUPPORT", "/api/admin/orders", "GET"), true);
+  assert.equal(canAccessAdminPath("SUPPORT", "/api/admin/orders/order-1", "GET"), true);
+  assert.equal(canAccessAdminPath("SUPPORT", "/api/admin/orders-export", "GET"), false);
+  assert.equal(canAccessAdminPath("MANAGER", "/api/admin/products", "GET"), true);
+  assert.equal(canAccessAdminPath("MANAGER", "/api/admin/products-private", "GET"), false);
+  assert.equal(canAccessAdminPath("ORDER_MANAGER", "/api/admin/reports", "GET"), true);
+  assert.equal(canAccessAdminPath("ORDER_MANAGER", "/api/admin/reports", "PATCH"), false);
+});
+
+test("all unsupported or unknown role names fail closed for both API and dashboard paths", () => {
+  for (const role of ["", "ADMIN", "ROOT", "SUPERADMIN", "unknown", "null"]) {
+    assert.equal(canAccessAdminPath(role, "/api/admin/products", "GET"), false);
+    assert.equal(canAccessAdminPath(role, "/admin/products", "GET"), false);
+  }
+});
+
+test("middleware wires authentication, role permissions and same-origin protection to admin routes", async () => {
+  const middleware = await readFile(new URL("../middleware.ts", import.meta.url), "utf8");
+  assert.match(middleware, /readAdminSession/);
+  assert.match(middleware, /canAccessAdminPath\(session\.role, path, req\.method\)/);
+  assert.match(middleware, /status: 401/);
+  assert.match(middleware, /status: 403/);
+  assert.match(middleware, /hasValidSameOrigin\(req\)/);
+  assert.match(middleware, /matcher: \["\/admin\/:path\*", "\/api\/admin\/:path\*"\]/);
+});
