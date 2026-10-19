@@ -8,9 +8,14 @@ export function canAccessAdminPath(role: string, path: string, method: string): 
   const superAdminOnly = [
     "/admin/staff", "/api/admin/staff",
     "/admin/settings", "/api/admin/store-settings",
-    "/admin/activity", "/api/admin/activity"
+    "/admin/activity", "/api/admin/activity",
+    // Payment gateway credentials/configuration and refund execution are high-impact.
+    "/admin/payment-gateways", "/api/admin/payment-gateways"
   ];
-  if (superAdminOnly.some(prefix => path === prefix || path.startsWith(prefix + "/"))) return false;
+  if (
+    superAdminOnly.some(prefix => path === prefix || path.startsWith(prefix + "/")) ||
+    /^\/api\/admin\/orders\/[^/]+\/refund(?:\/|$)/.test(path)
+  ) return false;
 
   // Support staff are read-only, including order details and customer/review APIs.
   if (role === "SUPPORT") {
