@@ -116,3 +116,12 @@ test("non-super-admin roles cannot change gateway configuration or execute refun
   }
   assert.equal(canAccessAdminPath("SUPER_ADMIN", "/api/admin/orders/order-1/refund", "POST"), true);
 });
+
+test("manager permissions fail closed for unknown modules while preserving store operations", () => {
+  assert.equal(canAccessAdminPath("MANAGER", "/api/admin/coupons", "POST"), true);
+  assert.equal(canAccessAdminPath("MANAGER", "/admin/marketing", "GET"), true);
+  assert.equal(canAccessAdminPath("MANAGER", "/api/admin/payment-transactions", "GET"), true);
+  assert.equal(canAccessAdminPath("MANAGER", "/api/admin/secrets", "GET"), false);
+  assert.equal(canAccessAdminPath("MANAGER", "/admin/future-module", "GET"), false);
+  assert.equal(canAccessAdminPath("MANAGER", "/api/admin/auth/login", "POST"), false);
+});
