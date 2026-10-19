@@ -310,6 +310,61 @@ export async function confirmPaymentAtomically(args: AtomicPaymentArgs) {
 }
 
 
+
+/**
+ * Claims a mobile-money transaction reference and attaches proof to an order
+ * atomically, preventing two concurrent submissions from linking the same ID
+ * to different orders.
+ */
+export async function claimPaymentProofAtomically(args: {
+  orderId: string; gatewayId: string; provider: string; transactionId: string;
+  senderLast4: string;
+}) {
+  const now = new Date();
+  const claimId = await deterministicId("payment-proof:" + args.provider + ":" + args.transactionId);
+  const started: any = await req(":beginTransaction", { method: "POST", body: JSON.stringify({ options: { readWrite: {} } }) });
+  const transaction = String(started?.transaction || "");
+  if (!transaction) throw new Error("Firestore did not create a payment-proof transaction");
+  try {
+    const orderDocument: any = await transactionGet("orders", args.orderId, transaction);
+    const order = docToObj(orderDocument) as AnyObj | null;
+    const claimDocument: any = await transactionGet("paymentReferenceClaims", claimId, transaction);
+    if (claimDocument) {
+      const claim = docToObj(claimDocument) as AnyObj;
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { accepted: false, reason: claim.orderId === args.orderId ? "duplicate" as const : "reference_used" as const };
+    }
+    if (!order || order.status !== "PENDING" || order.paymentStatus !== "PENDING") {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { accepted: false, reason: "order_state" as const };
+    }
+    if (String(order.paymentGatewayId || "") !== args.gatewayId ||
+        String(order.paymentProvider || args.provider) !== args.provider ||
+        (order.paymentReference && order.paymentReference !== args.transactionId)) {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { accepted: false, reason: "order_evidence" as const };
+    }
+    const project = await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id");
+    if (!project) throw new Error("FIREBASE_PROJECT_ID is required");
+    const writes = [
+      firestorePatchWrite("orders", orderDocument, {
+        paymentReference: args.transactionId, paymentSenderLast4: args.senderLast4,
+        paymentProvider: args.provider, paymentProofSubmittedAt: now, updatedAt: now
+      }, project),
+      firestoreCreateWrite("paymentReferenceClaims", {
+        id: claimId, orderId: args.orderId, gatewayId: args.gatewayId,
+        provider: args.provider, transactionId: args.transactionId,
+        createdAt: now, updatedAt: now
+      }, project)
+    ];
+    await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
+    return { accepted: true, reason: "claimed" as const };
+  } catch (error) {
+    await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+    throw error;
+  }
+}
+
 /**
  * Atomically rejects a pending payment, releases held reservations, and restores
  * product stock once. The order-state check and all stock writes share one commit.
