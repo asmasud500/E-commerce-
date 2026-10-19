@@ -77,3 +77,21 @@ test("payment proof route rate-limits upload attempts", () => {
   assert.match(paymentProof, /rateLimit\("payment-proof:"/);
   assert.match(paymentProof, /status: 429/);
 });
+
+
+const firestoreAdapter = await readFile(new URL("../lib/firestore.ts", import.meta.url), "utf8");
+const checkoutRoute = await readFile(new URL("../app/api/orders/route.ts", import.meta.url), "utf8");
+
+test("checkout uses Firestore native read-write transaction for stock and order writes", () => {
+  assert.match(firestoreAdapter, /req\(":beginTransaction"/);
+  assert.match(firestoreAdapter, /req\(":commit"/);
+  assert.match(firestoreAdapter, /req\(":rollback"/);
+  assert.match(firestoreAdapter, /updateMask: \{ fieldPaths: \["stock", "updatedAt"\] \}/);
+  assert.match(checkoutRoute, /createOrderWithStockReservation\(/);
+  assert.doesNotMatch(checkoutRoute, /const order=await db\.\$transaction\(async tx=>/);
+});
+
+test("checkout idempotency keys map to deterministic order IDs inside the atomic commit", () => {
+  assert.match(firestoreAdapter, /deterministicId\("order:" \+ String\(args\.orderData\.idempotencyKey\)\)/);
+  assert.match(firestoreAdapter, /currentDocument: \{ exists: false \}/);
+});
