@@ -80,7 +80,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!done) return NextResponse.json({ error: "Order already processed or not found." }, { status: 409 });
     try { await notifyStatus(id); } catch {}
     return NextResponse.json({ ok: true, status: action === "confirm" ? "CONFIRMED" : "CANCELLED" });
-  } catch {
+  } catch (error) {
+    const e = error as { code?: string };
+    if (e.code === "P2002") {
+      return NextResponse.json({ error: "This transaction has already been processed." }, { status: 409 });
+    }
     return NextResponse.json({ error: "Payment update failed." }, { status: 400 });
   }
 }
