@@ -8,7 +8,7 @@ const modules=[
  {title:"Customers",desc:"Search customer records, review purchase totals and export the customer directory.",href:"/admin/customers",icon:"♙",tag:"Live data"},
  {title:"Reviews & Moderation",desc:"Approve, unapprove or remove customer product reviews.",href:"/admin/reviews",icon:"☆",tag:"Live data"},
  {title:"Payments & Shipping",desc:"Configure payment gateways and inspect transaction verification records.",href:"/admin/payment-gateways",icon:"৳",tag:"Live data"},
- {title:"Coupons & Marketing",desc:"Create discount codes and manage active coupon rules.",href:"/admin/coupons",icon:"✦",tag:"Live data"},
+ {title:"Coupons & Marketing",desc:"Create discount codes and manage active coupon rules.",href:"/admin/marketing",icon:"✦",tag:"Marketing hub"},
  {title:"Categories",desc:"Maintain the store taxonomy used by product listings.",href:"/admin/categories",icon:"▦",tag:"Live data"},
  {title:"Reports & Activity",desc:"Seven-day sales activity, order status breakdown, low-stock alerts and CSV export.",href:"/admin/reports",icon:"▥",tag:"Live analytics"},
  {title:"Activity Log",desc:"Search recent audit records for order and store operations.",href:"/admin/activity",icon:"◷",tag:"Audit trail"},
