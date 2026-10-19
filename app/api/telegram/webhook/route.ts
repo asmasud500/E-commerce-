@@ -4,7 +4,7 @@ function isAdminUpdate(u:any){const m=u?.message||u?.callback_query?.message;con
 const transitions:Record<string,string[]>={PENDING:["CONFIRMED","CANCELLED"],CONFIRMED:["PROCESSING","CANCELLED"],PROCESSING:["SHIPPED"],SHIPPED:["DELIVERED"],DELIVERED:[],CANCELLED:[],REFUNDED:[]};
 async function callback(id:string,text:string,alert=false){await telegramApi("answerCallbackQuery",{callback_query_id:id,text,show_alert:alert})}
 async function send(text:string,extra:Record<string,unknown>={}){return telegramApi("sendMessage",{chat_id:process.env.TELEGRAM_CHAT_ID,text,parse_mode:"HTML",...extra})}
-async function editTask(messageId:number|undefined,text:string,extra:Record<string,unknown>={}){if(!messageId)return send(text,extra);const r=await telegramApi("editMessageText",{chat_id:process.env.TELEGRAM_CHAT_ID,message_id:messageId,text,parse_mode:"HTML",...extra});if(r?.ok||String(r?.description||"").toLowerCase().includes("message is not modified"))return r;return send(text,extra)}
+async function editTask(messageId:number|undefined,text:string,extra:Record<string,unknown>={}){if(!messageId)return send(text,extra);const r=await telegramApi("editMessageText",{chat_id:process.env.TELEGRAM_CHAT_ID,message_id:messageId,text,parse_mode:"HTML",...extra});if(r?.ok||String(r?.description||"").toLowerCase().includes("message is not modified"))return r;return r}
 const MENU:Record<string,string>={"🧾 Orders":"/orders","⏳ Pending":"/pending","📅 Today":"/today","💰 Sales":"/sales","📦 Stock":"/stock","🔎 Search":"/searchhelp","❓ Help":"/help"};
 const mainMenu={inline_keyboard:[
 [{text:"🧾 Orders & Payments",callback_data:"menu:orders"},{text:"📦 Products",callback_data:"menu:products"}],
