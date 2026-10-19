@@ -121,13 +121,20 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
 
-      - name: Verify production storefront and database-backed config
+      - name: Verify production storefront and Firestore readiness
         run: |
           set -euo pipefail
+          BASE_URL="https://ecommerce-platform.masud50003.workers.dev"
           for attempt in $(seq 1 8); do
-            if curl --fail --silent --show-error --output /dev/null https://ecommerce-platform.masud50003.workers.dev/; then break; fi
+            if curl --fail --silent --show-error --output /dev/null "$BASE_URL/"; then break; fi
             if [ "$attempt" -eq 8 ]; then echo "Storefront smoke test failed"; exit 1; fi
             sleep 10
           done
-          curl --fail --silent --show-error https://ecommerce-platform.masud50003.workers.dev/api/storefront/config --output /tmp/storefront-config.json
-          node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("/tmp/storefront-config.json","utf8"));if(!d.settings||!Array.isArray(d.zones))process.exit(1);console.log("Storefront and Firestore-backed config smoke test passed.")'
+          curl --fail --silent --show-error "$BASE_URL/api/health" --output /tmp/health.json
+          node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("/tmp/health.json","utf8"));if(d.status!=="ok"||d.database!=="reachable")throw new Error("Firestore readiness check failed");console.log("Firestore readiness check passed.")'
+          curl --fail --silent --show-error "$BASE_URL/api/storefront/config" --output /tmp/storefront-config.json
+          node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("/tmp/storefront-config.json","utf8"));if(!d.settings||!Array.isArray(d.zones))throw new Error("Storefront config response is invalid");console.log("Storefront configuration smoke test passed.")'
+          curl --fail --silent --show-error "$BASE_URL/api/products?limit=1" --output /tmp/products.json
+          node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("/tmp/products.json","utf8"));if(!Array.isArray(d.items)||typeof d.total!=="number"||typeof d.pages!=="number")throw new Error("Product catalogue response is invalid");console.log("Product catalogue API smoke test passed; returned total="+d.total+".")'
+          curl --fail --silent --show-error "$BASE_URL/api/categories" --output /tmp/categories.json
+          node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("/tmp/categories.json","utf8"));if(!Array.isArray(d))throw new Error("Categories API response is invalid");console.log("Categories API smoke test passed; returned count="+d.length+".")'
