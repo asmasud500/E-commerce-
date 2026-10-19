@@ -184,7 +184,7 @@ export default async function Home(){
           <section className="hp-sec" aria-labelledby="trending-h">
             <div className="hp-sec-h hp-plain">
               <h2 id="trending-h"><Icon name="trendingUp" size={22}/> Trending Now</h2>
-              <Link href="/products?sort=popular" className="hp-more">Explore popular <Icon name="chevronRight" size={16}/></Link>
+              <Link href="/products" className="hp-more">Explore popular <Icon name="chevronRight" size={16}/></Link>
             </div>
             <div className="hp-grid">{trending.map(p=><ProductCard key={p.id} p={p}/>)}</div>
           </section>
@@ -194,7 +194,7 @@ export default async function Home(){
           <section className="hp-sec" aria-labelledby="arrivals-h">
             <div className="hp-sec-h hp-plain">
               <h2 id="arrivals-h">New Arrivals</h2>
-              <Link href="/products?sort=newest" className="hp-more">See what's new <Icon name="chevronRight" size={16}/></Link>
+              <Link href="/products" className="hp-more">See what's new <Icon name="chevronRight" size={16}/></Link>
             </div>
             <div className="hp-grid">{arrivals.map(p=><ProductCard key={p.id} p={p}/>)}</div>
           </section>
