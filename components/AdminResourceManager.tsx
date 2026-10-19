@@ -22,11 +22,7 @@ export default function AdminResourceManager({kind}:{kind:Kind}){
  const load=useCallback(async()=>{try{const r=await fetch(m.endpoint,{cache:"no-store"});const j=await r.json();if(!r.ok)throw new Error(j.error||"Could not load records");setRows(Array.isArray(j)?j:[]);}catch(e){setNotice(e instanceof Error?e.message:"Request failed");}},[m.endpoint]);
  useEffect(()=>{void load();},[load]);
  const set=(key:string,value:string)=>setForm(old=>({...old,[key]:value}));
- const markLocation=()=>{
-  if(!navigator.geolocation){setNotice("This browser does not support location access.");return;}
-  setNotice("Requesting location permission…");
-  navigator.geolocation.getCurrentPosition(pos=>{setForm(old=>({...old,latitude:String(pos.coords.latitude),longitude:String(pos.coords.longitude)}));setNotice("Location marked. Coordinates saved in the form; press Save to store them.");},err=>setNotice(err.code===1?"Location access is blocked. Allow Location permission for this site in your browser settings, then reload; or enter latitude and longitude manually.":"Could not get GPS location. Check device Location/GPS and browser permission, or enter coordinates manually."),{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
- };
+
  const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setNotice("");try{
   const body:Record<string,any>={...form};
   if(kind==="delivery-zones"){body.fee=Number(body.fee);body.estimatedDays=Number(body.estimatedDays);body.freeAbove=body.freeAbove===""?null:Number(body.freeAbove);body.latitude=body.latitude===""?null:Number(body.latitude);body.longitude=body.longitude===""?null:Number(body.longitude);body.active=true;body.name=body.name.trim()||[body.upazila,body.district].filter(Boolean).join(", ");}
@@ -50,20 +46,17 @@ export default function AdminResourceManager({kind}:{kind:Kind}){
  const label=(row:Row)=>String(row.title||row.name||"Untitled");
  const input=(key:string,label:string,type="text",required=false,placeholder="")=><label key={key}>{label}<input type={type} step={type==="number"?"any":undefined} required={required} placeholder={placeholder} value={form[key]||""} onChange={e=>set(key,e.target.value)} /></label>;
  const select=(key:string,label:string,options:string[],required=false,disabled=false)=><label key={key}>{label}<select required={required} disabled={disabled} value={form[key]||""} onChange={e=>set(key,e.target.value)}><option value="">Choose {label.toLowerCase()}</option>{options.map(v=><option key={v} value={v}>{v}</option>)}</select></label>;
- return <div className="admin-layout"><AdminSidebar/><main className="admin-content"><div className="admin-kicker">MART · STORE CONTROL</div><div className="admin-heading-row"><div><h1>{m.title}</h1><p>{m.description}</p></div></div>
+ return <div className={"admin-layout"+(kind==="delivery-zones"?" delivery-zone-admin":"")}><AdminSidebar/><main className="admin-content"><div className="admin-kicker">MART · STORE CONTROL</div><div className="admin-heading-row"><div><h1>{m.title}</h1><p>{m.description}</p></div></div>
  {notice&&<p role="status" className="admin-notice">{notice}</p>}
- <section className="admin-recent"><h2>Create new</h2><form className="admin-resource-form" onSubmit={submit}>
+ <section className="admin-recent delivery-zone-create"><div className="delivery-zone-section-head"><span className="delivery-zone-step">01</span><div><h2>{kind==="delivery-zones"?"Configure a delivery area":"Create new"}</h2><p>{kind==="delivery-zones"?"Choose the service area, then set delivery pricing and timing.":"Add details below to create a new record."}</p></div></div><form className={"admin-resource-form"+(kind==="delivery-zones"?" delivery-zone-form":"")} onSubmit={submit}>
  {kind==="delivery-zones"?<>
-  {input("name","Zone label (optional)","text",false,"Auto: Upazila, District")}
+  <div className="delivery-zone-group-title">Service area <span>Step 1 of 2</span></div>\n  {input("name","Zone label (optional)","text",false,"Auto-generated from upazila and district")}
   {select("division","Division",BANGLADESH_LOCATIONS.map(x=>x.name),true)}
   {select("district","District",districts.map(x=>x.name),true,!form.division)}
   {upazilas.length?select("upazila","Upazila",upazilas,true,!form.district):input("upazila","Upazila / Thana","text",true,"Enter upazila / thana")}
   {input("postalCode","Postal code (optional)","text",false,"e.g. 5500 (optional)") }
   {input("locationDescription","Exact delivery location (village / area / road / house / landmark)","text",true,"Village, para, road, house no. or nearby landmark")}
-  <div className="admin-location-mark"><button type="button" onClick={markLocation}>📍 Mark location using this device</button><p>Browser permission required. GPS coordinates help identify the delivery point; you can also enter them manually.</p></div>
-  {input("latitude","Latitude (optional)","number",false,"e.g. 25.9167")}
-  {input("longitude","Longitude (optional)","number",false,"e.g. 89.4500")}
-  {input("fee","Delivery fee (৳)","number",true)}
+  <div className="delivery-zone-group-title">Delivery settings <span>Step 2 of 2</span></div>\n  {input("fee","Delivery fee (৳)","number",true,"e.g. 120")}
   {input("freeAbove","Free delivery above (৳, optional)","number")}
   {input("estimatedDays","Estimated days","number",true)}
  </>:kind==="banners"?<>
@@ -72,7 +65,7 @@ export default function AdminResourceManager({kind}:{kind:Kind}){
   {input("title","Flash sale title","text",true)}{input("productIds","Product IDs (comma separated)","text",true)}{input("discountPercent","Discount percent (1–90)","number",true)}{input("startsAt","Start time","datetime-local",true)}{input("endsAt","End time","datetime-local",true)}
  </>}
  <button disabled={busy} type="submit">{busy?"Saving…":"Save"}</button></form>
- {kind==="delivery-zones"&&<p className="admin-footnote">Postal code is optional. Choose the division and district; select an upazila when listed, or enter it manually when unavailable. If GPS is blocked, allow location access in your browser settings or enter latitude and longitude manually. Confirm exact delivery addresses with the customer.</p>}
+ {kind==="delivery-zones"&&<p className="admin-footnote">Postal code is optional. Choose Division → District → Upazila, then enter the delivery area and fee. If an upazila is not listed, enter it manually. Confirm exact addresses with customers before saving.</p>}
  {kind==="flash-sales"&&<p className="admin-footnote">Product IDs must match existing product document IDs.</p>}</section>
  <section className="admin-recent"><div className="admin-section-heading"><div><h2>Saved records</h2><p>{filteredRows.length} of {rows.length} record(s)</p></div><div className="admin-row-actions"><button type="button" onClick={exportCsv} disabled={!filteredRows.length}>Export CSV</button><button type="button" onClick={()=>void load()}>Refresh</button></div></div><div style={{display:"flex",gap:10,flexWrap:"wrap",margin:"14px 0"}}><input aria-label="Search saved records" placeholder="Search area, district, postal code…" value={query} onChange={e=>setQuery(e.target.value)} style={{flex:"1 1 240px",minWidth:0}}/><select aria-label="Filter record status" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="ALL">All records</option><option value="ACTIVE">Active only</option><option value="INACTIVE">Inactive only</option></select></div>{filteredRows.length===0?<p className="admin-empty">{rows.length===0?"No records yet.":"No records match your search or filter."}</p>:<div className="admin-table-wrap"><table><thead><tr><th>Name</th><th>Status</th><th>Details</th><th>Actions</th></tr></thead><tbody>{filteredRows.map(row=><tr key={row.id}><td>{label(row)}</td><td><span className="admin-status">{row.active?"Active":"Inactive"}</span></td><td>{kind==="delivery-zones"?[row.division,row.district,row.upazila,row.postalCode,row.locationDescription,"৳"+row.fee,row.estimatedDays+" day(s)"].filter(Boolean).join(" · "):kind==="banners"?(row.imageUrl||"No image URL"):(row.discountPercent+"% · "+(row.productIds||[]).length+" product(s)")}</td><td><div className="admin-row-actions"><button type="button" onClick={()=>void edit(row)}>Edit</button><button type="button" onClick={()=>void patch(row,{active:!row.active})}>{row.active?"Disable":"Enable"}</button><button type="button" onClick={()=>void remove(row)}>Delete</button></div></td></tr>)}</tbody></table></div>}</section>
  </main></div>;
