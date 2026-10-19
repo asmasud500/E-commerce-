@@ -14,7 +14,8 @@
     "cf:deploy": "opennextjs-cloudflare deploy",
     "cf:preview": "opennextjs-cloudflare preview",
     "db:migrate-firestore": "node --experimental-strip-types scripts/migrate-postgres-to-firestore.ts",
-    "test:security": "node --experimental-strip-types --test tests/*.test.mjs"
+    "test:security": "node --experimental-strip-types --test tests/*.test.mjs",
+    "db:seed-demo": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/seed-demo-products.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.16.0",
