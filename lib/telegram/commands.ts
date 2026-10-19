@@ -163,11 +163,13 @@ export async function handleTextCommand(text:string,photo?:{fileId:string}):Prom
     await reply(o?"<b>Order Details</b>\n"+orderDetailsText(o):"Order পাওয়া যায়নি");return true;
   }
   if(cmd==="/track"){
-    const [no,courier,...t]=args;const o=no?await db.order.findFirst({where:{orderNumber:no.toUpperCase()}}):null;
-    if(!o||!courier||!t.length){await reply("ব্যবহার: <code>/track ORDER-NO COURIER TRACKING-ID</code>");return true}
+    const [no,courier,...t]=args;const o=no?await db.order.findFirst({where:{orderNumber:{equals:no.toUpperCase(),mode:"insensitive"}},include:{items:true,paymentGateway:true}}):null;
+    if(!o){await reply("ব্যবহার: <code>/track ORDER-NO</code> — বর্তমান tracking দেখুন\nঅথবা tracking সেট করতে: <code>/track ORDER-NO COURIER TRACKING-ID</code>");return true}
+    if(!courier){const lines=["<b>🚚 ORDER TRACKING</b>","Order: <code>"+esc(o.orderNumber)+"</code>","Status: <b>"+esc(o.status)+"</b>","Courier: "+esc(o.courierName||"এখনও সেট করা হয়নি"),"Tracking ID: "+(o.trackingNumber?"<code>"+esc(o.trackingNumber)+"</code>":"এখনও সেট করা হয়নি"),"Payment: <b>"+esc(o.paymentStatus)+"</b>"];await reply(lines.join("\\n"),{disable_web_page_preview:true});return true}
+    if(!t.length){await reply("Tracking ID দিন: <code>/track ORDER-NO COURIER TRACKING-ID</code>");return true}
     if(!["PROCESSING","SHIPPED","DELIVERED"].includes(o.status)){await reply("❌ Order এখন "+esc(o.status)+" — Processing/Shipped হলে courier দিন");return true}
-    await db.order.update({where:{id:o.id},data:{courierName:courier.slice(0,120),trackingNumber:t.join(" ").slice(0,160)}});await audit("TRACKING_SET_TELEGRAM","Order",o.id,{courier});
-    await reply("✅ "+esc(o.orderNumber)+" → "+esc(courier)+" "+esc(t.join(" ")));return true;
+    await db.order.update({where:{id:o.id},data:{courierName:courier.slice(0,120),trackingNumber:t.join(" ").slice(0,160)}});await audit("TRACKING_SET_TELEGRAM","Order",o.id,{courier,trackingNumber:t.join(" ")});
+    await reply("✅ <b>TRACKING UPDATED</b>\\nOrder: <code>"+esc(o.orderNumber)+"</code>\\nCourier: "+esc(courier)+"\\nTracking ID: <code>"+esc(t.join(" "))+"</code>\\nStatus: "+esc(o.status));return true;
   }
   if(cmd==="/gateways"){
     const gs=await db.paymentGateway.findMany({orderBy:{sortOrder:"asc"}});
