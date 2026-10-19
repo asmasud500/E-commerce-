@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid normalized incoming payment SMS." }, { status: 400 });
     }
 
-    const o = await db.order.findFirst({
+    const matches = await db.order.findMany({
       where: {
         paymentReference: transactionId,
         paymentSenderLast4: senderLast4,
@@ -31,9 +31,22 @@ export async function POST(req: NextRequest) {
         paymentStatus: "PENDING",
         status: "PENDING"
       },
-      include: { paymentGateway: true }
+      include: { paymentGateway: true },
+      take: 2
     });
-    if (!o) return NextResponse.json({ ok: true, matched: false, message: "No matching pending order." });
+    if (matches.length === 0) {
+      return NextResponse.json({ ok: true, matched: false, message: "No matching pending order." });
+    }
+    // Never guess which customer paid when a transaction reference is attached to
+    // multiple pending orders. Keep both orders pending for manual investigation.
+    if (matches.length > 1) {
+      return NextResponse.json({
+        ok: false,
+        matched: false,
+        message: "Ambiguous transaction reference; manual review required."
+      }, { status: 409 });
+    }
+    const o = matches[0];
     if (!o.paymentGatewayId || !o.paymentGateway || String(o.paymentGateway.type) !== provider) {
       return NextResponse.json({ ok: true, matched: false, message: "Payment provider does not match the order." });
     }
