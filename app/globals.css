@@ -737,3 +737,10 @@ button.pg-btn,a.pg-btn{min-height:44px}
 @media(prefers-reduced-motion:reduce){
  .hp-pm img,.hp-fm img{transition:none}
 }
+
+.sf-in{grid-template-columns:1.5fr 1fr 1fr 1.25fr}
+.sf-brand .sf-trust-note{display:block;margin-top:14px;color:#8b95a3;font-size:11px}
+.sf-contact p{max-width:270px;margin:0;color:#9aa3b0;font-size:13px;line-height:1.7}
+.sf-copyright{grid-column:1/-1;padding-top:20px;border-top:1px solid rgba(255,255,255,.1);color:#8b95a3}
+@media(max-width:820px){.sf-in{grid-template-columns:1fr 1fr}.sf-brand{grid-column:1/-1}.sf-copyright{grid-column:1/-1}}
+@media(max-width:700px){.sf-in{grid-template-columns:1fr 1fr}.sf-contact p{font-size:12px}}
