@@ -145,12 +145,6 @@ export async function createOrderWithStockReservation(args: {
       status: "HELD", createdAt: now, updatedAt: now
     }));
 
-    const addCreate = (model: string, value: AnyObj) => writes.push({
-      update: {
-        name: `projects/${""}`,
-        fields: {}
-      }
-    });
     const project = await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id");
     if (!project) throw new Error("FIREBASE_PROJECT_ID is required");
     const documentName = (collection: string, documentId: string) =>
