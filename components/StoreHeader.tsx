@@ -57,5 +57,6 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
         </nav>
       </div>
     </header>
-    </>\n  );
+    </>
+  );
 }
