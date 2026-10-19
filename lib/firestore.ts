@@ -311,6 +311,63 @@ export async function confirmPaymentAtomically(args: AtomicPaymentArgs) {
 
 
 
+
+/**
+ * Atomically records a manual refund after verifying the order is still paid.
+ * This records the refund; it does not call a payment provider's refund API.
+ */
+export async function recordRefundAtomically(args: {
+  orderId: string; gatewayId: string; reference: string; reason?: string | null;
+}) {
+  const now = new Date();
+  const transactionId = await deterministicId("refund:" + args.gatewayId + ":" + args.reference);
+  const started: any = await req(":beginTransaction", { method: "POST", body: JSON.stringify({ options: { readWrite: {} } }) });
+  const transaction = String(started?.transaction || "");
+  if (!transaction) throw new Error("Firestore did not create a refund transaction");
+  try {
+    const orderDocument: any = await transactionGet("orders", args.orderId, transaction);
+    const order = docToObj(orderDocument) as AnyObj | null;
+    if (!order || order.paymentStatus !== "PAID" || !args.gatewayId ||
+        String(order.paymentGatewayId || "") !== args.gatewayId) {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { refunded: false, reason: "state_changed" as const };
+    }
+    const existing = await transactionGet("paymentTransactions", transactionId, transaction);
+    const existingProviderRows = await transactionQuery("paymentTransactions", [
+      { field: "gatewayId", value: args.gatewayId }, { field: "providerTransactionId", value: args.reference }
+    ], transaction);
+    if (existing || existingProviderRows.length) {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { refunded: false, reason: "duplicate_reference" as const };
+    }
+    const project = await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id");
+    if (!project) throw new Error("FIREBASE_PROJECT_ID is required");
+    const writes = [
+      firestorePatchWrite("orders", orderDocument, {
+        paymentStatus: "REFUNDED", status: "REFUNDED", refundReference: args.reference,
+        refundReason: args.reason || null, refundedAt: now, updatedAt: now
+      }, project),
+      firestoreCreateWrite("paymentTransactions", {
+        id: transactionId, orderId: args.orderId, gatewayId: args.gatewayId,
+        reference: args.reference, providerTransactionId: args.reference,
+        amount: Number(order.total), status: "REFUNDED",
+        rawResponse: { source: "admin_manual_refund", reason: args.reason || null },
+        verifiedAt: now, createdAt: now, updatedAt: now
+      }, project),
+      firestoreCreateWrite("auditLogs", {
+        id: id(), action: "ORDER_REFUNDED", entity: "Order", entityId: args.orderId,
+        metadata: { reference: args.reference, reason: args.reason || null },
+        createdAt: now, updatedAt: now
+      }, project)
+    ];
+    await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
+    return { refunded: true, reason: "refunded" as const };
+  } catch (error) {
+    await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+    throw error;
+  }
+}
+
 /**
  * Claims a mobile-money transaction reference and attaches proof to an order
  * atomically, preventing two concurrent submissions from linking the same ID
