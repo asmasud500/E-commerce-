@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import AdminSidebar from "@/components/AdminSidebar";
+import { fileToCompressedDataUrl } from "@/lib/client-image";
 
 type Category = { id: string; name: string };
 type ImageDraft = { url: string; alt: string };
@@ -18,7 +19,8 @@ function makeSku(name: string) {
 
 export default function NewProduct() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [form, setForm] = useState({ name: "", sku: "", slug: "", price: "", compareAtPrice: "", salePrice: "", stock: "0", lowStockThreshold: "5", categoryId: "", description: "", published: false, featured: false });
+  const [form, setForm] = useState({ name: "", sku: "", slug: "", price: "", compareAtPrice: "", salePrice: "", stock: "0", lowStockThreshold: "5", categoryId: "", description: "", published: false, featured: false, freeShipping: false, shippingFee: "" });
+  const [files, setFiles] = useState<File[]>([]);
   const [images, setImages] = useState<ImageDraft[]>([{ url: "", alt: "" }]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -66,7 +68,8 @@ export default function NewProduct() {
           name: form.name.trim(), sku, slug: form.slug.trim() || undefined,
           description: form.description.trim() || null, price, compareAtPrice: compare,
           salePrice: sale, stock, lowStockThreshold: threshold,
-          featured: form.featured, published: form.published, categoryId: form.categoryId || null
+          featured: form.featured, published: form.published, categoryId: form.categoryId || null,
+          freeShipping: form.freeShipping, shippingFee: form.shippingFee === "" ? null : Number(form.shippingFee)
         })
       });
       const product = await response.json();
@@ -80,6 +83,16 @@ export default function NewProduct() {
           body: JSON.stringify({ url: image.url.trim(), alt: image.alt.trim() || form.name.trim(), sortOrder: index })
         });
         if (!imageResponse.ok) imageFailures.push(image.url);
+      }
+      for (const f of files) {
+        try {
+          const dataUrl = await fileToCompressedDataUrl(f);
+          const up = await fetch(`/api/admin/products/${encodeURIComponent(product.id)}/images/upload`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dataUrl, alt: form.name.trim() })
+          });
+          if (!up.ok) imageFailures.push(f.name);
+        } catch { imageFailures.push(f.name); }
       }
       if (imageFailures.length) {
         setMessage(`Product created, but ${imageFailures.length} image(s) could not be saved. You can add them from the edit page.`);
@@ -164,8 +177,16 @@ export default function NewProduct() {
             </label>
             <button type="button" onClick={() => setImages(old => old.filter((_, i) => i !== index))} disabled={images.length === 1} style={{ padding: "10px 12px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer" }}>Remove</button>
           </div>)}
+          <label style={labelStyle}>Upload pictures from your device<input type="file" accept="image/*" multiple onChange={e => setFiles(Array.from(e.target.files || []))} style={fieldStyle} /></label>
+          {files.length > 0 && <small style={{ color: "#6b7280" }}>{files.length} file(s) selected — compressed automatically and saved after the product is created.</small>}
           <div><button type="button" onClick={addImage} style={{ padding: "9px 13px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", cursor: "pointer" }}>+ Add another image</button></div>
           {validImages[0]?.url && <div style={{ display: "flex", gap: 12, alignItems: "center" }}><img src={validImages[0].url} alt="First product image preview" style={{ width: 86, height: 86, objectFit: "cover", borderRadius: 10, border: "1px solid #e5e7eb" }} onError={e => { e.currentTarget.style.display = "none"; }} /><small style={{ color: "#6b7280" }}>Preview of the first image URL</small></div>}
+        </section>
+
+        <section style={cardStyle}>
+          <div><h2 style={{ margin: 0, fontSize: 19 }}>Delivery</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Free delivery, or a custom delivery fee for this product. Leave blank to use the area/default fee.</p></div>
+          <label style={{ display: "flex", gap: 10, alignItems: "center" }}><input type="checkbox" checked={form.freeShipping} onChange={e => set("freeShipping", e.target.checked)} /> Free delivery for this product</label>
+          <label style={labelStyle}>Custom delivery fee (৳)<input type="number" min="0" step=".01" disabled={form.freeShipping} value={form.shippingFee} onChange={e => set("shippingFee", e.target.value)} style={fieldStyle} /></label>
         </section>
 
         <section style={cardStyle}>

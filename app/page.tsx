@@ -7,6 +7,7 @@ import FlashCountdown from "@/components/home/FlashCountdown";
 import {FlashCard,ProductCard,type HomeProduct} from "@/components/home/ProductCard";
 import {db} from "@/lib/prisma";
 import {getEffectivePrice} from "@/lib/products/pricing";
+import {isFreeDelivery} from "@/lib/shipping";
 
 // Prices, stock and sales change constantly, so this page is rendered per request.
 export const dynamic="force-dynamic";
@@ -70,12 +71,20 @@ async function loadHome(){
       price,original:discount>0?original:null,discount,image:firstImage.get(p.id)||null,
       rating:r?r.sum/r.n:0,reviews:r?.n||0,
       sold,soldPct:Math.min(100,Math.round((sold/(sold+Number(p.stock)))*100)),
-      categoryId:p.categoryId||null,category:p.categoryId?catName.get(p.categoryId)||null:null
+      categoryId:p.categoryId||null,category:p.categoryId?catName.get(p.categoryId)||null:null,
+      freeDelivery:isFreeDelivery(p)
     };
   });
 
   const createdAt=new Map<string,number>(products.map((p:any)=>[p.id,time(p.createdAt)]));
-  const flash=list.filter(p=>p.discount>0).sort((a,b)=>b.discount-a.discount).slice(0,12);
+  // A running flash sale (set in the admin panel or Telegram) decides what is shown here and when it ends;
+  // with none running we fall back to any discounted product and a midnight countdown.
+  const nowMs=Date.now();
+  const running=flashSales.filter((f:any)=>f.active&&time(f.startsAt)<=nowMs&&nowMs<=time(f.endsAt));
+  const flashIds=new Set<string>(running.flatMap((f:any)=>Array.isArray(f.productIds)?f.productIds:[]));
+  const flashPool=flashIds.size?list.filter(p=>flashIds.has(p.id)):list.filter(p=>p.discount>0);
+  const flashEndsAt=running.length?Math.min(...running.map((f:any)=>time(f.endsAt))):null;
+  const flash=flashPool.sort((a,b)=>b.discount-a.discount).slice(0,12);
   const newest=[...list].sort((a,b)=>(createdAt.get(b.id)||0)-(createdAt.get(a.id)||0));
   const forYou=list.slice(0,20);
   const trending=[...list].sort((a,b)=>b.sold-a.sold||b.rating-a.rating||b.reviews-a.reviews).slice(0,8);
@@ -86,7 +95,7 @@ async function loadHome(){
     return {id:c.id,name:c.name,slug:c.slug,count:items.length,cover:items.find(p=>p.image)?.image||null};
   }).filter(s=>s.count>0).sort((a,b)=>b.count-a.count).slice(0,6);
 
-  return {categories,flash,forYou,trending,arrivals,stores,banners,
+  return {categories,flash,flashEndsAt,forYou,trending,arrivals,stores,banners,
     flashImages:flash.map(p=>p.image).filter(Boolean) as string[],
     newImages:newest.map(p=>p.image).filter(Boolean) as string[]};
 }
@@ -96,11 +105,11 @@ const QUICK=[
   {icon:"ticket",label:"Vouchers",href:"/cart"},
   {icon:"store",label:"Official Stores",href:"#stores",fallback:"/products"},
   {icon:"globe",label:"Global Collection",href:"/products"},
-  {icon:"truck",label:"Free Delivery",href:"/products"},
+  {icon:"truck",label:"Free Delivery",href:"/products?delivery=free"},
 ];
 
 export default async function Home(){
-  const {categories,flash,forYou,trending,arrivals,stores,banners,flashImages,newImages}=await loadHome();
+  const {categories,flash,flashEndsAt,forYou,trending,arrivals,stores,banners,flashImages,newImages}=await loadHome();
   const hasFlash=flash.length>0,hasStores=stores.length>0;
   const quickHref=(q:typeof QUICK[number])=>q.fallback&&!((q.label==="Flash Deals"&&hasFlash)||(q.label==="Official Stores"&&hasStores))?q.fallback:q.href;
 
@@ -154,7 +163,7 @@ export default async function Home(){
             <div className="hp-card">
               <div className="hp-sec-h">
                 <h2 id="flash-h"><Icon name="bolt" size={24} className="hp-bolt"/> Flash Sale</h2>
-                <FlashCountdown/>
+                <FlashCountdown endsAt={flashEndsAt}/>
                 <Link href="/products" className="hp-more">Shop all <Icon name="chevronRight" size={16}/></Link>
               </div>
               <div className="hp-flash-row">{flash.map(p=><FlashCard key={p.id} p={p}/>)}</div>

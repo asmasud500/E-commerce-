@@ -6,6 +6,7 @@ export type HomeProduct={
   price:number;original:number|null;discount:number;image:string|null;
   rating:number;reviews:number;sold:number;soldPct:number;
   categoryId:string|null;category:string|null;
+  freeDelivery?:boolean;
 };
 
 export const money=(n:number)=>"৳"+n.toLocaleString("en-BD",{maximumFractionDigits:2});
@@ -67,6 +68,7 @@ export function ProductCard({p}:{p:HomeProduct}){
         <Link href={"/products/"+p.slug} className="hp-pt">{p.name}</Link>
         <Stars value={p.rating} count={p.reviews}/>
         <PriceRow p={p}/>
+        {p.freeDelivery&&<span className="hp-free">Free delivery</span>}
       </div>
     </div>
   );

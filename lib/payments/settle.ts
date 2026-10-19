@@ -1,4 +1,4 @@
-import {db} from "@/lib/prisma";import {confirmPaymentAtomically} from "@/lib/firestore";import {paymentAdapters} from "@/lib/payments/adapters";import {decryptSecrets} from "@/lib/security/gateway-secrets";import {sendTelegramOrderNotification} from "@/lib/notifications/telegram";
+import {db} from "@/lib/prisma";import {confirmPaymentAtomically} from "@/lib/firestore";import {paymentAdapters} from "@/lib/payments/adapters";import {decryptSecrets} from "@/lib/security/gateway-secrets";import {sendPaidOrderTelegram} from "@/lib/notifications/telegram-admin";
 export async function settlePayment(orderNumber:string,payload:Record<string,unknown>){
  const order=await db.order.findUnique({where:{orderNumber},include:{paymentGateway:true}});
  if(!order||!order.paymentGateway)throw new Error("Order not found");
@@ -16,6 +16,6 @@ export async function settlePayment(orderNumber:string,payload:Record<string,unk
   reference:reference||null,amount:verifiedAmount,rawResponse:(verification.raw||payload) as Record<string,unknown>
  });
  if(!result.confirmed)return {paid:result.reason==="duplicate",duplicate:result.reason==="duplicate"};
- await sendTelegramOrderNotification("<b>Payment Received</b>\nOrder: <code>"+order.orderNumber+"</code>\nAmount: ৳"+Number(order.total).toLocaleString("en-BD")+"\nGateway: "+gateway.name+"\nReference: <code>"+(reference||"verified")+"</code>");
+ await sendPaidOrderTelegram(order.id,"Gateway "+gateway.name).catch(()=>{});
  return {paid:true,duplicate:false};
 }

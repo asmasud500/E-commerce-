@@ -1122,3 +1122,44 @@ a:hover{color:#ea580c}
 .primary-cta:hover{background:#1d3555;color:#fff}
 :where(button,a,input,select,textarea):focus-visible{outline-color:rgba(249,115,22,.32)}
 @media(max-width:760px){.sh{background:#111c2e;background-image:linear-gradient(105deg,#101b2d,#172b46)}}
+/* payment instructions */
+.pay-howto{display:grid;gap:12px;padding:16px;border:1px solid #ffd2b3;border-radius:12px;background:var(--or-soft)}
+.pay-howto h2{margin:0}
+.pay-amount,.pay-number{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px;color:#4b5563}
+.pay-amount b{font-family:var(--disp);font-size:26px;color:var(--or)}
+.pay-number b{font-family:var(--disp);font-size:20px;letter-spacing:.02em;color:var(--navy)}
+.pay-number .pg-btn{padding:6px 14px;font-size:13px}
+.pay-text{white-space:pre-line;color:var(--navy)!important;font-size:15px;line-height:1.7}
+.pay-ref{font-size:13px}
+.coupon-row{display:flex;gap:8px}.coupon-row input{flex:1;min-width:0}.coupon-row .pg-btn{padding:10px 18px;font-size:14px}
+.coupon-good{color:var(--success)!important;font-weight:600}.coupon-bad{color:#b91c1c!important;font-weight:600}
+.checkout-summary>small{display:block;margin:4px 0}
+
+/* order tracking */
+.trk{max-width:720px;margin:0 auto;display:grid;gap:16px}
+.trk-form h1{margin:0 0 6px;font-family:var(--disp);font-size:clamp(22px,3vw,28px);color:var(--navy)}
+.trk-form>p{margin:0 0 18px}
+.trk-form form{display:grid;gap:14px}
+.trk-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.trk-top small{font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.trk-top h2{margin:2px 0;font-family:var(--disp);font-size:20px;color:var(--navy);word-break:break-all}
+.trk-date{font-size:13px;color:#6b7280}
+.trk-courier{display:flex;align-items:center;gap:12px;margin:16px 0 4px;padding:12px 14px;border-radius:10px;background:var(--or-soft);color:var(--navy)}
+.trk-courier svg{color:var(--or);flex:none}.trk-courier div{display:grid;gap:2px;font-size:14px}.trk-courier code{font-weight:700}
+.trk-steps{list-style:none;margin:20px 0 4px;padding:0}
+.trk-step{position:relative;display:flex;gap:14px;padding-bottom:20px}
+.trk-step:last-child{padding-bottom:0}
+.trk-step:not(:last-child):before{content:"";position:absolute;left:11px;top:24px;bottom:0;width:2px;background:#e5e7eb}
+.trk-step.done:not(:last-child):before{background:var(--navy)}
+.trk-dot{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;border:2px solid #d6d9df;background:#fff;color:#fff;font-size:13px;font-weight:800}
+.trk-step.done .trk-dot{background:var(--navy);border-color:var(--navy)}
+.trk-step.current .trk-dot{border-color:var(--or);box-shadow:0 0 0 4px rgba(255,104,1,.18)}
+.trk-step.failed .trk-dot{background:#dc2626;border-color:#dc2626}
+.trk-step div{display:grid;gap:2px}.trk-step b{color:var(--navy);font-size:15px}.trk-step.todo b{color:#9ca3af}
+.trk-step small{font-size:13px}.trk-step em{font-style:normal;font-size:12px;color:#8b909a}
+.trk-sum{margin-top:22px;padding-top:16px;border-top:1px solid var(--hp-line)}
+.trk-sum h3{margin:0 0 10px;font-family:var(--disp);font-size:16px;color:var(--navy)}
+.trk-sum ul{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:8px;font-size:14px}
+.trk-sum li{display:flex;justify-content:space-between;gap:12px}
+.trk-sum>small{display:block;margin-top:10px}
+.hp-free{display:inline-block;align-self:flex-start;padding:2px 8px;border-radius:6px;background:#ecfdf5;color:#047857;font-size:11.5px;font-weight:700}

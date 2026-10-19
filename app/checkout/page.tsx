@@ -8,10 +8,23 @@ export default function Checkout(){
  const subtotal=useMemo(()=>items.reduce((s,i)=>s+i.price*i.quantity,0),[items]);
  const availableDistricts=findDivision(form.shippingDivision)?.districts||[];const availableUpazilas=findDistrict(form.shippingDivision,form.shippingDistrict)?.upazilas||[];
  const selectedZone=storeConfig.zones.find(z=>z.district.trim().toLocaleLowerCase()===form.shippingDistrict.trim().toLocaleLowerCase()&&(!z.division||z.division.trim().toLocaleLowerCase()===form.shippingDivision.trim().toLocaleLowerCase())&&(!z.upazila||z.upazila.trim().toLocaleLowerCase()===form.shippingUpazila.trim().toLocaleLowerCase()));
- const deliveryFee=selectedZone?selectedZone.fee:Number(storeConfig.settings.defaultDeliveryFee??120);
- const freeThreshold=selectedZone?.freeAbove!=null?selectedZone.freeAbove:storeConfig.settings.freeShippingThreshold;
- const shipping=freeThreshold!=null&&subtotal>=freeThreshold?0:deliveryFee;
- const estimatedTax=storeConfig.settings.taxEnabled?Math.round(subtotal*Number(storeConfig.settings.taxRate||0))/100:0;
+ const[quote,setQuote]=useState<any>(null),[quoteError,setQuoteError]=useState(""),[appliedCoupon,setAppliedCoupon]=useState("");
+ // The server prices everything (flash sales, voucher, per-product and area delivery, tax) so the total shown here is exactly what the order will charge.
+ useEffect(()=>{
+  if(!items.length){setQuote(null);return}
+  let off=false;
+  const t=setTimeout(()=>{
+   fetch("/api/checkout/quote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({couponCode:appliedCoupon||undefined,shippingDivision:form.shippingDivision,shippingDistrict:form.shippingDistrict,shippingUpazila:form.shippingUpazila,items:items.map(i=>({productId:i.productId,quantity:i.quantity}))})})
+    .then(async r=>({ok:r.ok,d:await r.json()}))
+    .then(({ok,d})=>{if(off)return;if(ok){setQuote(d);setQuoteError("")}else{setQuote(null);setQuoteError(d.error||"Could not calculate the total.")}})
+    .catch(()=>{if(!off)setQuoteError("Could not calculate the total.")});
+  },250);
+  return()=>{off=true;clearTimeout(t)};
+ },[items,appliedCoupon,form.shippingDivision,form.shippingDistrict,form.shippingUpazila]);
+ const tk=(n:number)=>"৳"+Number(n).toLocaleString("en-BD");
+ const shipping=quote?quote.shipping:0,estimatedTax=quote?quote.taxAmount:0,grandTotal=quote?quote.total:subtotal;
+ const lineMode=(id:string)=>quote?.lines?.find((l:any)=>l.productId===id)?.delivery;
+ const freeCount=quote?quote.lines.filter((l:any)=>l.delivery==="free").length:0;
  async function submit(e:React.FormEvent){e.preventDefault();if(!gatewayId||!items.length||loading)return;setLoading(true);setMessage("");let key=sessionStorage.getItem("checkout_idempotency_key");if(!key){key=crypto.randomUUID();sessionStorage.setItem("checkout_idempotency_key",key)}
  try{const res=await fetch("/api/orders",{method:"POST",headers:{"Content-Type":"application/json","Idempotency-Key":key},body:JSON.stringify({...form,shippingAddress:[form.shippingLocationDescription,form.shippingUpazila,form.shippingDistrict,form.shippingDivision,form.shippingPostalCode?"Postal code "+form.shippingPostalCode:""].filter(Boolean).join(", "),couponCode:couponCode.trim(),paymentGatewayId:gatewayId,items:items.map(i=>({productId:i.productId,quantity:i.quantity})),shippingLatitude:form.shippingLatitude===""?null:Number(form.shippingLatitude),shippingLongitude:form.shippingLongitude===""?null:Number(form.shippingLongitude)})});const data=await res.json();if(!res.ok){setMessage(data.error||"Order failed. Please try again.");return}sessionStorage.removeItem("checkout_idempotency_key");sessionStorage.setItem("lastOrderId",data.orderId);sessionStorage.setItem("orderPaymentToken",data.paymentToken||"");saveCart([]);window.location.href="/checkout/payment?order="+encodeURIComponent(data.orderId)}catch{setMessage("Unable to connect. Please check your internet connection and try again.")}finally{setLoading(false)}}
  return <><StoreHeader/><main className="pg">
@@ -31,10 +44,20 @@ export default function Checkout(){
  <label className="fld"><span>Postal code <small>(optional)</small></span><input maxLength={20} inputMode="numeric" placeholder="e.g. 5500 (optional)" value={form.shippingPostalCode} onChange={e=>setForm({...form,shippingPostalCode:e.target.value})}/></label></div>
  <label className="fld checkout-exact-address"><span>Exact delivery location (village / area / road / house / landmark)</span><textarea required minLength={5} maxLength={500} placeholder="Village, para, road, house no. or nearby landmark" rows={3} value={form.shippingLocationDescription} onChange={e=>setForm({...form,shippingLocationDescription:e.target.value})}/></label>
  <div className="fld"><button type="button" className="pg-btn" onClick={()=>{if(!navigator.geolocation){setMessage("This browser does not support location access.");return;}setMessage("Requesting location permission…");navigator.geolocation.getCurrentPosition(p=>{setForm(old=>({...old,shippingLatitude:String(p.coords.latitude),shippingLongitude:String(p.coords.longitude)}));setMessage("📍 Location marked. Coordinates will be saved with your order.");},e=>setMessage(e.code===1?"Location permission denied. You can continue by entering your exact address.":"Could not get location. Please enter your exact address."),{enableHighAccuracy:true,timeout:12000,maximumAge:30000});}}>📍 Mark my delivery location</button>{form.shippingLatitude&&form.shippingLongitude&&<small>Location marked: {form.shippingLatitude}, {form.shippingLongitude}</small>}<p><small>Optional GPS pin helps the courier identify your place. Your browser may ask for location permission.</small></p></div>
- <label className="fld"><span>Coupon (optional)</span><input maxLength={50} placeholder="Coupon code" value={couponCode} onChange={e=>setCouponCode(e.target.value)}/></label>
+ <div className="fld"><span>Voucher code (optional)</span><div className="coupon-row"><input maxLength={50} placeholder="Voucher code" value={couponCode} onChange={e=>setCouponCode(e.target.value)} onBlur={()=>setAppliedCoupon(couponCode.trim())} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();setAppliedCoupon(couponCode.trim())}}}/><button type="button" className="pg-btn pg-btn-navy" onClick={()=>setAppliedCoupon(couponCode.trim())}>Apply</button></div>{appliedCoupon&&quote?.couponError&&<small className="coupon-bad">{quote.couponError}</small>}{quote?.couponCode&&<small className="coupon-good">Voucher {quote.couponCode} applied: −{tk(quote.discount)}</small>}</div>
  <fieldset><legend>Payment method</legend>{gatewayLoading?<p>Loading payment methods...</p>:gateways.length?gateways.map(g=><label className={"gateway-option"+(gatewayId===g.id?" on":"")} key={g.id}><input type="radio" name="gateway" checked={gatewayId===g.id} onChange={()=>setGatewayId(g.id)}/><span><b>{g.name}</b><small>{g.type}{g.mode==="SANDBOX"?" · Sandbox":""}</small></span></label>):<p>No payment method is currently available.</p>}</fieldset>
  {message&&<p className="form-error" role="alert">{message}</p>}
  <button className="pg-btn pg-btn-block" disabled={loading||gatewayLoading||!gateways.length} type="submit">{loading?"Creating order...":"Continue to payment"}{!loading&&<Icon name="arrowRight" size={18}/>}</button></form>
  <aside className="pg-card checkout-summary"><h2>Order summary</h2>
- <ul className="co-items">{items.map(i=><li key={i.productId}><span className="co-thumb">{i.imageUrl?<img src={i.imageUrl} alt="" loading="lazy" decoding="async"/>:i.name.slice(0,1).toUpperCase()}</span><span className="co-name">{i.name}<small>Qty {i.quantity}</small></span><b>৳{(i.price*i.quantity).toLocaleString("en-BD")}</b></li>)}</ul>
- <div className="checkout-summary-row"><span>Subtotal</span><b>৳{subtotal.toLocaleString("en-BD")}</b></div><div className="checkout-summary-row"><span>Shipping</span><b>{shipping===0?"Free":"৳"+shipping.toLocaleString("en-BD")}</b></div>{estimatedTax>0&&<div className="checkout-summary-row"><span>Estimated tax</span><b>৳{estimatedTax.toLocaleString("en-BD")}</b></div>}<div className="checkout-total"><span>Estimated total</span><strong>৳{(subtotal+shipping+estimatedTax).toLocaleString("en-BD")}</strong></div><p>Any eligible coupon discount is applied by the order service and reflected in the final order before payment.</p></aside></div>}</main><StoreFooter/></>}
+ <ul className="co-items">{items.map(i=><li key={i.productId}><span className="co-thumb">{i.imageUrl?<img src={i.imageUrl} alt="" loading="lazy" decoding="async"/>:i.name.slice(0,1).toUpperCase()}</span><span className="co-name">{i.name}<small>Qty {i.quantity}{lineMode(i.productId)==="free"?" · Free delivery":lineMode(i.productId)==="custom"?" · Own delivery charge":""}</small></span><b>৳{(i.price*i.quantity).toLocaleString("en-BD")}</b></li>)}</ul>
+ <div className="checkout-summary-row"><span>Subtotal</span><b>{tk(quote?quote.subtotal:subtotal)}</b></div>
+ {quote&&quote.discount>0&&<div className="checkout-summary-row"><span>Voucher</span><b>−{tk(quote.discount)}</b></div>}
+ <div className="checkout-summary-row"><span>Delivery</span><b>{quote?(shipping===0?"Free":tk(shipping)):"…"}</b></div>
+ {quote&&quote.standardWaived&&<small className="coupon-good">Free delivery unlocked on orders over {tk(quote.freeThreshold)}.</small>}
+ {quote&&quote.hasStandard&&!quote.standardWaived&&quote.freeThreshold!=null&&<small>Add {tk(Math.max(0,quote.freeThreshold-(quote.subtotal-quote.discount)))} more for free delivery on regular items.</small>}
+ {quote&&quote.customFee>0&&<small>Includes {tk(quote.customFee)} for items with their own delivery charge.</small>}
+ {freeCount>0&&<small>{freeCount} item{freeCount===1?"":"s"} ship free.</small>}
+ {quote?.zone&&<small>Delivery area: {quote.zone.name} · about {quote.zone.estimatedDays} day(s)</small>}
+ {estimatedTax>0&&<div className="checkout-summary-row"><span>Tax</span><b>{tk(estimatedTax)}</b></div>}
+ <div className="checkout-total"><span>Total</span><strong>{tk(grandTotal)}</strong></div>
+ {quoteError&&<p className="form-error" role="alert">{quoteError}</p>}</aside></div>}</main><StoreFooter/></>}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { confirmPaymentAtomically } from "@/lib/firestore";
-import { notifyStatus } from "@/lib/notifications/telegram-admin";
+import { notifyStatus, sendPaidOrderTelegram } from "@/lib/notifications/telegram-admin";
 
 const PROVIDERS = new Set(["BKASH", "NAGAD", "ROCKET"]);
 
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     if (!confirmed && result.reason === "evidence_mismatch") {
       return NextResponse.json({ ok: true, matched: false, message: "Payment evidence changed; manual review required." }, { status: 409 });
     }
-    if (confirmed) await notifyStatus(o.id);
+    if (confirmed) await sendPaidOrderTelegram(o.id, "SMS auto-match");
     return NextResponse.json({ ok: true, matched: true, confirmed });
   } catch (error: unknown) {
     // The database unique constraint on (gatewayId, providerTransactionId) is

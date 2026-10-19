@@ -9,7 +9,8 @@ type Gateway = {
   publicConfig?: Record<string, unknown>;
 };
 const types = ["SSLCOMMERZ", "BKASH", "NAGAD", "ROCKET", "BANGLA_QR", "CUSTOM"];
-const initialForm = { name: "", type: "SSLCOMMERZ", mode: "SANDBOX", apiBaseUrl: "", qrImageUrl: "", qrMerchantName: "", merchantNumber: "", storeId: "", storePassword: "" };
+const initialForm = { name: "", type: "SSLCOMMERZ", mode: "SANDBOX", apiBaseUrl: "", qrImageUrl: "", qrMerchantName: "", merchantNumber: "", instructions: "", storeId: "", storePassword: "" };
+const MANUAL_TYPES = ["BKASH", "NAGAD", "ROCKET", "BANGLA_QR", "CUSTOM"];
 const moneyLabel = (s: string) => s.replaceAll("_", " ");
 const gatewayLogoDomain: Record<string, string> = {
   SSLCOMMERZ: "sslcommerz.com",
@@ -58,7 +59,7 @@ export default function PaymentGateways() {
       const r = await fetch("/api/admin/payment-gateways", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
         name: form.name.trim(), type: form.type, mode: form.mode, apiBaseUrl: form.apiBaseUrl || undefined,
         qrImageUrl: form.qrImageUrl || undefined, qrMerchantName: form.qrMerchantName || undefined,
-        publicConfig: ["BKASH", "NAGAD", "ROCKET"].includes(form.type) ? { merchantNumber: form.merchantNumber.trim() } : {},
+        publicConfig: MANUAL_TYPES.includes(form.type) ? { merchantNumber: form.merchantNumber.trim(), instructions: form.instructions.trim() } : {},
         enabled: false, sortOrder: items.length, secrets
       }) });
       const data = await r.json();
@@ -85,11 +86,15 @@ export default function PaymentGateways() {
       const qrImageUrl = window.prompt("Bangla QR image URL", g.qrImageUrl || ""); if (qrImageUrl === null) return;
       const qrMerchantName = window.prompt("QR merchant name", g.qrMerchantName || ""); if (qrMerchantName === null) return;
       Object.assign(body, { qrImageUrl: qrImageUrl || null, qrMerchantName: qrMerchantName || null });
-    } else if (["BKASH", "NAGAD", "ROCKET"].includes(g.type)) {
-      const merchantNumber = window.prompt("Merchant / payment number", String(g.publicConfig?.merchantNumber || "")); if (merchantNumber === null) return;
-      body.publicConfig = { ...(g.publicConfig || {}), merchantNumber: merchantNumber.trim() };
     }
     await patch(g, body);
+  }
+  const [payEdit, setPayEdit] = useState<{ id: string; number: string; instructions: string } | null>(null);
+  function openPayEdit(g: Gateway) { setPayEdit({ id: g.id, number: String(g.publicConfig?.merchantNumber || ""), instructions: String(g.publicConfig?.instructions || "") }); }
+  async function savePayEdit(g: Gateway) {
+    if (!payEdit) return;
+    await patch(g, { publicConfig: { ...(g.publicConfig || {}), merchantNumber: payEdit.number.trim(), instructions: payEdit.instructions.trim() } });
+    setPayEdit(null);
   }
   async function remove(g: Gateway) {
     if (!window.confirm("Delete " + g.name + "? This cannot be undone.")) return;
@@ -128,7 +133,8 @@ export default function PaymentGateways() {
         <label>Provider<select value={form.type} onChange={e => set("type", e.target.value)}>{types.map(x => <option key={x} value={x}>{moneyLabel(x)}</option>)}</select></label>
         <label>Environment<select value={form.mode} onChange={e => set("mode", e.target.value)}><option value="SANDBOX">Sandbox / Test</option><option value="LIVE">Live / Production</option></select></label>
         <label>API base URL (optional)<input type="url" placeholder="https://…" value={form.apiBaseUrl} onChange={e => set("apiBaseUrl", e.target.value)} /></label>
-        {["BKASH", "NAGAD", "ROCKET"].includes(form.type) && <label>Merchant / payment number<input placeholder="01XXXXXXXXX" value={form.merchantNumber} onChange={e => set("merchantNumber", e.target.value)} /></label>}
+        {MANUAL_TYPES.includes(form.type) && <><label>Number customers send money to<input placeholder="01XXXXXXXXX" value={form.merchantNumber} onChange={e => set("merchantNumber", e.target.value)} /></label>
+        <label style={{ gridColumn: "1 / -1" }}>Payment instructions shown to the customer<textarea rows={5} placeholder={"Example:\nSend {amount} by bKash Send Money to {number}.\nUse {order} as the reference, then submit the transaction ID."} value={form.instructions} onChange={e => set("instructions", e.target.value)} /><small>{"You can use {amount}, {order} and {number}; they are filled in for each order."}</small></label></>}
         {form.type === "SSLCOMMERZ" && <><label>Store ID<input required value={form.storeId} onChange={e => set("storeId", e.target.value)} /></label><label>Store password<input type="password" required autoComplete="new-password" value={form.storePassword} onChange={e => set("storePassword", e.target.value)} /></label></>}
         {form.type === "BANGLA_QR" && <><label>Bangla QR image URL<input type="url" placeholder="https://…" value={form.qrImageUrl} onChange={e => set("qrImageUrl", e.target.value)} /></label><label>Merchant name<input value={form.qrMerchantName} onChange={e => set("qrMerchantName", e.target.value)} /></label></>}
         <button className="admin-primary-action" type="submit" disabled={busy}>{busy ? "Saving…" : "Save payment method"}</button>
@@ -145,10 +151,18 @@ export default function PaymentGateways() {
           <div className="admin-module-top"><span className="admin-module-icon" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",overflow:"hidden",background:"#fff",border:"1px solid #e2e8f0",borderRadius:12,width:54,height:54,padding:6}}>{gatewayLogoUrl(g.type) ? <img src={gatewayLogoUrl(g.type)} alt={moneyLabel(g.type)+" logo"} loading="lazy" referrerPolicy="no-referrer" onError={e=>{e.currentTarget.style.display="none";}} style={{width:"100%",height:"100%",objectFit:"contain"}} /> : <span aria-label="Payment provider icon">৳</span>}</span><span className="admin-module-tag">{g.enabled ? "Enabled" : "Disabled"}</span></div>
           <h3>{g.name}</h3><p>{moneyLabel(g.type)} · {g.mode === "LIVE" ? "Live production" : "Sandbox / test"}</p>
           {typeof g.publicConfig?.merchantNumber === "string" && g.publicConfig.merchantNumber.length > 0 && <p>Merchant: {g.publicConfig.merchantNumber}</p>}
+          {typeof g.publicConfig?.instructions === "string" && g.publicConfig.instructions.length > 0 && <p style={{ whiteSpace: "pre-line", fontSize: 13 }}>Instructions: {g.publicConfig.instructions}</p>}
+          {MANUAL_TYPES.includes(g.type) && payEdit?.id === g.id && <div style={{ display: "grid", gap: 8, margin: "8px 0" }}>
+            <label style={{ display: "grid", gap: 4, fontSize: 13 }}>Payment number<input value={payEdit.number} onChange={e => setPayEdit({ ...payEdit, number: e.target.value })} placeholder="01XXXXXXXXX" /></label>
+            <label style={{ display: "grid", gap: 4, fontSize: 13 }}>Instructions for customers<textarea rows={5} value={payEdit.instructions} onChange={e => setPayEdit({ ...payEdit, instructions: e.target.value })} placeholder={"Send {amount} to {number} and use {order} as the reference."} /></label>
+            <small>{"Use {amount}, {order} and {number} as placeholders."}</small>
+            <div style={{ display: "flex", gap: 8 }}><button type="button" onClick={() => void savePayEdit(g)}>Save instructions</button><button type="button" onClick={() => setPayEdit(null)}>Cancel</button></div>
+          </div>}
           {g.apiBaseUrl && <p style={{ overflowWrap: "anywhere" }}>API: {g.apiBaseUrl}</p>}
           {g.type === "BANGLA_QR" && g.qrImageUrl && <img src={g.qrImageUrl} alt="Bangla QR payment code" loading="lazy" style={{ width: 180, maxWidth: "100%", borderRadius: 12, margin: "8px 0" }} />}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: "auto", paddingTop: 12 }}>
             <button type="button" onClick={() => void edit(g)}>Edit</button>
+            {MANUAL_TYPES.includes(g.type) && <button type="button" onClick={() => openPayEdit(g)}>Number &amp; instructions</button>}
             <button type="button" onClick={() => void patch(g, { enabled: !g.enabled })}>{g.enabled ? "Disable" : "Enable"}</button>
             <button type="button" onClick={() => void remove(g)}>Delete</button>
           </div>

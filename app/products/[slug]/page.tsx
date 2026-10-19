@@ -1,4 +1,4 @@
-import type{Metadata}from"next";import Link from "next/link";import {notFound} from "next/navigation";import {db} from "@/lib/prisma";import ProductActions from "./ProductActions";import Gallery from "./Gallery";import {Icon} from "@/components/Icons";import {ProductCard,money,Stars,type HomeProduct} from "@/components/home/ProductCard";import StoreHeader from "@/components/StoreHeader";import StoreFooter from "@/components/StoreFooter";
+import type{Metadata}from"next";import Link from "next/link";import {notFound} from "next/navigation";import {db} from "@/lib/prisma";import ProductActions from "./ProductActions";import Gallery from "./Gallery";import {deliveryLabel,isFreeDelivery} from "@/lib/shipping";import {Icon} from "@/components/Icons";import {ProductCard,money,Stars,type HomeProduct} from "@/components/home/ProductCard";import StoreHeader from "@/components/StoreHeader";import StoreFooter from "@/components/StoreFooter";
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const{slug}=await params;let p:any=null;try{p=await db.product.findUnique({where:{slug},include:{images:{orderBy:{sortOrder:"asc"},take:1}}});}catch(error){console.error("Product metadata error:",error instanceof Error?error.message:String(error));}if(!p)return{};const description=p.description||("Shop "+p.name+" at Store.");return{title:p.name,description,openGraph:{title:p.name,description,images:p.images?.[0]?.url?[{url:p.images[0].url}]:undefined}}}
 export default async function ProductDetails({params}:{params:Promise<{slug:string}>}){
   const {slug}=await params;
@@ -29,11 +29,16 @@ export default async function ProductDetails({params}:{params:Promise<{slug:stri
         const price=sale!=null&&sale>0&&sale<reg?sale:reg;
         const orig=price<reg?reg:(o.compareAtPrice!=null&&Number(o.compareAtPrice)>price?Number(o.compareAtPrice):null);
         const disc=orig?Math.round((1-price/orig)*100):0;
-        return {id:o.id,slug:o.slug,name:o.name,sku:o.sku,stock:Number(o.stock),price,original:disc>0?orig:null,discount:disc,image:first.get(o.id)||null,rating:0,reviews:0,sold:0,soldPct:0,categoryId:o.categoryId||null,category:p.category?.name||null};
+        return {id:o.id,slug:o.slug,name:o.name,sku:o.sku,stock:Number(o.stock),price,original:disc>0?orig:null,discount:disc,image:first.get(o.id)||null,rating:0,reviews:0,sold:0,soldPct:0,categoryId:o.categoryId||null,category:p.category?.name||null,freeDelivery:isFreeDelivery(o)};
       });
     }
   }catch(error){console.error("Related products error:",error instanceof Error?error.message:String(error))}
 
+  let storeSettings:any=null;
+  try{storeSettings=await db.storeSetting.findUnique({where:{id:"store"}})}catch{}
+  const defaultFee=Number(storeSettings?.defaultDeliveryFee??120);
+  const threshold=storeSettings&&storeSettings.freeShippingThreshold===null?null:Number(storeSettings?.freeShippingThreshold??3000);
+  const delivery=deliveryLabel(p,defaultFee,threshold);
   const inStock=p.stock>0;
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify({ "@context":"https://schema.org","@type":"Product",name:p.name,description:p.description||undefined,sku:p.sku,image:p.images.map(i=>i.url),category:p.category?.name,offers:{"@type":"Offer",price:effective,currency:"BDT",availability:inStock?"https://schema.org/InStock":"https://schema.org/OutOfStock"}}).replace(/</g,"\\u003c")}}/>
@@ -51,7 +56,7 @@ export default async function ProductDetails({params}:{params:Promise<{slug:stri
           <p className="pd-desc">{p.description||"Premium quality product."}</p>
           <div className="pd-buy"><ProductActions p={{id:p.id,name:p.name,slug:p.slug,sku:p.sku,price:effective,salePrice:p.salePrice,stock:p.stock,description:p.description,compareAtPrice:p.compareAtPrice,imageUrl:p.images[0]?.url||null}}/></div>
           <ul className="pd-perks">
-            <li><Icon name="truck" size={18}/>Free delivery on orders of ৳3,000 or more</li>
+            <li><Icon name="truck" size={18}/>{delivery}</li>
             <li><Icon name="ticket" size={18}/>Order is confirmed once your payment is verified</li>
             <li><Icon name="user" size={18}/>Track every order from your account</li>
           </ul>

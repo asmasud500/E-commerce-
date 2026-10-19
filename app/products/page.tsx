@@ -4,16 +4,18 @@ import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import {Icon} from "@/components/Icons";
 import {ProductCard,type HomeProduct} from "@/components/home/ProductCard";
+import {isFreeDelivery} from "@/lib/shipping";
 
 export const dynamic="force-dynamic";
 
 const num=(v:any)=>v==null||v===""?null:Number(v);
 
-export default async function ProductsPage({searchParams}:{searchParams:Promise<{q?:string;category?:string;featured?:string;sort?:string}>}) {
+export default async function ProductsPage({searchParams}:{searchParams:Promise<{q?:string;category?:string;featured?:string;sort?:string;delivery?:string}>}) {
   const sp=await searchParams;
   const q=sp.q?.trim()||"";
   const category=sp.category||"";
   const featured=sp.featured==="true";
+  const freeOnly=sp.delivery==="free";
   const sort=["price_asc","price_desc"].includes(sp.sort||"")?String(sp.sort):"";
 
   // Firestore compatibility layer performs relations in application code.
@@ -62,15 +64,17 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
       id:p.id,slug:p.slug,name:p.name,sku:p.sku,stock:Number(p.stock),
       price,original:discount>0?original:null,discount,image:firstImage.get(p.id)||null,
       rating:r?r.sum/r.n:0,reviews:r?.n||0,sold:0,soldPct:0,
-      categoryId:p.categoryId||null,category:p.categoryId?catName.get(p.categoryId)||null:null
+      categoryId:p.categoryId||null,category:p.categoryId?catName.get(p.categoryId)||null:null,
+      freeDelivery:isFreeDelivery(p)
     };
   });
+  if(freeOnly)list=list.filter(p=>p.freeDelivery);
   if(sort==="price_asc")list=[...list].sort((a,b)=>a.price-b.price);
   if(sort==="price_desc")list=[...list].sort((a,b)=>b.price-a.price);
 
   const href=(over:Record<string,string>)=>{
     const p=new URLSearchParams();
-    const cur:Record<string,string>={q,category,featured:featured?"true":"",sort,...over};
+    const cur:Record<string,string>={q,category,featured:featured?"true":"",sort,delivery:freeOnly?"free":"",...over};
     for(const [k,v] of Object.entries(cur))if(v)p.set(k,v);
     const s=p.toString();return "/products"+(s?"?"+s:"");
   };
@@ -89,6 +93,7 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
           </div>
           <div className="pc-side-foot">
             <Link href={href({featured:featured?"":"true"})} className={"pc-check"+(featured?" on":"")} aria-current={featured?"true":undefined}><span aria-hidden="true">{featured&&<Icon name="check" size={14}/>}</span>Featured only</Link>
+            <Link href={href({delivery:freeOnly?"":"free"})} className={"pc-check"+(freeOnly?" on":"")} aria-current={freeOnly?"true":undefined}><span aria-hidden="true">{freeOnly&&<Icon name="check" size={14}/>}</span>Free delivery</Link>
           </div>
         </aside>
         <section aria-label="Product results">
@@ -98,6 +103,7 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
           <form className="pc-tools" action="/products" method="get" role="search">
             {category&&<input type="hidden" name="category" value={category}/>}
             {featured&&<input type="hidden" name="featured" value="true"/>}
+            {freeOnly&&<input type="hidden" name="delivery" value="free"/>}
             <label className="pc-search"><Icon name="search" size={18}/><input name="q" defaultValue={q} placeholder="Search products, brands and more" aria-label="Search products"/></label>
             <select name="sort" defaultValue={sort} aria-label="Sort products"><option value="">Featured first</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option></select>
             <button className="pg-btn" type="submit">Apply</button>

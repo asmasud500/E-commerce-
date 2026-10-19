@@ -48,6 +48,7 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
           <button type="submit" aria-label="Search"><Icon name="search" size={18}/><span>Search</span></button>
         </form>
         <nav className="sh-actions" aria-label="Account and cart">
+          <Link href="/track" className="sh-act"><Icon name="truck" size={22}/><span>Track</span></Link>
           <Link href="/account" className="sh-act"><Icon name="user" size={22}/><span>Account</span></Link>
           <Link href="/wishlist" className="sh-act"><Icon name="heart" size={22}/><span>Wishlist</span></Link>
           <Link href="/cart" className="sh-act" aria-label={count?`Cart, ${count} items`:"Cart"}>

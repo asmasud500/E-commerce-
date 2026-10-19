@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { confirmPaymentAtomically, rejectPendingOrderAtomically } from "@/lib/firestore";
-import { notifyStatus } from "@/lib/notifications/telegram-admin";
+import { notifyStatus, sendPaidOrderTelegram } from "@/lib/notifications/telegram-admin";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           ? "This transaction has already been processed."
           : "Order was already updated or payment evidence changed." }, { status: 409 });
       }
-      try { await notifyStatus(id); } catch {}
+      try { await sendPaidOrderTelegram(id, "Admin dashboard"); } catch {}
       return NextResponse.json({ ok: true, status: "CONFIRMED" });
     }
 

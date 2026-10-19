@@ -2,9 +2,9 @@ import {NextRequest,NextResponse} from "next/server";
 import {db} from "@/lib/prisma";
 import {createOrderWithStockReservation} from "@/lib/firestore";
 import {z} from "zod";
-import {sendNewOrderTelegram} from "@/lib/notifications/telegram-admin";
+import {sendNewOrderTelegram,notifyLowStock} from "@/lib/notifications/telegram-admin";
 import {verifyCustomerToken} from "@/lib/auth/customer";
-import {getEffectivePrice} from "@/lib/products/pricing";
+import {buildQuote,QuoteError} from "@/lib/checkout";
 import {rateLimit} from "@/lib/security/rate-limit";
 import {createOrderAccessToken} from "@/lib/auth/order-access";
 
@@ -28,40 +28,17 @@ export async function POST(req:NextRequest){
   }
   const unique=[...new Set(input.items.map(i=>i.productId))];if(unique.length!==input.items.length)return NextResponse.json({error:"Duplicate products are not allowed."},{status:400});
   const gateway=await db.paymentGateway.findFirst({where:{id:input.paymentGatewayId,enabled:true}});if(!gateway)return NextResponse.json({error:"Selected payment gateway is unavailable."},{status:400});
-  const [products,flashSales]=await Promise.all([
-   db.product.findMany({where:{id:{in:unique},published:true}}),
-   db.flashSale.findMany({where:{active:true}})
-  ]);if(products.length!==unique.length)return NextResponse.json({error:"One or more products are unavailable."},{status:400});
-  const byId=new Map<string, any>(products.map((p:any)=>[p.id,p] as [string, any]));let subtotal=0;const orderItems:Array<{productId:string;name:string;unitPrice:number;quantity:number;lineTotal:number}>=[];
-  for(const item of input.items){const p=byId.get(item.productId)!;const unitPrice=getEffectivePrice(p,flashSales),lineTotal=unitPrice*item.quantity;subtotal+=lineTotal;orderItems.push({productId:p.id,name:p.name,unitPrice,quantity:item.quantity,lineTotal});}
-  let discount=0;
-  if(input.couponCode){
-   const c=await db.coupon.findFirst({where:{code:input.couponCode.toUpperCase(),active:true}});
-   if(!c||(c.expiresAt&&c.expiresAt<new Date())||(c.minOrder&&subtotal<Number(c.minOrder)))return NextResponse.json({error:"Invalid or unavailable coupon."},{status:400});
-   discount=c.type==="PERCENT"?Math.min(subtotal,subtotal*Number(c.value)/100):c.type==="FIXED"?Math.min(subtotal,Number(c.value)):0;
-   if(c.type!=="PERCENT"&&c.type!=="FIXED")return NextResponse.json({error:"Unsupported coupon type."},{status:400});
-  }
-  const [storedSettings,activeZones]=await Promise.all([
-   db.storeSetting.findUnique({where:{id:"store"}}),
-   db.deliveryZone.findMany({where:{active:true}})
-  ]);
-  const settings={defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,...(storedSettings||{})};
-  const normalizedDistrict=input.shippingDistrict.trim().toLocaleLowerCase();
-  const normalizedUpazila=input.shippingUpazila.trim().toLocaleLowerCase();
-  const zone=activeZones.find((z:any)=>String(z.district||"").trim().toLocaleLowerCase()===normalizedDistrict && (!z.upazila || String(z.upazila).trim().toLocaleLowerCase()===normalizedUpazila) && (!z.division || String(z.division).trim().toLocaleLowerCase()===input.shippingDivision.trim().toLocaleLowerCase()));
-  const deliveryFee=zone?Number(zone.fee||0):Number(settings.defaultDeliveryFee||0);
-  const freeThreshold=zone?.freeAbove!=null?Number(zone.freeAbove):settings.freeShippingThreshold==null?null:Number(settings.freeShippingThreshold);
-  const taxableAmount=Math.max(0,subtotal-discount);
-  const shippingFee=freeThreshold!=null&&taxableAmount>=freeThreshold?0:deliveryFee;
-  const taxAmount=settings.taxEnabled?Math.round(taxableAmount*Number(settings.taxRate||0))/100:0;
-  const total=taxableAmount+shippingFee+taxAmount;
+  const quote=await buildQuote({items:input.items,couponCode:input.couponCode,shippingDivision:input.shippingDivision,shippingDistrict:input.shippingDistrict,shippingUpazila:input.shippingUpazila},{strictCoupon:true});
+  const {subtotal,discount,shipping:shippingFee,taxAmount,total}=quote;
+  const orderItems=quote.lines.map(l=>({productId:l.productId,name:l.name,unitPrice:l.unitPrice,quantity:l.quantity,lineTotal:l.lineTotal}));
   const orderNumber="ORD-"+Date.now().toString(36).toUpperCase()+"-"+crypto.randomUUID().slice(0,5).toUpperCase(),expiresAt=new Date(Date.now()+30*60*1000);
   const order=await createOrderWithStockReservation({
-   orderData:{orderNumber,idempotencyKey:idempotencyKey||null,userId:session?.userId||null,customerName:input.customerName,customerPhone:input.customerPhone,customerEmail:input.customerEmail||null,shippingAddress:input.shippingAddress,shippingDistrict:input.shippingDistrict,shippingDivision:input.shippingDivision,shippingUpazila:input.shippingUpazila,shippingPostalCode:input.shippingPostalCode,shippingLocationDescription:input.shippingLocationDescription,shippingLatitude:input.shippingLatitude??null,shippingLongitude:input.shippingLongitude??null,subtotal,shippingFee,taxAmount,discount,total,paymentGatewayId:gateway.id},
+   orderData:{orderNumber,idempotencyKey:idempotencyKey||null,userId:session?.userId||null,customerName:input.customerName,customerPhone:input.customerPhone,customerEmail:input.customerEmail||null,shippingAddress:input.shippingAddress,shippingDistrict:input.shippingDistrict,shippingDivision:input.shippingDivision,shippingUpazila:input.shippingUpazila,shippingPostalCode:input.shippingPostalCode,shippingLocationDescription:input.shippingLocationDescription,shippingLatitude:input.shippingLatitude??null,shippingLongitude:input.shippingLongitude??null,subtotal,shippingFee,taxAmount,discount,total,couponCode:quote.couponCode||null,paymentGatewayId:gateway.id},
    items:orderItems,
    expiresAt
   });
   sendNewOrderTelegram(order.id).catch(()=>{});
+  notifyLowStock(input.items.map(i=>i.productId)).catch(()=>{});
   return NextResponse.json({orderId:order.id,orderNumber:order.orderNumber,total:Number(order.total),discount:Number(order.discount),shippingFee,taxAmount,gateway:{id:gateway.id,type:gateway.type,mode:gateway.mode},reservationExpiresAt:expiresAt,paymentToken:await createOrderAccessToken(order.id)},{status:201});
- }catch(error){console.error("Order creation error:",error instanceof Error?error.message:String(error));return NextResponse.json({error:"Unable to create order. Please check your information and try again."},{status:400});}
+ }catch(error){if(error instanceof QuoteError)return NextResponse.json({error:error.message},{status:error.status});console.error("Order creation error:",error instanceof Error?error.message:String(error));return NextResponse.json({error:"Unable to create order. Please check your information and try again."},{status:400});}
 }

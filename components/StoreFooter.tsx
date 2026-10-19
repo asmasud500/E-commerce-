@@ -36,6 +36,7 @@ export default function StoreFooter(){
         </div>
         <div>
           <h3>Your account</h3>
+          <Link href="/track">Track your order</Link>
           <Link href="/account">Orders and profile</Link>
           <Link href="/wishlist">Wishlist</Link>
           <Link href="/products">Continue shopping</Link>
