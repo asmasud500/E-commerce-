@@ -90,4 +90,93 @@ async function resolve(model:string,where:any){if(where?.id)return rawGet(model,
 function modelApi(model:string){return {findUnique:async(a:any={})=>resolve(model,a.where||{}).then((r:any)=>r?include(withModel(r,model),a.include,a.select):null),findFirst:async(a:any={})=>(await query(model,{...a,take:1}))[0]||null,findMany:async(a:any={})=>query(model,a),count:async(a:any={})=>(await query(model,{where:a.where})).length,aggregate:async(a:any={})=>{const rows=await query(model,{where:a.where});const out:any={};if(a._sum)for(const k of Object.keys(a._sum))out._sum={[k]:rows.reduce((s,r)=>s+Number(r[k]||0),0)};return out;},create:async(a:any={})=>{const i=a.data.id||id();const nested:AnyObj={};const plain:AnyObj={};for(const [k,v] of Object.entries(a.data)){const rel=relationMap[model]?.[k];if(rel&&v&&typeof v==="object"&&!Array.isArray(v)&&"create"in(v as any)&&!["user","category","product","paymentGateway","order"].includes(k))nested[k]={rel,rows:Array.isArray((v as any).create)?(v as any).create:[(v as any).create]};else plain[k]=v;}const d={...withDefaults(model,plain),id:i,createdAt:a.data.createdAt||new Date(),updatedAt:a.data.updatedAt||new Date()};const r=await write(model,i,d);for(const {rel,rows} of Object.values(nested) as any[]){const [cm,fk]=rel;for(const row of rows){const ci=row.id||id();await write(cm,ci,{...withDefaults(cm,row),id:ci,[fk]:i,createdAt:row.createdAt||new Date(),updatedAt:row.updatedAt||new Date()});}}return include(withModel(r,model),a.include,a.select);},createMany:async(a:any={})=>{for(const original of a.data||[]){const i=original.id||id();await write(model,i,{...withDefaults(model,original),id:i,createdAt:original.createdAt||new Date(),updatedAt:original.updatedAt||new Date()});}return {count:(a.data||[]).length};},update:async(a:any={})=>{const existing=await resolve(model,a.where||{});if(!existing)throw new Error("Not found");const r=await applyData(model,existing.id,{...a.data,updatedAt:new Date()});return include(withModel(r,model),a.include,a.select);},updateMany:async(a:any={})=>{const rows=await query(model,{where:a.where});for(const r of rows)await applyData(model,r.id,a.data);return {count:rows.length};},delete:async(a:any={})=>{const r=await resolve(model,a.where||{});if(!r)throw new Error("Not found");await remove(model,r.id);return r;},deleteMany:async(a:any={})=>{const rows=await query(model,{where:a.where});for(const r of rows)await remove(model,r.id);return {count:rows.length};},upsert:async(a:any={})=>{const r=await resolve(model,a.where||{});return r?modelApi(model).update({where:{id:r.id},data:a.update}):modelApi(model).create({data:{...a.create,id:compoundId(a.where||{})}});}};}
 const db:any=new Proxy({} as AnyObj, {get:(target,model:string)=>model in target?target[model]:modelApi(model)});
 db.$transaction=async(fn:any)=>fn(db);
+
+/**
+ * Atomically decrements inventory and creates the order, order items, and stock
+ * reservations in one native Firestore read-write transaction. Keep this
+ * checkout path separate from the Prisma-compatible $transaction shim below.
+ */
+export async function createOrderWithStockReservation(args: {
+  orderData: AnyObj;
+  items: Array<{ productId: string; name: string; unitPrice: number; quantity: number; lineTotal: number }>;
+  expiresAt: Date;
+}) {
+  const orderId = id();
+  const now = new Date();
+  const order = { ...withDefaults("order", args.orderData), id: orderId, createdAt: now, updatedAt: now };
+  const txResponse: any = await req(":beginTransaction", {
+    method: "POST",
+    body: JSON.stringify({ options: { readWrite: {} } })
+  });
+  const transaction = String(txResponse?.transaction || "");
+  if (!transaction) throw new Error("Firestore did not create a checkout transaction");
+
+  try {
+    const productSnapshots = new Map<string, { document: any; product: AnyObj }>();
+    for (const item of args.items) {
+      if (productSnapshots.has(item.productId)) throw new Error("Duplicate products are not allowed");
+      const document: any = await req(`/products/${encodeURIComponent(item.productId)}?transaction=${encodeURIComponent(transaction)}`);
+      const product = docToObj(document) as AnyObj | null;
+      if (!product || product.published !== true) throw new Error("Product is unavailable");
+      const stock = Number(product.stock ?? 0);
+      if (!Number.isFinite(stock) || stock < item.quantity) throw new Error("Stock changed during checkout");
+      productSnapshots.set(item.productId, { document, product });
+    }
+
+    const writes: AnyObj[] = [];
+    for (const item of args.items) {
+      const snapshot = productSnapshots.get(item.productId)!;
+      const product = snapshot.product;
+      writes.push({
+        update: {
+          name: snapshot.document.name,
+          fields: { stock: enc(Number(product.stock) - item.quantity), updatedAt: enc(now) }
+        },
+        updateMask: { fieldPaths: ["stock", "updatedAt"] }
+      });
+    }
+
+    const orderItems = args.items.map(item => ({
+      ...withDefaults("orderItem", item), id: id(), orderId, createdAt: now, updatedAt: now
+    }));
+    const reservations = args.items.map(item => ({
+      ...withDefaults("stockReservation", { orderId, productId: item.productId, quantity: item.quantity, expiresAt: args.expiresAt, status: "HELD" }),
+      id: id(), orderId, productId: item.productId, quantity: item.quantity, expiresAt: args.expiresAt,
+      status: "HELD", createdAt: now, updatedAt: now
+    }));
+
+    const addCreate = (model: string, value: AnyObj) => writes.push({
+      update: {
+        name: `projects/${""}`,
+        fields: {}
+      }
+    });
+    const project = await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id");
+    if (!project) throw new Error("FIREBASE_PROJECT_ID is required");
+    const documentName = (collection: string, documentId: string) =>
+      `projects/${project}/databases/(default)/documents/${collection}/${documentId}`;
+    const createDoc = (collection: string, value: AnyObj) => ({
+      update: {
+        name: documentName(collection, value.id),
+        fields: Object.fromEntries(Object.entries(stripData(value)).map(([key, val]) => [key, enc(val)]))
+      },
+      currentDocument: { exists: false }
+    });
+    writes.push(createDoc("orders", order));
+    for (const item of orderItems) writes.push(createDoc("orderItems", item));
+    for (const reservation of reservations) writes.push(createDoc("stockReservations", reservation));
+
+    await req(":commit", {
+      method: "POST",
+      body: JSON.stringify({ transaction, writes })
+    });
+    return order;
+  } catch (error) {
+    try {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) });
+    } catch {}
+    throw error;
+  }
+}
+
 export {db};
