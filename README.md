@@ -10,6 +10,8 @@ Next.js 15 + React 19 e-commerce application with a custom Firestore REST data a
 
 Do not run `prisma db push` expecting it to configure the live application's Firestore database; it only affects the PostgreSQL database in `DATABASE_URL`.
 
+Native payment and stock transactions use compound Firestore queries. Before enabling these paths in a Firebase project, deploy the checked-in indexes with `firebase deploy --only firestore:indexes` from the repository root (after authenticating the Firebase CLI and selecting the intended project). Index deployment is a separate Firebase-project operation and is not performed by the GitHub code commit.
+
 ## Local setup
 
 1. Copy `.env.example` to `.env`.
