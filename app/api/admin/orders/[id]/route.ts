@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {db} from "@/lib/prisma";
+import {rejectPendingOrderAtomically} from "@/lib/firestore";
 import {readAdminSession} from "@/lib/auth/admin";
 const next:Record<string,string[]>={PENDING:["CONFIRMED","CANCELLED"],CONFIRMED:["PROCESSING","CANCELLED"],PROCESSING:["SHIPPED"],SHIPPED:["DELIVERED"],DELIVERED:[],CANCELLED:[],REFUNDED:[]};
 const inputSchema=z.object({
@@ -21,6 +22,11 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
   if(input.status&&input.status!==before.status&&!next[before.status]?.includes(input.status))return NextResponse.json({error:`Invalid transition: ${before.status} → ${input.status}`},{status:409});
   if(input.status==="CONFIRMED"&&before.paymentStatus!=="PAID")return NextResponse.json({error:"Payment must be paid before confirmation."},{status:409});
   if((input.courierName!==undefined||input.trackingNumber!==undefined)&&!["PROCESSING","SHIPPED","DELIVERED"].includes(input.status||before.status))return NextResponse.json({error:"Courier and tracking details can be saved after an order enters fulfilment."},{status:409});
+  if(input.status==="CANCELLED"&&before.paymentStatus==="PENDING"){
+   const result=await rejectPendingOrderAtomically(id,"ADMIN_ORDER_CANCELLED");
+   if(!result.rejected)return NextResponse.json({error:"Order was already updated. Refresh and try again."},{status:409});
+   return NextResponse.json(await db.order.findUnique({where:{id}}));
+  }
   const data:Record<string,unknown>={};
   if(input.status&&input.status!==before.status){data.status=input.status;if(input.status==="SHIPPED")data.shippedAt=new Date();if(input.status==="DELIVERED")data.deliveredAt=new Date();}
   if(input.courierName!==undefined)data.courierName=input.courierName||null;
