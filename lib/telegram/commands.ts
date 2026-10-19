@@ -40,7 +40,7 @@ Photo পাঠিয়ে caption এ <code>/photo SKU</code> দিলে ছ
 <b>Payment</b>: /gateways · /paynumber ID NUMBER · /payinfo ID text · /gatewayon ID · /gatewayoff ID`;
 
 export async function handleTextCommand(text:string,photo?:{fileId:string},messageId?:number,parentMenu?:string):Promise<boolean>{
-  const respond=(body:string,extra:Record<string,any>={})=>{const markup=extra.reply_markup as any;const rows=markup?.inline_keyboard||[];const nav=[{text:"⬅️ Back",callback_data:"nav:back:"+((parentMenu&&["orders","products","inventory","delivery","promotions","payments","help"].includes(parentMenu))?parentMenu:"main")},{text:"✖️ Cancel",callback_data:"nav:cancel"}];const hasNav=rows.some((row:any[])=>row.some((b:any)=>b.callback_data==="nav:back"||b.callback_data==="nav:cancel"));return reply(body,{...extra,reply_markup:{...(markup||{}),inline_keyboard:hasNav?rows:[...rows,nav]}},messageId)};
+  const respond=(body:string,extra:Record<string,any>={})=>{const markup=extra.reply_markup as any;const rows=markup?.inline_keyboard||[];const nav=[{text:"⬅️ Back",callback_data:"nav:back:"+((parentMenu&&["orders","products","inventory","delivery","promotions","payments","help"].includes(parentMenu))?parentMenu:"main")},{text:"✖️ Cancel",callback_data:"nav:cancel"}];const hasNav=rows.some((row:any[])=>row.some((b:any)=>String(b.callback_data||"").startsWith("nav:back")||b.callback_data==="nav:cancel"));return reply(body,{...extra,reply_markup:{...(markup||{}),inline_keyboard:hasNav?rows:[...rows,nav]}},messageId)};
   const trimmed=text.trim();
   const m=/^(\/\S+)\s*([\s\S]*)$/.exec(trimmed);
   if(!m)return false;
