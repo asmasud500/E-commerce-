@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "stockReservations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "orderId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "paymentTransactions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gatewayId", "order": "ASCENDING" },
+        { "fieldPath": "providerTransactionId", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
