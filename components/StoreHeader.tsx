@@ -57,6 +57,16 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
         </nav>
       </div>
     </header>
+    <nav className="sh-subnav" aria-label="Main shopping navigation">
+      <div className="sh-subnav-in">
+        <Link href="/products" className="sh-all-cats"><Icon name="menu" size={17}/> All Categories</Link>
+        <Link href="/products?featured=true">Featured</Link>
+        <Link href="/products">New Arrivals</Link>
+        <Link href="/products">Deals & Offers</Link>
+        <span className="sh-subnav-spacer"/>
+        <span className="sh-delivery"><Icon name="mapPin" size={15}/> Shopping across Bangladesh</span>
+      </div>
+    </nav>
     </>
   );
 }
