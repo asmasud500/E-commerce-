@@ -44,7 +44,7 @@ export default function AdminProducts(){
   <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
    <button type="button" onClick={()=>downloadCSV("product-import-template.csv",template)} style={{padding:"10px 14px",borderRadius:8,border:"1px solid #cbd5e1",background:"#fff"}}>Download Template</button>
    <button type="button" onClick={exportProducts} style={{padding:"10px 14px",borderRadius:8,border:"1px solid #cbd5e1",background:"#fff"}}>Export Current Products</button>
-   <button type="button" disabled={busy} onClick={()=>fileRef.current?.click()} style={{padding:"10px 14px",borderRadius:8,border:0,background:"#0f766e",color:"#fff",opacity:busy?.65:1}}>{busy?"Importing…":"Choose CSV and Import"}</button>
+   <button type="button" disabled={busy} onClick={()=>fileRef.current?.click()} style={{padding:"10px 14px",borderRadius:8,border:0,background:"#0f766e",color:"#fff",opacity:busy ? 0.65 : 1}}>{busy?"Importing…":"Choose CSV and Import"}</button>
    <input ref={fileRef} type="file" accept=".csv,text/csv" style={{display:"none"}} onChange={e=>importFile(e.target.files?.[0])}/>
   </div>
   <p style={{fontSize:13,color:"#475569",marginBottom:0}}>SKU দিয়ে existing product match হবে। Existing product-এর blank cell অপরিবর্তিত থাকবে; নতুন SKU যোগ করতে name ও price আবশ্যক। প্রতি import-এ সর্বোচ্চ 500 row। ভুল row আলাদা report-এ দেখাবে।</p>
