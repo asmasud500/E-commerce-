@@ -31,7 +31,7 @@ export const HELP=`<b>🤖 Store Admin Bot</b>
 <b>Orders</b>: /orders /pending /today /sales /order NO /search NO|PHONE
 /track NO COURIER TRACKING-ID
 <b>Stock</b>: /stock · /lowstock · /addstock SKU QTY · /removestock SKU QTY · /setstock SKU QTY
-<b>Products</b>: /product SKU · /newproduct নাম | দাম | stock | category | description
+<b>Products</b>: /products · /product SKU · /newproduct নাম | দাম | stock | category | description
 /setprice SKU PRICE [SALE] · /describe SKU text · /publish SKU · /unpublish SKU
 Photo পাঠিয়ে caption এ <code>/photo SKU</code> দিলে ছবি যোগ হবে (caption এ /newproduct দিলে নতুন product-এ ছবি)
 <b>Delivery</b>: /delivery SKU free|default|FEE · /shipping · /shipping FEE [FREE-OVER] · /freelist
@@ -68,6 +68,13 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
     await db.product.update({where:{id:p.id},data:{stock:next}});
     await audit("STOCK_CHANGED_TELEGRAM","Product",p.id,{from:old,to:next,cmd});
     await respond("✅ "+esc(p.name)+"\nStock: "+old+" → <b>"+next+"</b>");return true;
+  }
+  if(cmd==="/products"){
+    const ps=await db.product.findMany({orderBy:{createdAt:"desc"},take:10,select:{id:true,name:true,sku:true,price:true,salePrice:true,stock:true,published:true}});
+    const lines=ps.map((p:any,i:number)=>(i+1)+". <b>"+esc(p.name)+"</b>\\n   <code>"+esc(p.sku)+"</code> · "+tk(p.salePrice??p.price)+" · stock "+p.stock+" · "+(p.published?"Published":"Draft"));
+    const inline_keyboard=ps.map((p:any)=>[{text:"📦 "+String(p.name).slice(0,32),callback_data:"run:/product "+p.sku}]);
+    inline_keyboard.push([{text:"📊 Inventory",callback_data:"run:/stock"},{text:"⚠️ Low Stock",callback_data:"run:/lowstock"}]);
+    await respond("<b>📦 PRODUCT CATALOG</b>\\n━━━━━━━━━━━━━━━━━━\\n"+(lines.length?lines.join("\\n\\n"):"কোনো product নেই"),{reply_markup:{inline_keyboard}});return true;
   }
   if(cmd==="/product"){
     const p=await findProduct(arg);if(!p){await respond("ব্যবহার: <code>/product SKU</code> (পাওয়া যায়নি)");return true}
