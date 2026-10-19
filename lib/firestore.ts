@@ -177,4 +177,192 @@ export async function createOrderWithStockReservation(args: {
   }
 }
 
+
+type AtomicPaymentArgs = {
+  orderId: string;
+  gatewayId: string;
+  providerTransactionId: string;
+  reference: string | null;
+  amount: number;
+  rawResponse: AnyObj;
+  expectedPaymentReference?: string;
+  expectedSenderLast4?: string;
+  expectedProvider?: string;
+  autoConfirmed?: boolean;
+  auditAction?: string;
+};
+
+async function transactionGet(collection: string, documentId: string, transaction: string) {
+  try {
+    return await req(`/${collection}/${encodeURIComponent(documentId)}?transaction=${encodeURIComponent(transaction)}`);
+  } catch (error) {
+    if (String((error as Error)?.message || error).startsWith("Firestore 404")) return null;
+    throw error;
+  }
+}
+
+async function transactionQuery(collection: string, filters: Array<{ field: string; value: any }>, transaction: string) {
+  const fieldFilters = filters.map(filter => ({
+    fieldFilter: { field: { fieldPath: filter.field }, op: "EQUAL", value: enc(filter.value) }
+  }));
+  const where = fieldFilters.length === 1 ? fieldFilters[0] : { compositeFilter: { op: "AND", filters: fieldFilters } };
+  const response: any = await req(":runQuery", {
+    method: "POST",
+    body: JSON.stringify({ structuredQuery: { from: [{ collectionId: collection }], where }, transaction })
+  });
+  return (Array.isArray(response) ? response : []).filter((row: any) => row.document).map((row: any) => row.document);
+}
+
+function firestoreDocumentName(collection: string, documentId: string, project: string) {
+  return `projects/${project}/databases/(default)/documents/${collection}/${documentId}`;
+}
+function firestoreCreateWrite(collection: string, value: AnyObj, project: string) {
+  return {
+    update: {
+      name: firestoreDocumentName(collection, value.id, project),
+      fields: Object.fromEntries(Object.entries(stripData(value)).map(([key, val]) => [key, enc(val)]))
+    },
+    currentDocument: { exists: false }
+  };
+}
+function firestorePatchWrite(collection: string, document: any, values: AnyObj, project: string) {
+  return {
+    update: {
+      name: document.name || firestoreDocumentName(collection, String(document.id), project),
+      fields: Object.fromEntries(Object.entries(values).map(([key, val]) => [key, enc(val)]))
+    },
+    updateMask: { fieldPaths: Object.keys(values) }
+  };
+}
+
+/**
+ * Atomically changes a pending order to paid, records a unique provider
+ * transaction, and confirms all held stock reservations.
+ */
+export async function confirmPaymentAtomically(args: AtomicPaymentArgs) {
+  const transactionId = await deterministicId("payment:" + args.gatewayId + ":" + args.providerTransactionId);
+  const now = new Date();
+  const started: any = await req(":beginTransaction", { method: "POST", body: JSON.stringify({ options: { readWrite: {} } }) });
+  const transaction = String(started?.transaction || "");
+  if (!transaction) throw new Error("Firestore did not create a payment transaction");
+  try {
+    const orderDocument: any = await transactionGet("orders", args.orderId, transaction);
+    const order = docToObj(orderDocument) as AnyObj | null;
+    if (!order) { await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {}); return { confirmed: false, reason: "not_found" as const }; }
+    if (order.paymentStatus !== "PENDING" || order.status !== "PENDING") {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { confirmed: false, reason: order.paymentStatus === "PAID" ? "duplicate" as const : "state_changed" as const };
+    }
+    if (args.expectedPaymentReference !== undefined &&
+        (order.paymentReference !== args.expectedPaymentReference ||
+         order.paymentSenderLast4 !== args.expectedSenderLast4 ||
+         order.paymentProvider !== args.expectedProvider)) {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { confirmed: false, reason: "evidence_mismatch" as const };
+    }
+    if (String(order.paymentGatewayId || "") !== args.gatewayId || Math.abs(Number(order.total) - args.amount) > 0.01) {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { confirmed: false, reason: "amount_or_gateway_mismatch" as const };
+    }
+    const existingPayment: any = await transactionGet("paymentTransactions", transactionId, transaction);
+    if (existingPayment) {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { confirmed: false, reason: "duplicate_transaction" as const };
+    }
+    const reservationDocs = await transactionQuery("stockReservations", [
+      { field: "orderId", value: args.orderId }, { field: "status", value: "HELD" }
+    ], transaction);
+    const project = await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id");
+    if (!project) throw new Error("FIREBASE_PROJECT_ID is required");
+    const writes: AnyObj[] = [
+      firestorePatchWrite("orders", orderDocument, {
+        paymentStatus: "PAID", status: "CONFIRMED", paymentReference: args.reference,
+        ...(args.autoConfirmed ? { paymentAutoConfirmedAt: now } : {}),
+        updatedAt: now
+      }, project),
+      firestoreCreateWrite("paymentTransactions", {
+        id: transactionId, orderId: args.orderId, gatewayId: args.gatewayId,
+        reference: args.reference, providerTransactionId: args.providerTransactionId,
+        amount: args.amount, status: "PAID", rawResponse: args.rawResponse,
+        verifiedAt: now, createdAt: now, updatedAt: now
+      }, project)
+    ];
+    for (const reservationDocument of reservationDocs) {
+      writes.push(firestorePatchWrite("stockReservations", reservationDocument, { status: "CONFIRMED", updatedAt: now }, project));
+    }
+    if (args.auditAction) {
+      writes.push(firestoreCreateWrite("auditLogs", {
+        id: id(), action: args.auditAction, entity: "Order", entityId: args.orderId,
+        metadata: { providerTransactionId: args.providerTransactionId }, createdAt: now, updatedAt: now
+      }, project));
+    }
+    await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
+    return { confirmed: true, reason: "confirmed" as const };
+  } catch (error) {
+    await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+    throw error;
+  }
+}
+
+/**
+ * Atomically releases held reservations for an expired pending order and restores
+ * each product's stock exactly once.
+ */
+export async function releaseOrderStockAtomically(orderId: string, now = new Date()) {
+  const started: any = await req(":beginTransaction", { method: "POST", body: JSON.stringify({ options: { readWrite: {} } }) });
+  const transaction = String(started?.transaction || "");
+  if (!transaction) throw new Error("Firestore did not create a stock-release transaction");
+  try {
+    const orderDocument: any = await transactionGet("orders", orderId, transaction);
+    const order = docToObj(orderDocument) as AnyObj | null;
+    if (!order || order.status !== "PENDING" || order.paymentStatus !== "PENDING") {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { released: 0, cancelled: false };
+    }
+    const reservations = await transactionQuery("stockReservations", [
+      { field: "orderId", value: orderId }, { field: "status", value: "HELD" }
+    ], transaction);
+    const expired = reservations.filter((doc: any) => {
+      const row = docToObj(doc) as AnyObj;
+      return row.expiresAt && new Date(row.expiresAt).getTime() < now.getTime();
+    });
+    if (!expired.length) {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { released: 0, cancelled: false };
+    }
+    const products = new Map<string, { document: any; product: AnyObj }>();
+    for (const reservationDocument of expired) {
+      const reservation = docToObj(reservationDocument) as AnyObj;
+      if (products.has(String(reservation.productId))) continue;
+      const productDocument: any = await transactionGet("products", String(reservation.productId), transaction);
+      const product = docToObj(productDocument) as AnyObj | null;
+      if (!product) throw new Error("Reserved product is missing; stock release needs manual review");
+      products.set(String(reservation.productId), { document: productDocument, product });
+    }
+    const project = await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id");
+    if (!project) throw new Error("FIREBASE_PROJECT_ID is required");
+    const writes: AnyObj[] = [];
+    for (const reservationDocument of expired) {
+      writes.push(firestorePatchWrite("stockReservations", reservationDocument, { status: "RELEASED", updatedAt: now }, project));
+    }
+    const increments = new Map<string, number>();
+    for (const reservationDocument of expired) {
+      const reservation = docToObj(reservationDocument) as AnyObj;
+      increments.set(String(reservation.productId), (increments.get(String(reservation.productId)) || 0) + Number(reservation.quantity || 0));
+    }
+    for (const [productId, quantity] of increments) {
+      const snapshot = products.get(productId)!;
+      writes.push(firestorePatchWrite("products", snapshot.document, {
+        stock: Number(snapshot.product.stock || 0) + quantity, updatedAt: now
+      }, project));
+    }
+    writes.push(firestorePatchWrite("orders", orderDocument, { status: "CANCELLED", updatedAt: now }, project));
+    await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
+    return { released: expired.length, cancelled: true };
+  } catch (error) {
+    await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+    throw error;
+  }
+}
+
 export {db};
