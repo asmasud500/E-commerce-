@@ -9,7 +9,7 @@ export async function settlePayment(orderNumber:string,payload:Record<string,unk
  const config={...((gateway.publicConfig||{}) as Record<string,unknown>),apiBaseUrl:gateway.apiBaseUrl||undefined,qrImageUrl:gateway.qrImageUrl||undefined};
  const verification=await adapter.verify(payload,config,secrets);if(!verification.ok)return {paid:false};
  const verifiedAmount=Number(verification.amount);if(!Number.isFinite(verifiedAmount)||Math.abs(verifiedAmount-Number(order.total))>0.01)throw new Error("Payment amount missing or mismatch");
- const reference=verification.reference||String(payload.reference||"");if(gateway.type==="SSLCOMMERZ"&&reference!==order.orderNumber)throw new Error("Verified transaction reference mismatch");const providerId=verification.providerTransactionId||String(payload.providerTransactionId||payload.tran_id||"")||null;if(gateway.type==="SSLCOMMERZ"&&!providerId)throw new Error("Verified provider transaction ID is missing");const providerId=verification.providerTransactionId||String(payload.providerTransactionId||payload.tran_id||"");
+ const reference=verification.reference||String(payload.reference||"");if(gateway.type==="SSLCOMMERZ"&&reference!==order.orderNumber)throw new Error("Verified transaction reference mismatch");const providerId=verification.providerTransactionId||String(payload.providerTransactionId||payload.tran_id||"");
  if(!providerId)throw new Error("Verified provider transaction ID is missing");
  const result=await confirmPaymentAtomically({
   orderId:order.id,gatewayId:gateway.id,providerTransactionId:providerId,
