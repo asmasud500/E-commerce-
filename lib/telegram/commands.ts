@@ -83,7 +83,7 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
   }
   if(cmd==="/newproduct"){
     const parts=arg.split("|").map(x=>x.trim());const [name,priceS,stockS,catName,...d]=parts;const price=num(priceS),stock=stockS?num(stockS):0;
-    if(!name||!Number.isFinite(price)||price<0||!Number.isInteger(stock)||stock<0){await respond("ব্যবহার:\n<code>/newproduct নাম | দাম | stock | category | description</code>\n(ছবি সহ পাঠাতে ছবির caption এ লিখুন)");return true}
+    if(!name||!Number.isFinite(price)||price<0||!Number.isInteger(stock)||stock<0){await respond("<b>➕ নতুন Product তৈরি</b>\\n━━━━━━━━━━━━━━━━━━\\n<b>ব্যবহারের নিয়ম</b>\\n<code>/newproduct নাম | দাম | stock | category | description</code>\\n\\n<b>উদাহরণ</b>\\n<code>/newproduct Cotton T-Shirt | 650 | 25 | Clothing | Premium cotton T-shirt</code>\\n\\n<b>🖼️ ছবি যোগ করতে</b>\\nছবি পাঠিয়ে Caption-এ একই <code>/newproduct ...</code> কমান্ডটি লিখুন।\\n\\n<i>টিপস: দাম ও stock সংখ্যা হিসেবে দিন। Category-এর নাম আগে থেকে থাকা ভালো।</i>");return true}
     let categoryId:string|null=null;
     if(catName){const cats=await db.category.findMany({});const c=cats.find((x:any)=>String(x.name).toLowerCase()===catName.toLowerCase());categoryId=c?.id||null}
     const sku=(name.normalize("NFKD").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"").toUpperCase().slice(0,20)||"ITEM")+"-"+Math.random().toString(36).slice(2,7).toUpperCase();
@@ -142,7 +142,7 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
   }
   if(cmd==="/voucher"){
     const code=(args[0]||"").toUpperCase(),type=(args[1]||"").toLowerCase(),value=num(args[2]),min=args[3]?num(args[3]):null,days=args[4]?num(args[4]):null;
-    if(code.length<2||!["percent","fixed"].includes(type)||!Number.isFinite(value)||value<=0||(type==="percent"&&value>100)||(min!==null&&!Number.isFinite(min))||(days!==null&&!Number.isFinite(days))){await respond("ব্যবহার: <code>/voucher CODE percent|fixed VALUE [min-order] [days]</code>\nউদাহরণ: <code>/voucher EID10 percent 10 500 7</code>");return true}
+    if(code.length<2||!["percent","fixed"].includes(type)||!Number.isFinite(value)||value<=0||(type==="percent"&&value>100)||(min!==null&&!Number.isFinite(min))||(days!==null&&!Number.isFinite(days))){await respond("<b>🎟️ Voucher তৈরি করুন</b>\\n━━━━━━━━━━━━━━━━━━\\n<b>ব্যবহারের নিয়ম</b>\\n<code>/voucher CODE percent|fixed VALUE [min-order] [days]</code>\\n\\n<b>উদাহরণ · Percentage Discount</b>\\n<code>/voucher EID10 percent 10 500 7</code>\\n• Code: <code>EID10</code>\\n• Discount: 10%\\n• Minimum order: ৳500\\n• Validity: 7 দিন\\n\\n<b>Discount Type</b>\\n• <code>percent</code> — শতকরা ছাড়\\n• <code>fixed</code> — নির্দিষ্ট টাকার ছাড়\\n\\n<i>ঐচ্ছিক: Minimum order ও validity না দিলে সেগুলো সেট হবে না।</i>");return true}
     if(await db.coupon.findFirst({where:{code}})){await respond("❌ এই code আগে থেকেই আছে");return true}
     const c=await db.coupon.create({data:{name:null,code,type:type==="percent"?"PERCENT":"FIXED",value,minOrder:min,expiresAt:days?new Date(Date.now()+days*86400000):null,active:true}});
     await audit("COUPON_CREATED_TELEGRAM","coupon",c.id,{code,type,value});
