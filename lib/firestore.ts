@@ -265,7 +265,11 @@ export async function confirmPaymentAtomically(args: AtomicPaymentArgs) {
       return { confirmed: false, reason: "amount_or_gateway_mismatch" as const };
     }
     const existingPayment: any = await transactionGet("paymentTransactions", transactionId, transaction);
-    if (existingPayment) {
+    const existingProviderRows = await transactionQuery("paymentTransactions", [
+      { field: "gatewayId", value: args.gatewayId },
+      { field: "providerTransactionId", value: args.providerTransactionId }
+    ], transaction);
+    if (existingPayment || existingProviderRows.length) {
       await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
       return { confirmed: false, reason: "duplicate_transaction" as const };
     }
@@ -356,9 +360,12 @@ export async function releaseOrderStockAtomically(orderId: string, now = new Dat
         stock: Number(snapshot.product.stock || 0) + quantity, updatedAt: now
       }, project));
     }
-    writes.push(firestorePatchWrite("orders", orderDocument, { status: "CANCELLED", updatedAt: now }, project));
+    const allReservationsExpired = expired.length === reservations.length;
+    if (allReservationsExpired) {
+      writes.push(firestorePatchWrite("orders", orderDocument, { status: "CANCELLED", updatedAt: now }, project));
+    }
     await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
-    return { released: expired.length, cancelled: true };
+    return { released: expired.length, cancelled: allReservationsExpired };
   } catch (error) {
     await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
     throw error;
