@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {db} from "@/lib/prisma";
+import {createOrderWithStockReservation} from "@/lib/firestore";
 import {z} from "zod";
 import {sendNewOrderTelegram} from "@/lib/notifications/telegram-admin";
 import {verifyCustomerToken} from "@/lib/auth/customer";
@@ -55,10 +56,10 @@ export async function POST(req:NextRequest){
   const taxAmount=settings.taxEnabled?Math.round(taxableAmount*Number(settings.taxRate||0))/100:0;
   const total=taxableAmount+shippingFee+taxAmount;
   const orderNumber="ORD-"+Date.now().toString(36).toUpperCase()+"-"+crypto.randomUUID().slice(0,5).toUpperCase(),expiresAt=new Date(Date.now()+30*60*1000);
-  const order=await db.$transaction(async tx=>{
-   for(const item of input.items){const held=await tx.product.updateMany({where:{id:item.productId,published:true,stock:{gte:item.quantity}},data:{stock:{decrement:item.quantity}}});if(held.count!==1)throw new Error("Stock changed during checkout");}
-   const created=await tx.order.create({data:{orderNumber,idempotencyKey:idempotencyKey||null,userId:session?.userId||null,customerName:input.customerName,customerPhone:input.customerPhone,customerEmail:input.customerEmail||null,shippingAddress:input.shippingAddress,shippingDistrict:input.shippingDistrict,shippingDivision:input.shippingDivision,shippingUpazila:input.shippingUpazila,shippingPostalCode:input.shippingPostalCode,shippingLocationDescription:input.shippingLocationDescription,shippingLatitude:input.shippingLatitude??null,shippingLongitude:input.shippingLongitude??null,subtotal,shippingFee,taxAmount,discount,total,paymentGatewayId:gateway.id,items:{create:orderItems}}});
-   await tx.stockReservation.createMany({data:input.items.map(i=>({orderId:created.id,productId:i.productId,quantity:i.quantity,expiresAt}))});return created;
+  const order=await createOrderWithStockReservation({
+   orderData:{orderNumber,idempotencyKey:idempotencyKey||null,userId:session?.userId||null,customerName:input.customerName,customerPhone:input.customerPhone,customerEmail:input.customerEmail||null,shippingAddress:input.shippingAddress,shippingDistrict:input.shippingDistrict,shippingDivision:input.shippingDivision,shippingUpazila:input.shippingUpazila,shippingPostalCode:input.shippingPostalCode,shippingLocationDescription:input.shippingLocationDescription,shippingLatitude:input.shippingLatitude??null,shippingLongitude:input.shippingLongitude??null,subtotal,shippingFee,taxAmount,discount,total,paymentGatewayId:gateway.id},
+   items:orderItems,
+   expiresAt
   });
   sendNewOrderTelegram(order.id).catch(()=>{});
   return NextResponse.json({orderId:order.id,orderNumber:order.orderNumber,total:Number(order.total),discount:Number(order.discount),shippingFee,taxAmount,gateway:{id:gateway.id,type:gateway.type,mode:gateway.mode},reservationExpiresAt:expiresAt,paymentToken:await createOrderAccessToken(order.id)},{status:201});
