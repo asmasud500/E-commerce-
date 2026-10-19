@@ -69,7 +69,9 @@ Call `POST /api/jobs/release-stock` with `Authorization: Bearer CRON_SECRET`. Sc
 
 ## Production readiness caveat
 
-The current Firestore compatibility adapter implements a Prisma-like `$transaction` wrapper but does not yet use Firestore's native atomic transaction API. Multi-document operations (for example, decrementing stock and creating an order together) are **not guaranteed to be atomic under concurrent requests**. Do not treat the current adapter as production-safe for high-concurrency checkout/payment until native Firestore transactions or a real transactional database adapter are implemented and load-tested.
+Checkout inventory reservation now uses Firestore's native read-write transaction: product stock decrements, order creation, order items, and held reservations are committed atomically. A deterministic order document ID also makes a repeated idempotency key fail safely at the atomic commit rather than creating a second order.
+
+**Important remaining limitation:** the generic Prisma-compatible `db.$transaction` wrapper is still not a real transaction. Payment settlement, SMS auto-confirmation, stock-release jobs, and some admin cancel/reject flows still use that wrapper and can partially apply multi-document updates during concurrent requests or failures. Those paths must be migrated to native Firestore transactions (or a real transactional database) and load-tested before the system is considered production-ready for concurrent payment/order processing.
 
 ## CI checks
 
