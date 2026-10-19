@@ -25,3 +25,11 @@ test("payment proof route rejects a transaction reference already attached to an
   assert.match(paymentProof, /paymentProvider/);
   assert.match(paymentProof, /status: 409/);
 });
+
+const adminPayment = await readFile(new URL("../app/api/admin/orders/[id]/payment/route.ts", import.meta.url), "utf8");
+
+test("admin payment confirmation checks duplicate transaction IDs before confirming", () => {
+  assert.match(adminPayment, /duplicateTransaction/);
+  assert.match(adminPayment, /duplicateOrderReference/);
+  assert.match(adminPayment, /providerTransactionId: ref/);
+});
