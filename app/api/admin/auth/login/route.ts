@@ -5,8 +5,23 @@ import {verifyStaffPassword} from "@/lib/auth/staff-password";
 import {db} from "@/lib/prisma";
 
 const STAFF_ROLES=["MANAGER","ORDER_MANAGER","PRODUCT_MANAGER","SUPPORT"] as const;
+
+function hasValidSameOrigin(req: NextRequest) {
+  if (req.headers.get("sec-fetch-site") === "cross-site") return false;
+  const origin = req.headers.get("origin");
+  if (!origin) return true; // Non-browser clients may omit Origin.
+  try {
+    return new URL(origin).host === req.nextUrl.host;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req:NextRequest){
  try{
+  if (!hasValidSameOrigin(req)) {
+    return NextResponse.json({error:"Cross-origin admin login is not allowed."},{status:403});
+  }
   const ip=req.headers.get("cf-connecting-ip")||"unknown";
   const rl=rateLimit("admin-login:"+ip,10,60_000);
   if(!rl.ok)return NextResponse.json({error:"Too many attempts. Try again later."},{status:429});
