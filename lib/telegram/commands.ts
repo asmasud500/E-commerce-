@@ -71,10 +71,10 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
   }
   if(cmd==="/products"){
     const ps=await db.product.findMany({orderBy:{createdAt:"desc"},take:10,select:{id:true,name:true,sku:true,price:true,salePrice:true,stock:true,published:true}});
-    const lines=ps.map((p:any,i:number)=>(i+1)+". <b>"+esc(p.name)+"</b>\\n   <code>"+esc(p.sku)+"</code> · "+tk(p.salePrice??p.price)+" · stock "+p.stock+" · "+(p.published?"Published":"Draft"));
+    const lines=ps.map((p:any,i:number)=>(i+1)+". <b>"+esc(p.name)+"</b>\n   <code>"+esc(p.sku)+"</code> · "+tk(p.salePrice??p.price)+" · stock "+p.stock+" · "+(p.published?"Published":"Draft"));
     const inline_keyboard=ps.map((p:any)=>[{text:"📦 "+String(p.name).slice(0,32),callback_data:"run:/product "+p.sku}]);
     inline_keyboard.push([{text:"📊 Inventory",callback_data:"run:/stock"},{text:"⚠️ Low Stock",callback_data:"run:/lowstock"}]);
-    await respond("<b>📦 PRODUCT CATALOG</b>\\n━━━━━━━━━━━━━━━━━━\\n"+(lines.length?lines.join("\\n\\n"):"কোনো product নেই"),{reply_markup:{inline_keyboard}});return true;
+    await respond("<b>📦 PRODUCT CATALOG</b>\n━━━━━━━━━━━━━━━━━━\n"+(lines.length?lines.join("\n\n"):"কোনো product নেই"),{reply_markup:{inline_keyboard}});return true;
   }
   if(cmd==="/product"){
     const p=await findProduct(arg);if(!p){await respond("ব্যবহার: <code>/product SKU</code> (পাওয়া যায়নি)");return true}
@@ -178,11 +178,11 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
   if(cmd==="/track"){
     const [no,courier,...t]=args;const o=no?await db.order.findFirst({where:{orderNumber:{equals:no.toUpperCase(),mode:"insensitive"}},include:{items:true,paymentGateway:true}}):null;
     if(!o){await respond("ব্যবহার: <code>/track ORDER-NO</code> — বর্তমান tracking দেখুন\nঅথবা tracking সেট করতে: <code>/track ORDER-NO COURIER TRACKING-ID</code>");return true}
-    if(!courier){const lines=["<b>🚚 ORDER TRACKING</b>","Order: <code>"+esc(o.orderNumber)+"</code>","Status: <b>"+esc(o.status)+"</b>","Courier: "+esc(o.courierName||"এখনও সেট করা হয়নি"),"Tracking ID: "+(o.trackingNumber?"<code>"+esc(o.trackingNumber)+"</code>":"এখনও সেট করা হয়নি"),"Payment: <b>"+esc(o.paymentStatus)+"</b>"];await respond(lines.join("\\n"),{disable_web_page_preview:true});return true}
+    if(!courier){const lines=["<b>🚚 ORDER TRACKING</b>","Order: <code>"+esc(o.orderNumber)+"</code>","Status: <b>"+esc(o.status)+"</b>","Courier: "+esc(o.courierName||"এখনও সেট করা হয়নি"),"Tracking ID: "+(o.trackingNumber?"<code>"+esc(o.trackingNumber)+"</code>":"এখনও সেট করা হয়নি"),"Payment: <b>"+esc(o.paymentStatus)+"</b>"];await respond(lines.join("\n"),{disable_web_page_preview:true});return true}
     if(!t.length){await respond("Tracking ID দিন: <code>/track ORDER-NO COURIER TRACKING-ID</code>");return true}
     if(!["PROCESSING","SHIPPED","DELIVERED"].includes(o.status)){await respond("❌ Order এখন "+esc(o.status)+" — Processing/Shipped হলে courier দিন");return true}
     await db.order.update({where:{id:o.id},data:{courierName:courier.slice(0,120),trackingNumber:t.join(" ").slice(0,160)}});await audit("TRACKING_SET_TELEGRAM","Order",o.id,{courier,trackingNumber:t.join(" ")});
-    await respond("✅ <b>TRACKING UPDATED</b>\\nOrder: <code>"+esc(o.orderNumber)+"</code>\\nCourier: "+esc(courier)+"\\nTracking ID: <code>"+esc(t.join(" "))+"</code>\\nStatus: "+esc(o.status));return true;
+    await respond("✅ <b>TRACKING UPDATED</b>\nOrder: <code>"+esc(o.orderNumber)+"</code>\nCourier: "+esc(courier)+"\nTracking ID: <code>"+esc(t.join(" "))+"</code>\nStatus: "+esc(o.status));return true;
   }
   if(cmd==="/gateways"){
     const gs=await db.paymentGateway.findMany({orderBy:{sortOrder:"asc"}});
