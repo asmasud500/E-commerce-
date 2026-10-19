@@ -48,3 +48,8 @@ test("admin payment route returns conflict for duplicate transaction database er
   assert.match(adminPaymentRoute, /e\.code === "P2002"/);
   assert.match(adminPaymentRoute, /status: 409/);
 });
+
+test("refund transaction stores the refund reference in the gateway-unique transaction ID field", () => {
+  assert.match(refundRoute, /providerTransactionId:input\.reference/);
+  assert.match(schema, /@@unique\(\[gatewayId, providerTransactionId\]\)/);
+});
