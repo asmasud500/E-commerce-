@@ -1088,3 +1088,37 @@ a:hover{color:#e94b0c}
 @media(prefers-reduced-motion:reduce){
  .hp-pc:hover img,.hp-fc:hover img{transform:none}
 }
+
+
+/* Restore the original premium navy + orange brand palette */
+:root{
+  --brand:#111c2e;
+  --accent:#f97316;
+  --accent-2:#ea580c;
+}
+a:hover{color:#ea580c}
+.sh,.sh[style]{background:#111c2e;background-image:linear-gradient(105deg,#101b2d 0%,#172b46 58%,#101b2d 100%)}
+.sh-logo .sh-logo-name,.sh-logo .sh-logo-dot{color:#fff!important}
+.sh-search{border-color:rgba(249,115,22,.45)}
+.sh-search button{background:#f97316;color:#fff}
+.sh-search button:hover{background:#ea580c;color:#fff}
+.sh-badge{background:#f97316;color:#fff;box-shadow:0 0 0 2px #111c2e}
+.sh-act{color:#f8fafc}
+.sh-act:hover{color:#fdba74}
+.sh-subnav a:hover,.hp-more,.product-card-price strong{color:#ea580c}
+.hp-tab h2{border-color:#f97316}
+.hp-btn,.pg-btn{background:#f97316;color:#fff}
+.hp-btn:hover,.pg-btn:hover:not(:disabled){background:#ea580c}
+.hp-bolt{color:#f97316}
+.hp-off{background:#fff0e5;color:#c2410c}
+.hp-q:hover{background:#fff4eb;color:#c2410c}
+.hp-q-ic,.hp-benefit-icon{background:#fff0e5;color:#c2410c}
+.hp-pc:hover,.hp-fc:hover,.product-card:hover{border-color:#fdba74!important}
+.gateway-option.on{border-color:#f97316;background:#fff7ed}
+.admin-sidebar nav a.active{background:linear-gradient(100deg,rgba(249,115,22,.22),rgba(249,115,22,.07));box-shadow:inset 3px 0 #f97316}
+.hero-panel{background:linear-gradient(145deg,#101b2d 0%,#172b46 62%,#7c2d12 100%);box-shadow:0 25px 60px rgba(17,28,46,.2)}
+.hero-panel:before{background:rgba(249,115,22,.22)}
+.primary-cta{background:#111c2e;color:#fff}
+.primary-cta:hover{background:#1d3555;color:#fff}
+:where(button,a,input,select,textarea):focus-visible{outline-color:rgba(249,115,22,.32)}
+@media(max-width:760px){.sh{background:#111c2e;background-image:linear-gradient(105deg,#101b2d,#172b46)}}
