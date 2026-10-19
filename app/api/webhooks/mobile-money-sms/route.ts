@@ -82,7 +82,18 @@ export async function POST(req: NextRequest) {
     });
     if (confirmed) await notifyStatus(o.id);
     return NextResponse.json({ ok: true, matched: true, confirmed });
-  } catch {
+  } catch (error: unknown) {
+    // The database unique constraint on (gatewayId, providerTransactionId) is
+    // the final concurrency guard. If two webhook deliveries race, the losing
+    // transaction rolls back its order update and returns a safe duplicate result.
+    if (typeof error === "object" && error !== null && "code" in error &&
+        (error as { code?: string }).code === "P2002") {
+      return NextResponse.json({
+        ok: true,
+        matched: false,
+        message: "Transaction ID was already processed."
+      }, { status: 409 });
+    }
     return NextResponse.json({ error: "SMS verification processing failed." }, { status: 400 });
   }
 }
