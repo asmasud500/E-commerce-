@@ -124,6 +124,8 @@ test("admin confirm, reject, cancellation, and refund use native transaction hel
   assert.match(adminPaymentAtomicRoute, /confirmPaymentAtomically\(/);
   assert.match(adminPaymentAtomicRoute, /rejectPendingOrderAtomically\(/);
   assert.match(adminOrderAtomicRoute, /rejectPendingOrderAtomically\(/);
+  assert.match(adminOrderAtomicRoute, /updateOrderAdminFieldsAtomically\(/);
+  assert.doesNotMatch(adminOrderAtomicRoute, /db\.\$transaction/);
   assert.match(refundAtomicRoute, /recordRefundAtomically\(/);
 });
 
