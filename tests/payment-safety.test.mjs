@@ -95,3 +95,37 @@ test("checkout idempotency keys map to deterministic order IDs inside the atomic
   assert.match(firestoreAdapter, /deterministicId\("order:" \+ String\(args\.orderData\.idempotencyKey\)\)/);
   assert.match(firestoreAdapter, /currentDocument: \{ exists: false \}/);
 });
+
+
+const settlementRoute = await readFile(new URL("../lib/payments/settle.ts", import.meta.url), "utf8");
+const smsProofRoute = await readFile(new URL("../app/api/webhooks/mobile-money-sms/route.ts", import.meta.url), "utf8");
+const stockReleaseRoute = await readFile(new URL("../app/api/jobs/release-stock/route.ts", import.meta.url), "utf8");
+const adminPaymentAtomicRoute = await readFile(new URL("../app/api/admin/orders/[id]/payment/route.ts", import.meta.url), "utf8");
+const adminOrderAtomicRoute = await readFile(new URL("../app/api/admin/orders/[id]/route.ts", import.meta.url), "utf8");
+const refundAtomicRoute = await readFile(new URL("../app/api/admin/orders/[id]/refund/route.ts", import.meta.url), "utf8");
+
+test("verified gateway settlement uses the native Firestore payment transaction", () => {
+  assert.match(settlementRoute, /confirmPaymentAtomically\(/);
+  assert.doesNotMatch(settlementRoute, /db\.\$transaction/);
+});
+
+test("SMS confirmation and proof reference claims use atomic Firestore helpers", () => {
+  assert.match(smsProofRoute, /confirmPaymentAtomically\(/);
+  assert.match(paymentProof, /claimPaymentProofAtomically\(/);
+});
+
+test("expired stock release restores inventory with a native transaction", () => {
+  assert.match(stockReleaseRoute, /releaseOrderStockAtomically\(/);
+});
+
+test("admin confirm, reject, cancellation, and refund use native transaction helpers", () => {
+  assert.match(adminPaymentAtomicRoute, /confirmPaymentAtomically\(/);
+  assert.match(adminPaymentAtomicRoute, /rejectPendingOrderAtomically\(/);
+  assert.match(adminOrderAtomicRoute, /rejectPendingOrderAtomically\(/);
+  assert.match(refundAtomicRoute, /recordRefundAtomically\(/);
+});
+
+test("native Firestore payment transactions query existing provider IDs within the transaction", () => {
+  assert.match(firestoreAdapter, /transactionQuery\("paymentTransactions"/);
+  assert.match(firestoreAdapter, /currentDocument: \{ exists: false \}/);
+});
