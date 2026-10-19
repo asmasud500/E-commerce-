@@ -7,7 +7,7 @@ import {getEffectivePrice} from "@/lib/products/pricing";
 import {rateLimit} from "@/lib/security/rate-limit";
 import {createOrderAccessToken} from "@/lib/auth/order-access";
 
-const schema=z.object({customerName:z.string().trim().min(2).max(100),customerPhone:z.string().trim().min(6).max(30),customerEmail:z.string().email().optional().or(z.literal("")),shippingAddress:z.string().trim().min(5).max(1000),shippingDistrict:z.string().trim().min(2).max(100),paymentGatewayId:z.string().min(1),couponCode:z.string().trim().max(50).optional(),items:z.array(z.object({productId:z.string().min(1),quantity:z.number().int().positive().max(100)})).min(1).max(100)});
+const schema=z.object({customerName:z.string().trim().min(2).max(100),customerPhone:z.string().trim().min(6).max(30),customerEmail:z.string().email().optional().or(z.literal("")),shippingAddress:z.string().trim().min(5).max(1000),shippingDistrict:z.string().trim().min(2).max(100),shippingDivision:z.string().trim().max(80).optional().default(""),shippingUpazila:z.string().trim().max(100).optional().default(""),shippingPostalCode:z.string().trim().max(20).optional().default(""),shippingLocationDescription:z.string().trim().max(500).optional().default(""),shippingLatitude:z.coerce.number().min(-90).max(90).nullable().optional(),shippingLongitude:z.coerce.number().min(-180).max(180).nullable().optional(),paymentGatewayId:z.string().min(1),couponCode:z.string().trim().max(50).optional(),items:z.array(z.object({productId:z.string().min(1),quantity:z.number().int().positive().max(100)})).min(1).max(100)});
 
 export async function POST(req:NextRequest){
  try{
@@ -46,7 +46,7 @@ export async function POST(req:NextRequest){
   ]);
   const settings={defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,...(storedSettings||{})};
   const normalizedDistrict=input.shippingDistrict.trim().toLocaleLowerCase();
-  const zone=activeZones.find((z:any)=>String(z.district||"").trim().toLocaleLowerCase()===normalizedDistrict);
+  const normalizedUpazila=input.shippingUpazila.trim().toLocaleLowerCase();\n  const zone=activeZones.find((z:any)=>String(z.district||"").trim().toLocaleLowerCase()===normalizedDistrict && (!z.upazila || String(z.upazila).trim().toLocaleLowerCase()===normalizedUpazila) && (!z.division || String(z.division).trim().toLocaleLowerCase()===input.shippingDivision.trim().toLocaleLowerCase()));
   const deliveryFee=zone?Number(zone.fee||0):Number(settings.defaultDeliveryFee||0);
   const freeThreshold=zone?.freeAbove!=null?Number(zone.freeAbove):settings.freeShippingThreshold==null?null:Number(settings.freeShippingThreshold);
   const taxableAmount=Math.max(0,subtotal-discount);
@@ -56,7 +56,7 @@ export async function POST(req:NextRequest){
   const orderNumber="ORD-"+Date.now().toString(36).toUpperCase()+"-"+crypto.randomUUID().slice(0,5).toUpperCase(),expiresAt=new Date(Date.now()+30*60*1000);
   const order=await db.$transaction(async tx=>{
    for(const item of input.items){const held=await tx.product.updateMany({where:{id:item.productId,published:true,stock:{gte:item.quantity}},data:{stock:{decrement:item.quantity}}});if(held.count!==1)throw new Error("Stock changed during checkout");}
-   const created=await tx.order.create({data:{orderNumber,idempotencyKey:idempotencyKey||null,userId:session?.userId||null,customerName:input.customerName,customerPhone:input.customerPhone,customerEmail:input.customerEmail||null,shippingAddress:input.shippingAddress,shippingDistrict:input.shippingDistrict,subtotal,shippingFee,taxAmount,discount,total,paymentGatewayId:gateway.id,items:{create:orderItems}}});
+   const created=await tx.order.create({data:{orderNumber,idempotencyKey:idempotencyKey||null,userId:session?.userId||null,customerName:input.customerName,customerPhone:input.customerPhone,customerEmail:input.customerEmail||null,shippingAddress:input.shippingAddress,shippingDistrict:input.shippingDistrict,shippingDivision:input.shippingDivision,shippingUpazila:input.shippingUpazila,shippingPostalCode:input.shippingPostalCode,shippingLocationDescription:input.shippingLocationDescription,shippingLatitude:input.shippingLatitude??null,shippingLongitude:input.shippingLongitude??null,subtotal,shippingFee,taxAmount,discount,total,paymentGatewayId:gateway.id,items:{create:orderItems}}});
    await tx.stockReservation.createMany({data:input.items.map(i=>({orderId:created.id,productId:i.productId,quantity:i.quantity,expiresAt}))});return created;
   });
   sendNewOrderTelegram(order.id).catch(()=>{});
