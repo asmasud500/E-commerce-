@@ -20,11 +20,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       if (!current || current.paymentStatus === "PAID" || current.status !== "PENDING") return;
 
       if (action === "confirm") {
-        if (!current.paymentGatewayId) return;
-        const ref = current.paymentReference || "ADMIN-CONFIRM-" + current.id;
+        // Do not create a synthetic transaction reference to make an unverified
+        // payment look paid. Require evidence captured by the payment-proof flow.
+        if (!current.paymentGatewayId || !current.paymentReference) return;
+        const evidence = await tx.order.findFirst({
+          where: { id, paymentStatus: "PENDING", status: "PENDING", OR: [
+            { paymentProofSubmittedAt: { not: null } },
+            { paymentProvider: { not: null } }
+          ] },
+          select: { id: true }
+        });
+        if (!evidence) return;
+        const ref = current.paymentReference;
         const changed = await tx.order.updateMany({
-          where: { id, paymentStatus: "PENDING", status: "PENDING" },
-          data: { paymentStatus: "PAID", status: "CONFIRMED", paymentReference: ref }
+          where: { id, paymentStatus: "PENDING", status: "PENDING", paymentReference: ref },
+          data: { paymentStatus: "PAID", status: "CONFIRMED" }
         });
         if (changed.count !== 1) return;
         await tx.paymentTransaction.create({
@@ -39,8 +49,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         });
         if (changed.count !== 1) return;
         const rs = await tx.stockReservation.findMany({ where: { orderId: id, status: "HELD" } });
-        for (const r of rs) await tx.product.update({ where: { id: r.productId }, data: { stock: { increment: r.quantity } } });
-        await tx.stockReservation.updateMany({ where: { orderId: id, status: "HELD" }, data: { status: "RELEASED" } });
+        for (const r of rs) {
+          // Claim each reservation before restoring inventory. Concurrent reject/cancel
+          // requests can increment stock only when this conditional transition wins.
+          const released = await tx.stockReservation.updateMany({
+            where: { id: r.id, status: "HELD" },
+            data: { status: "RELEASED" }
+          });
+          if (released.count === 1) {
+            await tx.product.update({ where: { id: r.productId }, data: { stock: { increment: r.quantity } } });
+          }
+        }
         await tx.auditLog.create({ data: { action: "ADMIN_PAYMENT_REJECTED", entity: "Order", entityId: id, metadata: { source: "dashboard" } } });
       }
       done = true;
