@@ -15,9 +15,11 @@ test("mobile-money webhook handles Prisma unique conflicts as duplicate transact
   assert.match(smsWebhook, /Transaction ID was already processed\./);
 });
 
-test("mobile-money webhook only confirms a still-pending order with matching payment details", () => {
-  assert.match(smsWebhook, /paymentStatus: "PENDING", status: "PENDING", paymentReference: transactionId, paymentSenderLast4: senderLast4, paymentProvider: provider/);
-  assert.match(smsWebhook, /changed\.count !== 1/);
+test("mobile-money webhook confirms only with matching pending-order evidence inside the atomic helper", () => {
+  assert.match(smsWebhook, /expectedPaymentReference: transactionId/);
+  assert.match(smsWebhook, /expectedSenderLast4: senderLast4/);
+  assert.match(smsWebhook, /expectedProvider: provider/);
+  assert.match(smsWebhook, /confirmPaymentAtomically\(/);
 });
 
 test("payment proof route rejects a transaction reference already attached to another order", () => {
