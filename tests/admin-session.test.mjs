@@ -27,3 +27,44 @@ test("malformed tokens are rejected", async () => {
   assert.equal(await readAdminSession(""), null);
   assert.equal(await readAdminSession("payload.signature.extra"), null);
 });
+
+test("legacy signed sessions without an explicit role are rejected", async () => {
+  const payload = Buffer.from(JSON.stringify({
+    email: "admin@example.com",
+    exp: Date.now() + 60_000
+  })).toString("base64url");
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(process.env.ADMIN_SESSION_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = Buffer.from(await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(payload)
+  )).toString("base64url");
+  assert.equal(await readAdminSession(payload + "." + signature), null);
+});
+
+test("expired signed sessions are rejected", async () => {
+  const payload = Buffer.from(JSON.stringify({
+    email: "admin@example.com",
+    role: "SUPER_ADMIN",
+    exp: Date.now() - 1
+  })).toString("base64url");
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(process.env.ADMIN_SESSION_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = Buffer.from(await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(payload)
+  )).toString("base64url");
+  assert.equal(await readAdminSession(payload + "." + signature), null);
+});
