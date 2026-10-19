@@ -908,3 +908,57 @@ a{transition:color .18s ease}
 .hp-benefit strong{font-size:13px;line-height:1.4;color:#111827}
 .hp-benefit small{font-size:11px;line-height:1.5;margin-top:3px}
 @media(max-width:760px){.hp-benefits{padding-inline:14px;grid-template-columns:1fr;gap:8px;margin-top:12px}.hp-benefit{padding:12px 14px}.hp-benefit-icon{width:36px;height:36px}}
+
+
+/* Marketplace direction: Daraz-style deal discovery + Amazon-style utility navigation */
+.sh{background:#f85606;background-image:linear-gradient(105deg,#f85606 0%,#f96b18 56%,#f85606 100%)}
+.sh-in{max-width:1440px;padding-top:15px;padding-bottom:15px;gap:clamp(12px,2vw,28px)}
+.sh-logo{display:flex;align-items:baseline;gap:0;letter-spacing:-.055em}
+.sh-logo .sh-logo-name{color:#fff!important}
+.sh-logo .sh-logo-dot{color:#fff!important;font-size:1.2em}
+.sh-search{border:0;border-radius:9px;box-shadow:0 2px 5px rgba(94,35,0,.12);max-width:none}
+.sh-search select{background:#f7f7f7;color:#4b5563}
+.sh-search input{background:#fff;color:#111827}
+.sh-search button{background:#ffe1d2;color:#c2410c;font-weight:800}
+.sh-search button:hover{background:#ffd0b8;color:#9a3412}
+.sh-actions{gap:clamp(10px,1.7vw,24px)}
+.sh-act{color:#fff}
+.sh-act:hover{color:#fff7ed}
+.sh-badge{background:#111827;color:#fff;box-shadow:0 0 0 2px #f85606}
+.sh-subnav{background:#fff;border-bottom:1px solid #e7eaf0;box-shadow:0 4px 14px rgba(16,24,40,.045)}
+.sh-subnav-in{max-width:1440px;min-height:44px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:clamp(16px,2.5vw,34px);overflow-x:auto;scrollbar-width:none}
+.sh-subnav-in::-webkit-scrollbar{display:none}
+.sh-subnav a{flex:none;display:inline-flex;align-items:center;gap:7px;color:#344054;font-size:13px;font-weight:650;white-space:nowrap;transition:color .16s ease}
+.sh-subnav a:hover{color:#ea580c}
+.sh-subnav .sh-all-cats{color:#111827;font-weight:800}
+.sh-subnav-spacer{flex:1;min-width:10px}
+.sh-delivery{flex:none;display:inline-flex;align-items:center;gap:6px;color:#667085;font-size:12px;white-space:nowrap}
+.hp-hero{padding-top:20px}
+.hp-cats{border-radius:10px}
+.hp-cats-h{background:#fff7f2;color:#111827}
+.hp-cat{border-radius:0}
+.hp-cat:hover{background:#fff2e9;color:#ea580c}
+.hp-slider{border-radius:12px}
+.hp-card,.hp-pc,.hp-store,.hp-fc,.hp-benefit,.hp-quick-in{border-radius:10px}
+.hp-sec-h h2{font-weight:800}
+.hp-tab h2{border-bottom:3px solid #f85606}
+.hp-off{background:#fff0e8;color:#e94b0c}
+.hp-btn,.pg-btn{background:#f85606}
+.hp-btn:hover,.pg-btn:hover:not(:disabled){background:#e94b0c}
+.hp-more{color:#e94b0c}
+.hp-bolt{color:#f85606}
+.hp-q-ic,.hp-benefit-icon{background:#fff0e8;color:#e94b0c}
+.hp-benefit{border-radius:10px}
+.hp-pc:hover{border-color:#ffb58e}
+.pg-btn{color:#fff}
+.sf{background:#17212f}
+@media(max-width:760px){
+  .sh{background:#f85606}
+  .sh-in{padding:11px 14px;gap:10px}
+  .sh-logo{font-size:22px}
+  .sh-actions{grid-column:auto;grid-row:auto;width:auto;padding-top:0}
+  .sh-subnav-in{padding:0 14px;min-height:40px;gap:20px}
+  .sh-delivery{display:none}
+  .hp-hero{padding-top:14px}
+  .hp-slider{border-radius:10px}
+}
