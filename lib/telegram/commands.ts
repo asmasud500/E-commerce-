@@ -39,8 +39,8 @@ Photo পাঠিয়ে caption এ <code>/photo SKU</code> দিলে ছ
 <b>Flash sale</b>: /flash PERCENT HOURS SKU1,SKU2 · /flashlist · /flashoff
 <b>Payment</b>: /gateways · /paynumber ID NUMBER · /payinfo ID text · /gatewayon ID · /gatewayoff ID`;
 
-export async function handleTextCommand(text:string,photo?:{fileId:string},messageId?:number):Promise<boolean>{
-  const respond=(body:string,extra:Record<string,any>={})=>{const markup=extra.reply_markup as any;const rows=markup?.inline_keyboard||[];const nav=[{text:"↩️ Back to Menu",callback_data:"nav:back"},{text:"✖️ Cancel",callback_data:"nav:cancel"}];const hasNav=rows.some((row:any[])=>row.some((b:any)=>b.callback_data==="nav:back"||b.callback_data==="nav:cancel"));return reply(body,{...extra,reply_markup:{...(markup||{}),inline_keyboard:hasNav?rows:[...rows,nav]}},messageId)};
+export async function handleTextCommand(text:string,photo?:{fileId:string},messageId?:number,parentMenu?:string):Promise<boolean>{
+  const respond=(body:string,extra:Record<string,any>={})=>{const markup=extra.reply_markup as any;const rows=markup?.inline_keyboard||[];const nav=[{text:"⬅️ Back",callback_data:"nav:back:"+((parentMenu&&["orders","products","inventory","delivery","promotions","payments","help"].includes(parentMenu))?parentMenu:"main")},{text:"✖️ Cancel",callback_data:"nav:cancel"}];const hasNav=rows.some((row:any[])=>row.some((b:any)=>b.callback_data==="nav:back"||b.callback_data==="nav:cancel"));return reply(body,{...extra,reply_markup:{...(markup||{}),inline_keyboard:hasNav?rows:[...rows,nav]}},messageId)};
   const trimmed=text.trim();
   const m=/^(\/\S+)\s*([\s\S]*)$/.exec(trimmed);
   if(!m)return false;
@@ -72,14 +72,14 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
   if(cmd==="/products"){
     const ps=await db.product.findMany({orderBy:{createdAt:"desc"},take:10,select:{id:true,name:true,sku:true,price:true,salePrice:true,stock:true,published:true}});
     const lines=ps.map((p:any,i:number)=>(i+1)+". <b>"+esc(p.name)+"</b>\n   <code>"+esc(p.sku)+"</code> · "+tk(p.salePrice??p.price)+" · stock "+p.stock+" · "+(p.published?"Published":"Draft"));
-    const inline_keyboard=ps.map((p:any)=>[{text:"📦 "+String(p.name).slice(0,32),callback_data:"run:/product "+p.sku}]);
-    inline_keyboard.push([{text:"📊 Inventory",callback_data:"run:/stock"},{text:"⚠️ Low Stock",callback_data:"run:/lowstock"}]);
+    const inline_keyboard=ps.map((p:any)=>[{text:"📦 "+String(p.name).slice(0,32),callback_data:"run:/product "+p.sku+"|products"}]);
+    inline_keyboard.push([{text:"📊 Inventory",callback_data:"run:/stock|inventory"},{text:"⚠️ Low Stock",callback_data:"run:/lowstock|inventory"}]);
     await respond("<b>📦 PRODUCT CATALOG</b>\n━━━━━━━━━━━━━━━━━━\n"+(lines.length?lines.join("\n\n"):"কোনো product নেই"),{reply_markup:{inline_keyboard}});return true;
   }
   if(cmd==="/product"){
     const p=await findProduct(arg);if(!p){await respond("ব্যবহার: <code>/product SKU</code> (পাওয়া যায়নি)");return true}
     const s=await db.storeSetting.findUnique({where:{id:"store"}});
-    await respond("<b>"+esc(p.name)+"</b>\nSKU: <code>"+esc(p.sku)+"</code>\nদাম: "+tk(p.price)+(p.salePrice!=null?" · sale "+tk(p.salePrice):"")+"\nStock: "+p.stock+"\nStatus: "+(p.published?"Published":"Draft")+"\nDelivery: "+esc(deliveryLabel(p,Number(s?.defaultDeliveryFee??120),s?.freeShippingThreshold==null?null:Number(s.freeShippingThreshold)))+"\n\n"+esc((p.description||"").slice(0,600)),{reply_markup:{inline_keyboard:[[{text:"💲 Update Price",callback_data:"run:/setprice "+p.sku},{text:"📦 Update Stock",callback_data:"run:/setstock "+p.sku}],[{text:p.published?"🙈 Unpublish":"✅ Publish",callback_data:"run:"+(p.published?"/unpublish ":"/publish ")+p.sku}],[{text:"🖼️ Add Photo",callback_data:"run:/photo "+p.sku},{text:"🚚 Delivery",callback_data:"run:/delivery "+p.sku}],[{text:"↩️ Product Catalog",callback_data:"run:/products"}]]}});return true;
+    await respond("<b>"+esc(p.name)+"</b>\nSKU: <code>"+esc(p.sku)+"</code>\nদাম: "+tk(p.price)+(p.salePrice!=null?" · sale "+tk(p.salePrice):"")+"\nStock: "+p.stock+"\nStatus: "+(p.published?"Published":"Draft")+"\nDelivery: "+esc(deliveryLabel(p,Number(s?.defaultDeliveryFee??120),s?.freeShippingThreshold==null?null:Number(s.freeShippingThreshold)))+"\n\n"+esc((p.description||"").slice(0,600)),{reply_markup:{inline_keyboard:[[{text:"💲 Update Price",callback_data:"run:/setprice "+p.sku+"|products"},{text:"📦 Update Stock",callback_data:"run:/setstock "+p.sku+"|products"}],[{text:p.published?"🙈 Unpublish":"✅ Publish",callback_data:"run:"+(p.published?"/unpublish ":"/publish ")+p.sku+"|products"}],[{text:"🖼️ Add Photo",callback_data:"run:/photo "+p.sku+"|products"},{text:"🚚 Delivery",callback_data:"run:/delivery "+p.sku+"|products"}],[{text:"↩️ Product Catalog",callback_data:"run:/products|products"}]]}});return true;
   }
   if(cmd==="/newproduct"){
     const parts=arg.split("|").map(x=>x.trim());const [name,priceS,stockS,catName,...d]=parts;const price=num(priceS),stock=stockS?num(stockS):0;
