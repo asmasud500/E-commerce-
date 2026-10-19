@@ -79,7 +79,7 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
   if(cmd==="/product"){
     const p=await findProduct(arg);if(!p){await respond("ব্যবহার: <code>/product SKU</code> (পাওয়া যায়নি)");return true}
     const s=await db.storeSetting.findUnique({where:{id:"store"}});
-    await respond("<b>"+esc(p.name)+"</b>\nSKU: <code>"+esc(p.sku)+"</code>\nদাম: "+tk(p.price)+(p.salePrice!=null?" · sale "+tk(p.salePrice):"")+"\nStock: "+p.stock+"\nStatus: "+(p.published?"Published":"Draft")+"\nDelivery: "+esc(deliveryLabel(p,Number(s?.defaultDeliveryFee??120),s?.freeShippingThreshold==null?null:Number(s.freeShippingThreshold)))+"\n\n"+esc((p.description||"").slice(0,600)));return true;
+    await respond("<b>"+esc(p.name)+"</b>\nSKU: <code>"+esc(p.sku)+"</code>\nদাম: "+tk(p.price)+(p.salePrice!=null?" · sale "+tk(p.salePrice):"")+"\nStock: "+p.stock+"\nStatus: "+(p.published?"Published":"Draft")+"\nDelivery: "+esc(deliveryLabel(p,Number(s?.defaultDeliveryFee??120),s?.freeShippingThreshold==null?null:Number(s.freeShippingThreshold)))+"\n\n"+esc((p.description||"").slice(0,600)),{reply_markup:{inline_keyboard:[[{text:"💲 Update Price",callback_data:"run:/setprice "+p.sku},{text:"📦 Update Stock",callback_data:"run:/setstock "+p.sku}],[{text:p.published?"🙈 Unpublish":"✅ Publish",callback_data:"run:"+(p.published?"/unpublish ":"/publish ")+p.sku}],[{text:"🖼️ Add Photo",callback_data:"run:/photo "+p.sku},{text:"🚚 Delivery",callback_data:"run:/delivery "+p.sku}],[{text:"↩️ Product Catalog",callback_data:"run:/products"}]]}});return true;
   }
   if(cmd==="/newproduct"){
     const parts=arg.split("|").map(x=>x.trim());const [name,priceS,stockS,catName,...d]=parts;const price=num(priceS),stock=stockS?num(stockS):0;
