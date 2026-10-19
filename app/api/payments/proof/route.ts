@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
+import { claimPaymentProofAtomically } from "@/lib/firestore";
 import { verifyOrderAccessToken } from "@/lib/auth/order-access";
 import { rateLimit } from "@/lib/security/rate-limit";
 
@@ -51,15 +52,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This transaction ID is already linked to another order." }, { status: 409 });
     }
 
-    await db.order.update({
-      where: { id: orderId },
-      data: {
-        paymentReference: transactionId,
-        paymentSenderLast4: senderLast4,
-        paymentProvider: String(o.paymentGateway.type),
-        paymentProofSubmittedAt: new Date()
-      }
+    const claim = await claimPaymentProofAtomically({
+      orderId,
+      gatewayId: o.paymentGatewayId,
+      provider: String(o.paymentGateway.type),
+      transactionId,
+      senderLast4
     });
+    if (!claim.accepted) {
+      return NextResponse.json({
+        error: claim.reason === "reference_used" || claim.reason === "duplicate"
+          ? "This transaction ID has already been submitted."
+          : "Order or payment evidence changed. Refresh and try again."
+      }, { status: 409 });
+    }
 
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chat = process.env.TELEGRAM_CHAT_ID;
