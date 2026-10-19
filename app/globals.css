@@ -578,3 +578,47 @@ button.pg-btn[disabled]{opacity:.5;cursor:not-allowed;transform:none;box-shadow:
  .admin-content .admin-quick{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){.admin-module-card,.admin-sidebar nav a{transition:none}}
+
+
+/* Delivery zones: clear, guided admin form */
+.delivery-zone-admin .admin-content{max-width:1500px}
+.delivery-zone-admin .admin-heading-row{margin:10px 0 26px}
+.delivery-zone-admin .admin-heading-row h1{font-size:clamp(30px,4vw,42px);margin:8px 0}
+.delivery-zone-admin .admin-heading-row p{max-width:760px;line-height:1.7}
+.delivery-zone-create{padding:26px!important;border:1px solid #e5e7eb;border-radius:22px;background:linear-gradient(180deg,#fff,#fbfcfe);box-shadow:0 14px 40px rgba(15,23,42,.055);margin-bottom:24px}
+.delivery-zone-section-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:22px}
+.delivery-zone-step{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:13px;background:#fff0e6;color:#e25b00;font-size:13px;font-weight:900}
+.delivery-zone-section-head h2{font-size:22px;margin:1px 0 7px}
+.delivery-zone-section-head p{margin:0;color:#64748b;font-size:14px;line-height:1.6}
+.delivery-zone-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 20px;align-items:start}
+.delivery-zone-form>label{display:flex;flex-direction:column;gap:8px;min-width:0;color:#334155;font-size:13px;font-weight:750}
+.delivery-zone-form input,.delivery-zone-form select{width:100%;min-height:48px;border-radius:12px;border-color:#dbe1e8;background:#fff}
+.delivery-zone-form select:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed}
+.delivery-zone-group-title{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;margin-top:2px;border:1px solid #edf0f4;border-radius:12px;background:#f8fafc;color:#172033;font-size:13px;font-weight:850}
+.delivery-zone-group-title span{color:#64748b;font-size:11px;font-weight:700}
+.delivery-zone-form>button[type=submit]{grid-column:1/-1;justify-self:start;min-width:180px;min-height:48px;background:#111827;color:#fff;border-color:#111827;padding:12px 24px}
+.delivery-zone-form>button[type=submit]:hover{background:#263449}
+.delivery-zone-admin .admin-footnote{padding:14px 16px;border-radius:12px;background:#f8fafc;color:#64748b;font-size:12px;line-height:1.7}
+.delivery-zone-admin .admin-recent+.admin-recent{border:1px solid #e5e7eb;border-radius:20px;padding:22px;background:#fff}
+@media(max-width:700px){.delivery-zone-create{padding:18px!important}.delivery-zone-form{grid-template-columns:minmax(0,1fr);gap:15px}.delivery-zone-form>button[type=submit]{width:100%}.delivery-zone-admin .admin-content{padding:20px 14px}.delivery-zone-section-head h2{font-size:19px}}
+/* Checkout: simple step-by-step customer address selection */
+.checkout-form{padding:clamp(18px,3vw,30px)!important}
+.checkout-section-title{display:flex;align-items:flex-start;gap:12px;margin:0 0 20px}
+.checkout-section-title h2{font-size:21px;margin:2px 0 6px}
+.checkout-section-title p{margin:0;color:#64748b;font-size:13px;line-height:1.6}
+.checkout-section-number{width:36px;height:36px;flex:0 0 36px;border-radius:11px;display:grid;place-items:center;background:#fff0e6;color:#e25b00;font-size:12px;font-weight:900}
+.checkout-address-title{margin-top:30px;padding-top:25px;border-top:1px solid #edf0f4}
+.checkout-address-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
+.checkout-address-grid .fld{min-width:0}
+.checkout-form .fld{margin-bottom:16px}
+.checkout-form .fld>span{display:block;margin-bottom:7px;font-size:13px;font-weight:750;color:#334155}
+.checkout-form .fld input,.checkout-form .fld select,.checkout-form .fld textarea{width:100%;min-height:48px;border-radius:12px;border-color:#dbe1e8}
+.checkout-form .fld select:disabled{background:#f1f5f9;color:#94a3b8}
+.checkout-exact-address{margin-top:2px}
+.checkout-zone-hint{grid-column:1/-1;display:flex;align-items:flex-start;gap:10px;margin:0 0 18px;padding:13px 14px;border:1px solid #a7f3d0;border-radius:13px;background:#ecfdf5;color:#065f46}
+.checkout-zone-hint>span{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#d1fae5;font-weight:900}
+.checkout-zone-hint b,.checkout-zone-hint small{display:block}
+.checkout-zone-hint b{font-size:13px}
+.checkout-zone-hint small{margin-top:3px;color:#047857;font-size:12px}
+.checkout-coupon{margin-top:20px;padding-top:18px;border-top:1px solid #edf0f4}
+@media(max-width:600px){.checkout-address-grid{grid-template-columns:minmax(0,1fr)}.checkout-section-title h2{font-size:19px}}
