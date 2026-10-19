@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { verifyOrderAccessToken } from "@/lib/auth/order-access";
+import { rateLimit } from "@/lib/security/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for") || "unknown";
+  const rl = rateLimit("payment-proof:" + ip, 5, 60_000);
+  if (!rl.ok) return NextResponse.json({ error: "Too many payment proof attempts. Try again later." }, { status: 429, headers: { "Retry-After": String(rl.retryAfter) } });
   try {
     const b = await req.json();
     const orderId = typeof b.orderId === "string" ? b.orderId : "";
