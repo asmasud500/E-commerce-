@@ -58,6 +58,7 @@ jobs:
           printf '%s' "$TELEGRAM_ADMIN_USER_IDS" | npx wrangler secret put TELEGRAM_ADMIN_USER_IDS
           printf '%s' "$TELEGRAM_WEBHOOK_SECRET" | npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
           printf '%s' "$PAYMENT_WEBHOOK_SECRET" | npx wrangler secret put PAYMENT_WEBHOOK_SECRET
+          printf '%s' "$MOBILE_MONEY_SMS_WEBHOOK_SECRET" | npx wrangler secret put MOBILE_MONEY_SMS_WEBHOOK_SECRET
           printf '%s' "$CRON_SECRET" | npx wrangler secret put CRON_SECRET
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -71,6 +72,7 @@ jobs:
           TELEGRAM_ADMIN_USER_IDS: ${{ secrets.TELEGRAM_ADMIN_USER_IDS }}
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
           PAYMENT_WEBHOOK_SECRET: ${{ secrets.PAYMENT_WEBHOOK_SECRET }}
+          MOBILE_MONEY_SMS_WEBHOOK_SECRET: ${{ secrets.MOBILE_MONEY_SMS_WEBHOOK_SECRET }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
       - name: Register store Telegram webhook and commands
         if: github.event_name == 'workflow_dispatch'
@@ -84,3 +86,14 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+
+      - name: Verify production storefront and database-backed config
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 8); do
+            if curl --fail --silent --show-error --output /dev/null https://ecommerce-platform.masud50003.workers.dev/; then break; fi
+            if [ "$attempt" -eq 8 ]; then echo "Storefront smoke test failed"; exit 1; fi
+            sleep 10
+          done
+          curl --fail --silent --show-error https://ecommerce-platform.masud50003.workers.dev/api/storefront/config --output /tmp/storefront-config.json
+          node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("/tmp/storefront-config.json","utf8"));if(!d.settings||!Array.isArray(d.zones))process.exit(1);console.log("Storefront and Firestore-backed config smoke test passed.")'
