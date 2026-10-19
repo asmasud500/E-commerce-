@@ -107,7 +107,7 @@ export async function createOrderWithStockReservation(args: {
 }) {
   const orderId = args.orderData.idempotencyKey ? await deterministicId("order:" + String(args.orderData.idempotencyKey)) : id();
   const now = new Date();
-  const order = { ...withDefaults("order", args.orderData), id: orderId, createdAt: now, updatedAt: now };
+  const order: AnyObj = { ...withDefaults("order", args.orderData), id: orderId, createdAt: now, updatedAt: now };
   const txResponse: any = await req(":beginTransaction", {
     method: "POST",
     body: JSON.stringify({ options: { readWrite: {} } })
