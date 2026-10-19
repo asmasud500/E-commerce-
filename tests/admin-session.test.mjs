@@ -68,3 +68,42 @@ test("expired signed sessions are rejected", async () => {
   )).toString("base64url");
   assert.equal(await readAdminSession(payload + "." + signature), null);
 });
+
+import { canAccessAdminPath } from "../lib/auth/permissions.ts";
+
+test("support role is read-only for orders and cannot mutate them", () => {
+  assert.equal(canAccessAdminPath("SUPPORT", "/api/admin/orders", "GET"), true);
+  assert.equal(canAccessAdminPath("SUPPORT", "/api/admin/orders/order-1", "PATCH"), false);
+  assert.equal(canAccessAdminPath("SUPPORT", "/api/admin/payment-gateways", "GET"), false);
+});
+
+test("order manager can update orders but cannot mutate payment gateway configuration", () => {
+  assert.equal(canAccessAdminPath("ORDER_MANAGER", "/api/admin/orders/order-1", "PATCH"), true);
+  assert.equal(canAccessAdminPath("ORDER_MANAGER", "/api/admin/orders", "DELETE"), false);
+  assert.equal(canAccessAdminPath("ORDER_MANAGER", "/api/admin/payment-gateways", "POST"), false);
+  assert.equal(canAccessAdminPath("ORDER_MANAGER", "/api/admin/reports", "GET"), true);
+  assert.equal(canAccessAdminPath("ORDER_MANAGER", "/api/admin/reports", "POST"), false);
+});
+
+test("product manager can manage catalogue and delivery zones only", () => {
+  assert.equal(canAccessAdminPath("PRODUCT_MANAGER", "/api/admin/products", "POST"), true);
+  assert.equal(canAccessAdminPath("PRODUCT_MANAGER", "/api/admin/delivery-zones/zone-1", "PATCH"), true);
+  assert.equal(canAccessAdminPath("PRODUCT_MANAGER", "/api/admin/orders", "GET"), false);
+  assert.equal(canAccessAdminPath("PRODUCT_MANAGER", "/api/admin/payment-gateways", "POST"), false);
+});
+
+test("manager cannot manage staff, global settings, or audit history", () => {
+  assert.equal(canAccessAdminPath("MANAGER", "/api/admin/products", "POST"), true);
+  assert.equal(canAccessAdminPath("MANAGER", "/api/admin/staff", "GET"), false);
+  assert.equal(canAccessAdminPath("MANAGER", "/api/admin/store-settings", "PATCH"), false);
+  assert.equal(canAccessAdminPath("MANAGER", "/api/admin/activity", "GET"), false);
+});
+
+test("super admin can access administrative modules", () => {
+  assert.equal(canAccessAdminPath("SUPER_ADMIN", "/api/admin/staff", "GET"), true);
+  assert.equal(canAccessAdminPath("SUPER_ADMIN", "/api/admin/payment-gateways", "POST"), true);
+});
+
+test("unknown roles fail closed", () => {
+  assert.equal(canAccessAdminPath("UNKNOWN_ROLE", "/api/admin/products", "GET"), false);
+});
