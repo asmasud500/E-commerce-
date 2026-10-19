@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
+import { confirmPaymentAtomically } from "@/lib/firestore";
 import { notifyStatus } from "@/lib/notifications/telegram-admin";
 
 const PROVIDERS = new Set(["BKASH", "NAGAD", "ROCKET"]);
@@ -59,27 +60,26 @@ export async function POST(req: NextRequest) {
     });
     if (duplicate) return NextResponse.json({ ok: true, matched: false, message: "Transaction ID was already processed." });
 
-    let confirmed = false;
-    await db.$transaction(async (tx) => {
-      const changed = await tx.order.updateMany({
-        where: { id: o.id, paymentStatus: "PENDING", status: "PENDING", paymentReference: transactionId, paymentSenderLast4: senderLast4, paymentProvider: provider },
-        data: { paymentStatus: "PAID", status: "CONFIRMED", paymentAutoConfirmedAt: new Date() }
-      });
-      if (changed.count !== 1) return;
-      await tx.paymentTransaction.create({
-        data: {
-          orderId: o.id, gatewayId: o.paymentGatewayId!, reference: transactionId,
-          providerTransactionId: transactionId, amount: o.total, status: "PAID",
-          rawResponse: { source: "verified_mobile_money_sms_webhook", provider, senderLast4 },
-          verifiedAt: new Date()
-        }
-      });
-      await tx.stockReservation.updateMany({ where: { orderId: o.id, status: "HELD" }, data: { status: "CONFIRMED" } });
-      await tx.auditLog.create({
-        data: { action: "MOBILE_MONEY_SMS_AUTO_CONFIRMED", entity: "Order", entityId: o.id, metadata: { transactionId, provider, senderLast4, amount } }
-      });
-      confirmed = true;
+    const result = await confirmPaymentAtomically({
+      orderId: o.id,
+      gatewayId: o.paymentGatewayId,
+      providerTransactionId: transactionId,
+      reference: transactionId,
+      amount,
+      rawResponse: { source: "verified_mobile_money_sms_webhook", provider, senderLast4 },
+      expectedPaymentReference: transactionId,
+      expectedSenderLast4: senderLast4,
+      expectedProvider: provider,
+      autoConfirmed: true,
+      auditAction: "MOBILE_MONEY_SMS_AUTO_CONFIRMED"
     });
+    const confirmed = result.confirmed;
+    if (!confirmed && result.reason === "duplicate_transaction") {
+      return NextResponse.json({ ok: true, matched: false, message: "Transaction ID was already processed." }, { status: 409 });
+    }
+    if (!confirmed && result.reason === "evidence_mismatch") {
+      return NextResponse.json({ ok: true, matched: false, message: "Payment evidence changed; manual review required." }, { status: 409 });
+    }
     if (confirmed) await notifyStatus(o.id);
     return NextResponse.json({ ok: true, matched: true, confirmed });
   } catch (error: unknown) {
