@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {db} from "@/lib/prisma";
+import {recordAdminAudit} from "@/lib/auth/audit";
 
 const schema=z.object({
   storeName:z.string().trim().min(1).max(120).optional(),
@@ -35,6 +36,7 @@ export async function PUT(req:NextRequest){
     const row=existing
       ? await db.storeSetting.update({where:{id:"store"},data})
       : await db.storeSetting.create({data:{...defaults,...data,id:"store"}});
+    await recordAdminAudit(req,{action:"STORE_SETTINGS_UPDATED",entity:"storeSetting",entityId:"store",metadata:{changedFields:Object.keys(parsed.data)}});
     return NextResponse.json({...defaults,...row});
   }catch(error){
     console.error("Admin store settings PUT failed:",error instanceof Error?error.message:String(error));
