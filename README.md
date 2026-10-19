@@ -71,7 +71,7 @@ Call `POST /api/jobs/release-stock` with `Authorization: Bearer CRON_SECRET`. Sc
 
 Checkout inventory reservation now uses Firestore's native read-write transaction: product stock decrements, order creation, order items, and held reservations are committed atomically. A deterministic order document ID also makes a repeated idempotency key fail safely at the atomic commit rather than creating a second order.
 
-**Important remaining limitation:** the generic Prisma-compatible `db.$transaction` wrapper is still not a real transaction. Payment settlement, SMS auto-confirmation, stock-release jobs, and some admin cancel/reject flows still use that wrapper and can partially apply multi-document updates during concurrent requests or failures. Those paths must be migrated to native Firestore transactions (or a real transactional database) and load-tested before the system is considered production-ready for concurrent payment/order processing.
+**Important remaining limitation:** the generic Prisma-compatible `db.$transaction` wrapper is still not a real transaction and other application paths still use it. Core checkout, verified payment settlement, mobile-money SMS auto-confirmation, proof-reference claiming, expired-stock release, admin payment confirm/reject, pending-order cancellation, and manual refund recording now use dedicated native Firestore transactions. This does not make every endpoint transactional: other admin edits, general order-status updates, and unrelated multi-document operations still need review. The current REST adapter also needs staging/load testing against the configured Firestore project before production traffic.
 
 ## CI checks
 
