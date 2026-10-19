@@ -125,6 +125,12 @@ export default async function Home(){
           <HeroSlider flashImages={flashImages} newImages={newImages} flashHref={hasFlash?"#flash-sale":"/products"}/>
         </div>
 
+        <section className="hp-benefits" aria-label="Shopping benefits">
+          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">✓</span><span><strong>Simple, secure checkout</strong><small>Clear order details before you pay</small></span></div>
+          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">৳</span><span><strong>Local payment options</strong><small>Choose an available payment method</small></span></div>
+          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">↗</span><span><strong>Order updates</strong><small>Keep track of your order status</small></span></div>
+        </section>
+
         {banners.length>0&&<section aria-label="Store promotions" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12,margin:"20px 0"}}>
           {banners.map((b:any)=><Link key={b.id} href={typeof b.href==="string"&&b.href.startsWith("/")?b.href:"/products"} style={{display:"block",position:"relative",minHeight:120,overflow:"hidden",borderRadius:14,background:"var(--card,#f3f4f6)",border:"1px solid var(--border,#e5e7eb)"}}>
             <img src={b.imageUrl} alt={b.title||"Store promotion"} loading="lazy" decoding="async" style={{width:"100%",height:160,objectFit:"cover",display:"block"}}/>
