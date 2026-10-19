@@ -22,7 +22,7 @@ export default function AdminResourceManager({kind}:{kind:Kind}){
  const markLocation=()=>{
   if(!navigator.geolocation){setNotice("This browser does not support location access.");return;}
   setNotice("Requesting location permission…");
-  navigator.geolocation.getCurrentPosition(pos=>{setForm(old=>({...old,latitude:String(pos.coords.latitude),longitude:String(pos.coords.longitude)}));setNotice("Location marked. Coordinates saved in the form; press Save to store them.");},err=>setNotice(err.code===1?"Location permission denied. You can enter coordinates manually.":"Could not get location. Try outdoors or enter coordinates manually."),{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
+  navigator.geolocation.getCurrentPosition(pos=>{setForm(old=>({...old,latitude:String(pos.coords.latitude),longitude:String(pos.coords.longitude)}));setNotice("Location marked. Coordinates saved in the form; press Save to store them.");},err=>setNotice(err.code===1?"Location access is blocked. Allow Location permission for this site in your browser settings, then reload; or enter latitude and longitude manually.":"Could not get GPS location. Check device Location/GPS and browser permission, or enter coordinates manually."),{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
  };
  const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setNotice("");try{
   const body:Record<string,any>={...form};
@@ -55,7 +55,7 @@ export default function AdminResourceManager({kind}:{kind:Kind}){
   {select("division","Division",BANGLADESH_LOCATIONS.map(x=>x.name),true)}
   {select("district","District",districts.map(x=>x.name),true,!form.division)}
   {upazilas.length?select("upazila","Upazila",upazilas,true,!form.district):input("upazila","Upazila / Thana","text",true,"Enter upazila / thana")}
-  {input("postalCode","Postal code","text",true,"e.g. 5500")}
+  {input("postalCode","Postal code (optional)","text",false,"e.g. 5500 (optional)") }
   {input("locationDescription","Exact delivery location (village / area / road / house / landmark)","text",true,"Village, para, road, house no. or nearby landmark")}
   <div className="admin-location-mark"><button type="button" onClick={markLocation}>📍 Mark location using this device</button><p>Browser permission required. GPS coordinates help identify the delivery point; you can also enter them manually.</p></div>
   {input("latitude","Latitude (optional)","number",false,"e.g. 25.9167")}
@@ -69,7 +69,7 @@ export default function AdminResourceManager({kind}:{kind:Kind}){
   {input("title","Flash sale title","text",true)}{input("productIds","Product IDs (comma separated)","text",true)}{input("discountPercent","Discount percent (1–90)","number",true)}{input("startsAt","Start time","datetime-local",true)}{input("endsAt","End time","datetime-local",true)}
  </>}
  <button disabled={busy} type="submit">{busy?"Saving…":"Save"}</button></form>
- {kind==="delivery-zones"&&<p className="admin-footnote">Division and district lists are provided. Rangpur division includes its eight districts and listed upazilas; for other divisions, enter the upazila manually. Postal codes and exact addresses must be confirmed by the customer.</p>}
+ {kind==="delivery-zones"&&<p className="admin-footnote">Postal code is optional. Choose the division and district; select an upazila when listed, or enter it manually when unavailable. If GPS is blocked, allow location access in your browser settings or enter latitude and longitude manually. Confirm exact delivery addresses with the customer.</p>}
  {kind==="flash-sales"&&<p className="admin-footnote">Product IDs must match existing product document IDs.</p>}</section>
  <section className="admin-recent"><div className="admin-section-heading"><div><h2>Saved records</h2><p>{rows.length} record(s)</p></div><button type="button" onClick={()=>void load()}>Refresh</button></div>{rows.length===0?<p className="admin-empty">No records yet.</p>:<div className="admin-table-wrap"><table><thead><tr><th>Name</th><th>Status</th><th>Details</th><th>Actions</th></tr></thead><tbody>{rows.map(row=><tr key={row.id}><td>{label(row)}</td><td><span className="admin-status">{row.active?"Active":"Inactive"}</span></td><td>{kind==="delivery-zones"?[row.division,row.district,row.upazila,row.postalCode,row.locationDescription,"৳"+row.fee,row.estimatedDays+" day(s)"].filter(Boolean).join(" · "):kind==="banners"?(row.imageUrl||"No image URL"):(row.discountPercent+"% · "+(row.productIds||[]).length+" product(s)")}</td><td><div className="admin-row-actions"><button type="button" onClick={()=>void edit(row)}>Edit</button><button type="button" onClick={()=>void patch(row,{active:!row.active})}>{row.active?"Disable":"Enable"}</button><button type="button" onClick={()=>void remove(row)}>Delete</button></div></td></tr>)}</tbody></table></div>}</section>
  </main></div>;
