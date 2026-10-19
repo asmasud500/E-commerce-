@@ -69,7 +69,8 @@ export async function notifyStatus(orderId:string){
   const chatId=process.env.TELEGRAM_CHAT_ID;if(!chatId)return;
   const o=await db.order.findUnique({where:{id:orderId}});if(!o)return;
   const statusIcon:Record<string,string>={PENDING:"⏳",CONFIRMED:"✅",PROCESSING:"⚙️",SHIPPED:"🚚",DELIVERED:"📬",CANCELLED:"❌",RETURNED:"↩️"};
-  const paymentIcon:Record<string,string>={PENDING:"⏳",PAID:"✅",FAILED:"❌",REFUNDED:"↩️"};\n  return telegramApi("sendMessage",{chat_id:chatId,text:"<b>📦 ORDER STATUS UPDATE</b>\n━━━━━━━━━━━━━━━━━━\n<b>Order ID</b>\n<code>"+esc(o.orderNumber)+"</code>\n\n<b>📍 Order Status</b>\n"+(statusIcon[o.status]||"🔹")+" <b>"+esc(o.status.replace(/_/g," "))+"</b>\n\n<b>💳 Payment Status</b>\n"+(paymentIcon[o.paymentStatus]||"🔹")+" <b>"+esc(o.paymentStatus.replace(/_/g," "))+"</b>\n\n<i>MART STORE · Automated Notification</i>",parse_mode:"HTML",disable_web_page_preview:true});
+  const paymentIcon:Record<string,string>={PENDING:"⏳",PAID:"✅",FAILED:"❌",REFUNDED:"↩️"};
+  return telegramApi("sendMessage",{chat_id:chatId,text:"<b>📦 ORDER STATUS UPDATE</b>\n━━━━━━━━━━━━━━━━━━\n<b>Order ID</b>\n<code>"+esc(o.orderNumber)+"</code>\n\n<b>📍 Order Status</b>\n"+(statusIcon[o.status]||"🔹")+" <b>"+esc(o.status.replace(/_/g," "))+"</b>\n\n<b>💳 Payment Status</b>\n"+(paymentIcon[o.paymentStatus]||"🔹")+" <b>"+esc(o.paymentStatus.replace(/_/g," "))+"</b>\n\n<i>MART STORE · Automated Notification</i>",parse_mode:"HTML",disable_web_page_preview:true});
 }
 
 /** Warn the admin when a sale leaves a product at or below its low-stock threshold. */
