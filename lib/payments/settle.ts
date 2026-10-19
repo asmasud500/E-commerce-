@@ -8,8 +8,8 @@ export async function settlePayment(orderNumber:string,payload:Record<string,unk
  const secrets=gateway.encryptedSecrets?decryptSecrets(gateway.encryptedSecrets):{};
  const config={...((gateway.publicConfig||{}) as Record<string,unknown>),apiBaseUrl:gateway.apiBaseUrl||undefined,qrImageUrl:gateway.qrImageUrl||undefined};
  const verification=await adapter.verify(payload,config,secrets);if(!verification.ok)return {paid:false};
- if(verification.amount!==undefined&&Math.abs(verification.amount-Number(order.total))>0.01)throw new Error("Payment amount mismatch");
- const reference=verification.reference||String(payload.reference||"");const providerId=verification.providerTransactionId||String(payload.providerTransactionId||payload.tran_id||"")||null;let settled=false;
+ const verifiedAmount=Number(verification.amount);if(!Number.isFinite(verifiedAmount)||Math.abs(verifiedAmount-Number(order.total))>0.01)throw new Error("Payment amount missing or mismatch");
+ const reference=verification.reference||String(payload.reference||"");if(gateway.type==="SSLCOMMERZ"&&reference!==order.orderNumber)throw new Error("Verified transaction reference mismatch");const providerId=verification.providerTransactionId||String(payload.providerTransactionId||payload.tran_id||"")||null;if(gateway.type==="SSLCOMMERZ"&&!providerId)throw new Error("Verified provider transaction ID is missing");let settled=false;
  await db.$transaction(async tx=>{
   const changed=await tx.order.updateMany({where:{id:order.id,status:"PENDING",paymentStatus:"PENDING"},data:{paymentStatus:"PAID",status:"CONFIRMED",paymentReference:reference||null}});
   if(changed.count!==1)return;
