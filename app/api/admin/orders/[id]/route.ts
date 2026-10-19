@@ -1,7 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {db} from "@/lib/prisma";
-import {rejectPendingOrderAtomically} from "@/lib/firestore";
+import {rejectPendingOrderAtomically,updateOrderAdminFieldsAtomically} from "@/lib/firestore";
 import {readAdminSession} from "@/lib/auth/admin";
 const next:Record<string,string[]>={PENDING:["CONFIRMED","CANCELLED"],CONFIRMED:["PROCESSING","CANCELLED"],PROCESSING:["SHIPPED"],SHIPPED:["DELIVERED"],DELIVERED:[],CANCELLED:[],REFUNDED:[]};
 const inputSchema=z.object({
@@ -27,17 +27,16 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
    if(!result.rejected)return NextResponse.json({error:"Order was already updated. Refresh and try again."},{status:409});
    return NextResponse.json(await db.order.findUnique({where:{id}}));
   }
-  const data:Record<string,unknown>={};
-  if(input.status&&input.status!==before.status){data.status=input.status;if(input.status==="SHIPPED")data.shippedAt=new Date();if(input.status==="DELIVERED")data.deliveredAt=new Date();}
-  if(input.courierName!==undefined)data.courierName=input.courierName||null;
-  if(input.trackingNumber!==undefined)data.trackingNumber=input.trackingNumber||null;
-  const updated=await db.$transaction(async tx=>{
-   const order=await tx.order.update({where:{id},data});
-   if(input.status&&input.status!==before.status)await tx.auditLog.create({data:{actorId,action:"ORDER_STATUS_CHANGED",entity:"Order",entityId:id,metadata:{from:before.status,to:input.status}}});
-   if(input.courierName!==undefined||input.trackingNumber!==undefined)await tx.auditLog.create({data:{actorId,action:"SHIPMENT_TRACKING_UPDATED",entity:"Order",entityId:id,metadata:{courierName:input.courierName??before.courierName,trackingNumber:input.trackingNumber??before.trackingNumber}}});
-   if(input.status==="CANCELLED"&&before.paymentStatus==="PENDING"){const rs=await tx.stockReservation.findMany({where:{orderId:id,status:"HELD"}});for(const r of rs)await tx.product.update({where:{id:r.productId},data:{stock:{increment:r.quantity}}});await tx.stockReservation.updateMany({where:{orderId:id,status:"HELD"},data:{status:"RELEASED"}})}
-   return order;
+  const result=await updateOrderAdminFieldsAtomically({
+   orderId:id,actorId,
+   ...(input.status!==undefined?{status:input.status}:{}),
+   ...(input.courierName!==undefined?{courierName:input.courierName||null}:{}),
+   ...(input.trackingNumber!==undefined?{trackingNumber:input.trackingNumber||null}:{})
   });
-  return NextResponse.json(updated);
+  if(!result.updated){
+   const status=result.reason==="not_found"?404:409;
+   return NextResponse.json({error:result.reason==="payment_not_paid"?"Payment must be paid before confirmation.":"Order state changed or the requested transition is not allowed."},{status});
+  }
+  return NextResponse.json(await db.order.findUnique({where:{id}}));
  }catch(error){console.error("Admin order update failed:",error instanceof Error?error.message:String(error));return NextResponse.json({error:"Order update failed."},{status:400})}
 }
