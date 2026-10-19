@@ -899,3 +899,12 @@ a{transition:color .18s ease}
   .sf-in{grid-template-columns:1fr}
   .sf-brand,.sf-contact{grid-column:auto}
 }
+
+
+.hp-benefits{max-width:1320px;margin:18px auto 0;padding:0 20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.hp-benefit{display:flex;align-items:center;gap:13px;min-width:0;padding:16px 18px;background:#fff;border:1px solid #e7eaf0;border-radius:16px;box-shadow:0 4px 18px rgba(16,24,40,.025)}
+.hp-benefit-icon{flex:none;width:40px;height:40px;display:grid;place-items:center;border-radius:13px;background:#fff1e7;color:#c2410c;font-size:19px;font-weight:900}
+.hp-benefit strong,.hp-benefit small{display:block}
+.hp-benefit strong{font-size:13px;line-height:1.4;color:#111827}
+.hp-benefit small{font-size:11px;line-height:1.5;margin-top:3px}
+@media(max-width:760px){.hp-benefits{padding-inline:14px;grid-template-columns:1fr;gap:8px;margin-top:12px}.hp-benefit{padding:12px 14px}.hp-benefit-icon{width:36px;height:36px}}
