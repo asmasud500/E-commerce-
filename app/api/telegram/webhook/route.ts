@@ -6,12 +6,12 @@ async function callback(id:string,text:string,alert=false){await telegramApi("an
 async function send(text:string,extra:Record<string,unknown>={}){return telegramApi("sendMessage",{chat_id:process.env.TELEGRAM_CHAT_ID,text,parse_mode:"HTML",...extra})}
 async function editTask(messageId:number|undefined,text:string,extra:Record<string,unknown>={}){if(!messageId)return send(text,extra);const r=await telegramApi("editMessageText",{chat_id:process.env.TELEGRAM_CHAT_ID,message_id:messageId,text,parse_mode:"HTML",...extra});if(r?.ok)return r;return send(text,extra)}
 const MENU:Record<string,string>={"🧾 Orders":"/orders","⏳ Pending":"/pending","📅 Today":"/today","💰 Sales":"/sales","📦 Stock":"/stock","🔎 Search":"/searchhelp","❓ Help":"/help"};
-const mainMenu={keyboard:[
-[{text:"🧾 Orders & Payments"},{text:"📦 Products"}],
-[{text:"📊 Inventory"},{text:"🚚 Delivery"}],
-[{text:"📈 Store Dashboard"},{text:"🎟️ Vouchers & Flash Sale"}],
-[{text:"💳 Payment Gateways"},{text:"❓ Help"}]
-],resize_keyboard:true,is_persistent:true,input_field_placeholder:"Select an admin section"};
+const mainMenu={inline_keyboard:[
+[{text:"🧾 Orders & Payments",callback_data:"menu:orders"},{text:"📦 Products",callback_data:"menu:products"}],
+[{text:"📊 Inventory",callback_data:"menu:inventory"},{text:"🚚 Delivery",callback_data:"menu:delivery"}],
+[{text:"📈 Store Dashboard",callback_data:"run:/dashboard"},{text:"🎟️ Vouchers & Flash Sale",callback_data:"menu:promotions"}],
+[{text:"💳 Payment Gateways",callback_data:"menu:payments"},{text:"❓ Help",callback_data:"menu:help"}]
+]};
 const submenus:Record<string,{title:string;rows:{text:string;cmd:string}[][]}> = {
 orders:{title:"🧾 <b>ORDERS & PAYMENTS</b>\n━━━━━━━━━━━━━━━━━━\nManage orders, review payments and track shipments.\n\n<i>Select an action below.</i>",rows:[[{text:"📋 Latest Orders",cmd:"/orders"},{text:"⏳ Pending Orders",cmd:"/pending"}],[{text:"📅 Today's Summary",cmd:"/today"},{text:"💰 Paid Sales",cmd:"/sales"}],[{text:"🔎 Search Order",cmd:"/searchhelp"},{text:"📦 Track Shipment",cmd:"/track"}],[{text:"↩️ Main Menu",cmd:"/start"}]]},
 products:{title:"📦 <b>PRODUCT MANAGEMENT</b>\n━━━━━━━━━━━━━━━━━━\nCreate products, update pricing and manage publishing.\n\n<i>Select an action below.</i>",rows:[[{text:"📚 Product Catalog",cmd:"/products"},{text:"➕ New Product",cmd:"/newproduct"}],[{text:"🔍 Product Details",cmd:"/product"},{text:"🖼️ Add Product Photo",cmd:"/photo"}],[{text:"💲 Set Price",cmd:"/setprice"}],[{text:"📝 Edit Description",cmd:"/describe"}],[{text:"✅ Publish",cmd:"/publish"},{text:"🙈 Unpublish",cmd:"/unpublish"}],[{text:"↩️ Main Menu",cmd:"/start"}]]},
