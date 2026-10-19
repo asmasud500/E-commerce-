@@ -144,7 +144,7 @@ export default function PaymentGateways() {
         <div className="admin-module-grid">{filtered.map(g => <article className="admin-module-card" key={g.id}>
           <div className="admin-module-top"><span className="admin-module-icon" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",overflow:"hidden",background:"#fff",border:"1px solid #e2e8f0",borderRadius:12,width:54,height:54,padding:6}}>{gatewayLogoUrl(g.type) ? <img src={gatewayLogoUrl(g.type)} alt={moneyLabel(g.type)+" logo"} loading="lazy" referrerPolicy="no-referrer" onError={e=>{e.currentTarget.style.display="none";}} style={{width:"100%",height:"100%",objectFit:"contain"}} /> : <span aria-label="Payment provider icon">৳</span>}</span><span className="admin-module-tag">{g.enabled ? "Enabled" : "Disabled"}</span></div>
           <h3>{g.name}</h3><p>{moneyLabel(g.type)} · {g.mode === "LIVE" ? "Live production" : "Sandbox / test"}</p>
-          {g.publicConfig?.merchantNumber && <p>Merchant: {String(g.publicConfig.merchantNumber)}</p>}
+          {typeof g.publicConfig?.merchantNumber === "string" && g.publicConfig.merchantNumber.length > 0 && <p>Merchant: {g.publicConfig.merchantNumber}</p>}
           {g.apiBaseUrl && <p style={{ overflowWrap: "anywhere" }}>API: {g.apiBaseUrl}</p>}
           {g.type === "BANGLA_QR" && g.qrImageUrl && <img src={g.qrImageUrl} alt="Bangla QR payment code" loading="lazy" style={{ width: 180, maxWidth: "100%", borderRadius: 12, margin: "8px 0" }} />}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: "auto", paddingTop: 12 }}>
