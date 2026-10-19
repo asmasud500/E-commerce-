@@ -71,3 +71,9 @@ test("SSLCOMMERZ settlement requires the verified order reference and provider t
 test("SSLCOMMERZ adapter refuses validation responses without a valid amount and transaction reference", () => {
   assert.match(paymentAdapters, /validStatus&&transaction\.length>0&&Number\.isFinite\(amount\)&&amount>0/);
 });
+
+
+test("payment proof route rate-limits upload attempts", () => {
+  assert.match(paymentProof, /rateLimit\("payment-proof:"/);
+  assert.match(paymentProof, /status: 429/);
+});
