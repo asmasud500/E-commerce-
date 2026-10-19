@@ -32,13 +32,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         });
         if (!evidence) return;
         const ref = current.paymentReference;
+        // Enforce transaction-ID uniqueness for manual dashboard confirmation too,
+        // not only for the automatic SMS webhook.
+        const duplicateTransaction = await tx.paymentTransaction.findFirst({
+          where: { gatewayId: current.paymentGatewayId, providerTransactionId: ref },
+          select: { id: true }
+        });
+        if (duplicateTransaction) return;
+        const duplicateOrderReference = await tx.order.findFirst({
+          where: { id: { not: id }, paymentGatewayId: current.paymentGatewayId, paymentReference: ref },
+          select: { id: true }
+        });
+        if (duplicateOrderReference) return;
         const changed = await tx.order.updateMany({
           where: { id, paymentStatus: "PENDING", status: "PENDING", paymentReference: ref },
           data: { paymentStatus: "PAID", status: "CONFIRMED" }
         });
         if (changed.count !== 1) return;
         await tx.paymentTransaction.create({
-          data: { orderId: id, gatewayId: current.paymentGatewayId, reference: ref, amount: current.total, status: "PAID", rawResponse: { source: "admin_dashboard_confirmation" }, verifiedAt: new Date() }
+          data: { orderId: id, gatewayId: current.paymentGatewayId, reference: ref, providerTransactionId: ref, amount: current.total, status: "PAID", rawResponse: { source: "admin_dashboard_confirmation" }, verifiedAt: new Date() }
         });
         await tx.stockReservation.updateMany({ where: { orderId: id, status: "HELD" }, data: { status: "CONFIRMED" } });
         await tx.auditLog.create({ data: { action: "ADMIN_PAYMENT_CONFIRMED", entity: "Order", entityId: id, metadata: { source: "dashboard" } } });
