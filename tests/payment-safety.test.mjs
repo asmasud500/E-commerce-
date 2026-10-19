@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 const schema = await readFile(new URL("../prisma/schema.prisma", import.meta.url), "utf8");
 const smsWebhook = await readFile(new URL("../app/api/webhooks/mobile-money-sms/route.ts", import.meta.url), "utf8");
 const paymentProof = await readFile(new URL("../app/api/payments/proof/route.ts", import.meta.url), "utf8");
+const firestoreAdapter = await readFile(new URL("../lib/firestore.ts", import.meta.url), "utf8");
 
 test("database schema has a unique provider transaction key per gateway", () => {
   assert.match(schema, /@@unique\(\[gatewayId, providerTransactionId\]\)/);
@@ -81,7 +82,6 @@ test("payment proof route rate-limits upload attempts", () => {
 });
 
 
-const firestoreAdapter = await readFile(new URL("../lib/firestore.ts", import.meta.url), "utf8");
 const checkoutRoute = await readFile(new URL("../app/api/orders/route.ts", import.meta.url), "utf8");
 
 test("checkout uses Firestore native read-write transaction for stock and order writes", () => {
