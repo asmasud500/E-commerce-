@@ -48,7 +48,7 @@ export default function AdminSidebar() {
         <Link href="/admin" className="admin-brand" onClick={() => setOpen(false)}><span>MART</span><small>ADMIN CONTROL CENTER</small></Link>
         <nav aria-label="Admin modules">
           {groups.map(group => (
-            <div key={group.title}>
+            <div className="admin-nav-section" key={group.title}>
               <div className="admin-nav-group">{group.title}</div>
               {group.items.map(([href, label, icon]) => {
                 const active = href === "/admin" ? path === href : path === href || path.startsWith(href + "/");
