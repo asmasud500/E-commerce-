@@ -13,7 +13,8 @@ const groups = [
   { title: "Store management", items: [
     ["/admin/orders", "Orders & fulfilment", "▤"],
     ["/admin/returns", "Returns & refunds", "↩"],
-    ["/admin/products", "Products & inventory", "▣"],
+    ["/admin/products", "Products", "▣"],
+    ["/admin/inventory", "Inventory management", "▤"],
     ["/admin/categories", "Categories", "▦"],
     ["/admin/customers", "Customers", "♙"],
     ["/admin/reviews", "Reviews & moderation", "☆"],
