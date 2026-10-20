@@ -145,7 +145,7 @@ test("MART Pay admin can submit provider credentials securely without exposing s
   assert.match(page, /body: JSON\.stringify\(\{ secrets: values, enabled: false \}\)/);
   assert.match(itemApi, /encryptSecrets\(secrets\)/);
   assert.match(itemApi, /decryptSecrets\(existing\.encryptedSecrets\)/);
-  assert.doesNotMatch(listApi, /encryptedSecrets:true/);
-  assert.match(listApi, /select:safe/);
+  assert.match(listApi, /map\(\(\{encryptedSecrets,\.\.\.gateway\}:any\)=>\(\{\.\.\.gateway,credentialsConfigured:!!encryptedSecrets\}\)\)/);
+  assert.match(listApi, /credentialsConfigured/);
   assert.match(itemApi, /finalType!==\"SSLCOMMERZ\"/);
 });
