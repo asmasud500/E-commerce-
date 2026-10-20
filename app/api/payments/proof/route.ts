@@ -67,7 +67,9 @@ export async function POST(req: NextRequest) {
       gatewayId: o.paymentGatewayId,
       provider: String(o.paymentGateway.type),
       transactionId,
-      senderLast4
+      senderLast4,
+      proofFileId: storagePath,
+      proofFileSize: imageBytes.byteLength
     });
     if (!claim.accepted) {
       await deletePrivateStorageObject(storagePath).catch(() => {});
@@ -76,17 +78,6 @@ export async function POST(req: NextRequest) {
           ? "This transaction ID has already been submitted."
           : "Order or payment evidence changed. Refresh and try again."
       }, { status: 409 });
-    }
-
-    try {
-      await db.order.update({ where: { id: orderId }, data: {
-        paymentProofStoragePath: storagePath,
-        paymentProofContentType: "image/jpeg",
-        paymentProofFileName: "payment-proof.jpg",
-        paymentProofSize: imageBytes.byteLength
-      } });
-    } catch (metadataError) {
-      console.error("Payment proof uploaded but order metadata could not be saved:", metadataError instanceof Error ? metadataError.message : String(metadataError));
     }
 
     // The proof has already been atomically claimed. Telegram is a notification
