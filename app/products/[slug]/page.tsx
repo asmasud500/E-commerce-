@@ -66,6 +66,15 @@ export default async function ProductDetails({params}:{params:Promise<{slug:stri
           </ul>
         </div>
       </div>
+      <section className="pd-details-panel" aria-labelledby="pd-details-heading">
+        <h2 id="pd-details-heading">Product details</h2>
+        <div className="pd-details-copy">{p.description||"Product information will be updated soon."}</div>
+        <div className="pd-perks" style={{gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,190px),1fr))",marginTop:18,paddingTop:16,borderTop:"1px solid #edf0f4"}}>
+          <li><Icon name="shield-check" size={18}/>Secure checkout</li>
+          <li><Icon name="package" size={18}/>Stock checked for selected variants</li>
+          <li><Icon name="truck" size={18}/>{delivery}</li>
+        </div>
+      </section>
       <section className="pg-sec rv" aria-labelledby="rv-h">
         <div className="hp-sec-h hp-tab"><h2 id="rv-h">Customer reviews</h2></div>
         <div className="pg-card rv-box">
