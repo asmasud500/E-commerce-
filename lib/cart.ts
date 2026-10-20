@@ -1,7 +1,8 @@
-export type CartItem = { productId: string; name: string; price: number; quantity: number; sku: string; imageUrl?: string | null; stock?: number; options?: Record<string,string> };
+export type CartItem = { productId: string; lineId?: string; name: string; price: number; quantity: number; sku: string; imageUrl?: string | null; stock?: number; options?: Record<string,string> };
 
 const KEY = "ecommerce-cart";
 const MAX_QTY = 100;
+export function cartLineId(item: Pick<CartItem,"productId"|"options">) { return item.productId+"::"+Object.entries(item.options||{}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+"="+v).join("|"); }
 
 export function getCart(): CartItem[] {
   if (typeof window === "undefined") return [];
@@ -12,7 +13,7 @@ export function getCart(): CartItem[] {
       item && typeof item.productId === "string" && typeof item.name === "string" &&
       Number.isFinite(Number(item.price)) && Number(item.price) >= 0 &&
       Number.isInteger(Number(item.quantity)) && Number(item.quantity) > 0
-    ).map(item => ({...item, price:Number(item.price), quantity:Math.min(MAX_QTY, Number(item.quantity))}));
+    ).map(item => ({...item, lineId:cartLineId(item), price:Number(item.price), quantity:Math.min(MAX_QTY, Number(item.quantity))}));
   } catch { return []; }
 }
 export function saveCart(items: CartItem[]) {
@@ -25,7 +26,7 @@ export function addToCart(item: CartItem) {
   const existing = items.find(i => i.productId === item.productId);
   if (existing && item.options) existing.options = item.options;
   if (existing) existing.quantity = Math.min(MAX_QTY, existing.quantity + Math.max(1, item.quantity));
-  else items.push({...item, price:Number(item.price), quantity:Math.min(MAX_QTY, Math.max(1,item.quantity))});
+  else items.push({...item, lineId, price:Number(item.price), quantity:Math.min(MAX_QTY, Math.max(1,item.quantity))});
   saveCart(items);
   return items;
 }
