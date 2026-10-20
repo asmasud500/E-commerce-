@@ -1654,3 +1654,36 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(255,104,1,.6);outlin
 .mart-page-loading .mart-loading-card{width:min(100%,440px)}
 .mart-spinner{width:22px;height:22px;border:2px solid #fed7aa;border-top-color:var(--accent);border-radius:50%;animation:mart-spin .75s linear infinite}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+
+/* YouTube-inspired loading: thin red top progress and neutral shimmer placeholders */
+@keyframes yt-load-sweep{0%{transform:translateX(-110%)}100%{transform:translateX(360%)}}
+@keyframes yt-load-breathe{0%,100%{opacity:.55}50%{opacity:1}}
+.yt-loading-screen{min-height:100vh;background:var(--bg,#f9fafb);color:var(--text,#111827)}
+.yt-top-progress{position:fixed;z-index:9999;top:0;left:0;right:0;height:3px;overflow:hidden;background:rgba(255,0,0,.09)}
+.yt-top-progress:after{content:"";display:block;width:28%;height:100%;background:#ff0033;box-shadow:0 0 8px rgba(255,0,51,.25);animation:yt-load-sweep 1.15s cubic-bezier(.4,0,.2,1) infinite}
+.yt-loading-header{height:64px;display:flex;align-items:center;gap:16px;padding:0 clamp(16px,4vw,42px);border-bottom:1px solid #e8eaed;background:var(--surface,#fff)}
+.yt-loading-menu{width:22px;height:16px;border-top:2px solid #9aa0a6;border-bottom:2px solid #9aa0a6;position:relative;flex:0 0 auto}
+.yt-loading-menu:after{content:"";position:absolute;left:0;right:0;top:6px;border-top:2px solid #9aa0a6}
+.yt-loading-logo{display:flex;align-items:center;gap:6px;font-size:18px;font-weight:900;letter-spacing:-.06em;color:#172b45;white-space:nowrap}
+.yt-loading-play{display:grid;place-items:center;width:27px;height:19px;border-radius:6px;background:#ff0033;color:#fff;font-size:12px}
+.yt-loading-search{height:38px;max-width:500px;flex:1;margin:auto;border:1px solid #d7dce0;border-radius:22px;background:#f8f9fa}
+.yt-loading-user{width:32px;height:32px;border-radius:50%;background:#e8eaed;flex:0 0 auto}
+.yt-loading-body{max-width:1400px;margin:auto;padding:clamp(20px,4vw,42px)}
+.yt-loading-chips{display:flex;gap:10px;overflow:hidden;margin-bottom:26px}
+.yt-loading-chip{height:32px;min-width:76px;border-radius:8px;background:#e8eaed;flex:0 0 auto}
+.yt-loading-chip:first-child{background:#202124}
+.yt-loading-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 18px}
+.yt-loading-video{min-width:0}
+.yt-loading-thumb{position:relative;overflow:hidden;aspect-ratio:16/9;border-radius:12px;background:#e8eaed}
+.yt-loading-thumb:after,.yt-loading-avatar:after,.yt-loading-line:after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 25%,rgba(255,255,255,.72) 45%,transparent 65%);background-size:200% 100%;animation:mart-skeleton 1.5s linear infinite}
+.yt-loading-meta{display:flex;gap:12px;padding-top:12px}
+.yt-loading-avatar{position:relative;overflow:hidden;width:36px;height:36px;border-radius:50%;background:#e8eaed;flex:0 0 auto}
+.yt-loading-copy{flex:1;min-width:0}
+.yt-loading-line{position:relative;overflow:hidden;height:12px;border-radius:6px;background:#e8eaed;margin:3px 0 9px}
+.yt-loading-line.long{width:92%}.yt-loading-line.short{width:58%}
+.yt-loading-admin{max-width:1400px;margin:auto;padding:32px}
+.yt-loading-admin .yt-loading-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:900px){.yt-loading-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 14px}.yt-loading-admin .yt-loading-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.yt-loading-header{height:56px;padding:0 14px;gap:12px}.yt-loading-logo{font-size:16px}.yt-loading-search{max-width:none;height:34px}.yt-loading-body{padding:18px 12px}.yt-loading-chips{margin-bottom:18px}.yt-loading-grid{grid-template-columns:1fr;gap:22px}.yt-loading-thumb{border-radius:10px}.yt-loading-admin{padding:18px 12px}.yt-loading-admin .yt-loading-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.yt-loading-admin .yt-loading-video .yt-loading-meta{gap:8px}.yt-loading-admin .yt-loading-avatar{width:28px;height:28px}}
+@media(prefers-reduced-motion:reduce){.yt-top-progress:after,.yt-loading-thumb:after,.yt-loading-avatar:after,.yt-loading-line:after{animation:none!important}}
