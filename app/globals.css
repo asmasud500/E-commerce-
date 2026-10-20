@@ -1686,11 +1686,14 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(255,104,1,.6);outlin
 @media(max-width:520px){.yt-loading-header{height:56px;padding:0 14px;gap:12px}.yt-loading-logo{font-size:16px}.yt-loading-search{max-width:none;height:34px}.yt-loading-body{padding:18px 12px}.yt-loading-chips{margin-bottom:18px}.yt-loading-grid{grid-template-columns:1fr;gap:22px}.yt-loading-thumb{border-radius:10px}.yt-loading-admin{padding:18px 12px}.yt-loading-admin .yt-loading-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.yt-loading-admin .yt-loading-video .yt-loading-meta{gap:8px}.yt-loading-admin .yt-loading-avatar{width:28px;height:28px}}
 @media(prefers-reduced-motion:reduce){.yt-loading-thumb:after,.yt-loading-avatar:after,.yt-loading-line:after{animation:none!important}}
 
-/* Keep the interface motion enabled; disable only shimmer/skeleton placeholder motion. */
+/* Keep normal interface motion enabled; disable shimmer, YouTube-style skeleton motion, and loading-screen animations. */
 .loading-skeleton,
 .orders-loading span,
+.mart-loading-card,
+.mart-loading-mark,
 .mart-loading-title,
 .mart-loading-line,
+.mart-loading-progress:after,
 .yt-loading-thumb:after,
 .yt-loading-avatar:after,
 .yt-loading-line:after{animation:none!important}
