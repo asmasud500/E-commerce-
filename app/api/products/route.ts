@@ -2,6 +2,8 @@ import {NextRequest,NextResponse} from "next/server";
 import {db} from "@/lib/prisma";
 import {getEffectivePrice} from "@/lib/products/pricing";
 
+const hasAvailableStock=(p:any)=>Array.isArray(p.variants)&&p.variants.length>0?p.variants.some((v:any)=>Number(v.stock)>0):Number(p.stock)>0;
+
 export async function GET(req:NextRequest){
   try{
     const params=req.nextUrl.searchParams;
@@ -15,7 +17,6 @@ export async function GET(req:NextRequest){
     const selectedCategory=category?categories.find((c:any)=>c.slug===category):null;
     const where:any={
       published:true,
-      stock:{gt:0},
       ...(q?{OR:[
         {name:{contains:q,mode:"insensitive"}},
         {description:{contains:q,mode:"insensitive"}},
@@ -43,9 +44,10 @@ export async function GET(req:NextRequest){
       category:p.categoryId?categories.find((c:any)=>c.id===p.categoryId)||null:null,
       images:imagesByProduct.get(p.id)||[]
     }));
-    const total=hydrated.length;
+    const availableProducts=hydrated.filter(hasAvailableStock);
+    const total=availableProducts.length;
     const now=new Date();
-    const items=hydrated.slice((page-1)*limit,page*limit).map((p:any)=>{
+    const items=availableProducts.slice((page-1)*limit,page*limit).map((p:any)=>{
       const regular=Number(p.price);
       const currentSale=p.salePrice!=null?Number(p.salePrice):null;
       const effective=getEffectivePrice(p,flashSales,now);
