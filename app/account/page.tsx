@@ -4,6 +4,7 @@ import Link from "next/link";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import {Icon} from "@/components/Icons";
+import InvoiceDownloadButton from "@/components/InvoiceDownloadButton";
 
 const tone=(s:string)=>s==="PAID"||s==="DELIVERED"||s==="CONFIRMED"?"ok":s==="FAILED"||s==="CANCELLED"||s==="REFUNDED"?"bad":"wait";
 const money=(n:any)=>Number(n||0).toLocaleString("en-BD",{maximumFractionDigits:2});
@@ -50,6 +51,7 @@ export default function Account(){
    <ul>{(o.items||[]).map((i:any)=><li key={i.id}>{i.name} × {i.quantity} <span>— ৳{money(i.lineTotal)}</span></li>)}</ul>
    <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:14}}>
     <Link href={"/track?order="+encodeURIComponent(o.orderNumber)} className="pg-btn pg-btn-navy">Track order</Link>
+    <InvoiceDownloadButton orderId={o.id}/>
     {o.status==="PENDING"&&o.paymentStatus==="PENDING"&&<button type="button" className="pg-btn pg-btn-line" disabled={busy===o.orderNumber} onClick={()=>void cancelOrder(o.orderNumber)}>{busy===o.orderNumber?"Cancelling…":"Cancel order"}</button>}
     {o.status==="DELIVERED"&&<Link href={"/track?order="+encodeURIComponent(o.orderNumber)} className="pg-btn pg-btn-line">Return / refund options</Link>}
     <Link href="/products" className="pg-btn pg-btn-line">Shop again</Link>
