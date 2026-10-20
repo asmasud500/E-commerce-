@@ -1,4 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
+import {readAdminSession} from "@/lib/auth/admin";
 import {db} from "@/lib/prisma";
 import {decryptSecrets,encryptSecrets} from "@/lib/security/gateway-secrets";
 import {z} from "zod";
@@ -8,6 +9,8 @@ const input=z.object({name:z.string().trim().min(1).max(100).optional(),type:z.e
 const safe={id:true,name:true,type:true,mode:true,enabled:true,sortOrder:true,apiBaseUrl:true,publicConfig:true,qrImageUrl:true,qrMerchantName:true,createdAt:true,updatedAt:true} as const;
 
 export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}>}){
+ const session=await readAdminSession(req.cookies.get("admin_session")?.value||"");
+ if(!session)return NextResponse.json({error:"Admin authentication required."},{status:401});
  const {id}=await params;
  try{
   const b=input.parse(await req.json());
@@ -30,6 +33,8 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
  }catch{return NextResponse.json({error:"Invalid gateway update"},{status:400})}
 }
 export async function DELETE(req:NextRequest,{params}:{params:Promise<{id:string}>}){
+ const session=await readAdminSession(req.cookies.get("admin_session")?.value||"");
+ if(!session)return NextResponse.json({error:"Admin authentication required."},{status:401});
  const {id}=await params;
  try{
   const existing=await db.paymentGateway.findUnique({where:{id},select:{id:true,name:true,type:true,enabled:true}});
