@@ -6,7 +6,7 @@ export type HomeProduct={
   price:number;original:number|null;discount:number;image:string|null;
   rating:number;reviews:number;sold:number;soldPct:number;
   categoryId:string|null;category:string|null;
-  freeDelivery?:boolean;
+  freeDelivery?:boolean;hasVariants?:boolean;
 };
 
 export const money=(n:number)=>"৳"+n.toLocaleString("en-BD",{maximumFractionDigits:2});
@@ -61,7 +61,7 @@ export function ProductCard({p}:{p:HomeProduct}){
       <div className="hp-pm">
         <Link href={"/products/"+p.slug} className="hp-pm-link" aria-label={p.name}><Media p={p}/></Link>
         {p.discount>0&&<span className="hp-off">-{p.discount}%</span>}
-        <AddToCart p={{id:p.id,name:p.name,price:p.price,sku:p.sku,image:p.image,stock:p.stock}}/>
+        <AddToCart p={{id:p.id,name:p.name,price:p.price,sku:p.sku,image:p.image,stock:p.stock,hasVariants:p.hasVariants}}/>
       </div>
       <div className="hp-pb">
         {p.category&&<small>{p.category}</small>}
