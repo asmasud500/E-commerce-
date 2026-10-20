@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.text.InputType
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
@@ -25,7 +26,7 @@ class MainActivity : Activity() {
   layout.addView(TextView(this).apply { text = "Mobile Money SMS Bridge\nConfigure private webhook endpoint and secret."; textSize = 20f })
   endpoint = EditText(this).apply { hint = "https://your-domain/api/webhooks/mobile-money-sms"; setText(prefs.getString("endpoint", "")); singleLine = true }
   layout.addView(endpoint, fieldParams())
-  secret = EditText(this).apply { hint = "MOBILE_MONEY_SMS_WEBHOOK_SECRET"; setText(prefs.getString("secret", "")); singleLine = true }
+  secret = EditText(this).apply { hint = "MOBILE_MONEY_SMS_WEBHOOK_SECRET"; setText(prefs.getString("secret", "")); singleLine = true; inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD }
   layout.addView(secret, fieldParams())
   layout.addView(Button(this).apply {
    text = "Save settings"
