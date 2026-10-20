@@ -98,8 +98,13 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
           </div>
         </aside>
         <section aria-label="Product results">
-          <div className="pg-head">
-            <div><h1>{title}</h1><p>{list.length} product{list.length===1?"":"s"} available</p></div>
+          <div className="pg-head pc-catalog-head">
+            <div>
+              <span className="pc-eyebrow">DISCOVER YOUR NEXT FAVOURITE</span>
+              <h1>{title}</h1>
+              <p>Explore quality picks, compare prices and find the right product for you.</p>
+            </div>
+            <span className="pc-results-count"><strong>{list.length}</strong> {list.length===1?"product":"products"} found</span>
           </div>
           <form className="pc-tools" action="/products" method="get" role="search">
             {category&&<input type="hidden" name="category" value={category}/>}
@@ -107,8 +112,17 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
             {freeOnly&&<input type="hidden" name="delivery" value="free"/>}
             <label className="pc-search"><Icon name="search" size={18}/><input name="q" defaultValue={q} placeholder="Search products, brands and more" aria-label="Search products"/></label>
             <select name="sort" defaultValue={sort} aria-label="Sort products"><option value="">Featured first</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option></select>
-            <button className="pg-btn" type="submit">Apply</button>
+            <button className="pg-btn" type="submit"><Icon name="search" size={16}/> Find products</button>
           </form>
+          {(q||category||featured||freeOnly||sort)&&<div className="pc-active-filters" aria-label="Active filters">
+            <span>Active filters</span>
+            {q&&<Link href={href({q:""})} className="pc-filter-chip">Search: {q} <b aria-hidden="true">×</b></Link>}
+            {category&&<Link href={href({category:""})} className="pc-filter-chip">{selectedCategory?.name||"Category"} <b aria-hidden="true">×</b></Link>}
+            {featured&&<Link href={href({featured:""})} className="pc-filter-chip">Featured <b aria-hidden="true">×</b></Link>}
+            {freeOnly&&<Link href={href({delivery:""})} className="pc-filter-chip">Free delivery <b aria-hidden="true">×</b></Link>}
+            {sort&&<Link href={href({sort:""})} className="pc-filter-chip">{sort==="price_asc"?"Price: low to high":"Price: high to low"} <b aria-hidden="true">×</b></Link>}
+            <Link href="/products" className="pc-clear-filters">Clear all</Link>
+          </div>}
           {list.length===0
             ?<div className="pg-card pg-empty"><span className="pg-empty-ic"><Icon name="search" size={26}/></span><h2>No products found</h2><p>Try a different search or browse another category.</p><Link href="/products" className="pg-btn">Clear filters</Link></div>
             :<div className="pc-grid">{list.map(p=><ProductCard key={p.id} p={p}/>)}</div>}
