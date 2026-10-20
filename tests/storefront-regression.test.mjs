@@ -102,6 +102,8 @@ test("wishlist requires customer authentication and reviews require a verified p
   const reviews = await read("../app/api/reviews/route.ts");
   assert.match(wishlist, /customer_session/);
   assert.match(wishlist, /verifyCustomerToken/);
+  assert.match(wishlist, /cf-connecting-ip/);
+  assert.doesNotMatch(wishlist, /x-forwarded-for/);
   assert.match(reviews, /verifyCustomerToken/);
   assert.match(reviews, /Purchase the product before reviewing it/);
   assert.match(reviews, /approved:true/);
