@@ -1,0 +1,37 @@
+name: Android SMS Bridge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android-sms-bridge/**"
+      - ".github/workflows/android-sms-bridge.yml"
+  pull_request:
+    paths:
+      - "android-sms-bridge/**"
+      - ".github/workflows/android-sms-bridge.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android-sms-bridge
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+      - name: Assemble debug APK
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
