@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
     }
 
     const bestSelling = new Map<string, { productId: string; name: string; quantity: number; revenue: number }>();
-    const cancelledOrders = [];
+    const cancelledOrders: Array<{ orderNumber: string; createdAt: Date; total: number }> = [];
     let grossSales = 0;
     let paidSales = 0;
 
