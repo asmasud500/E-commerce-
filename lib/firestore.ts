@@ -130,6 +130,19 @@ export async function createOrderWithStockReservation(args: {
     }
 
     const writes: AnyObj[] = [];
+    const giftCardCode = String(order.giftCardCode || "").trim().toUpperCase();
+    const giftCardAmount = Math.round(Number(order.giftCardDiscount || 0) * 100) / 100;
+    if (giftCardAmount > 0) {
+      if (!giftCardCode || !Number.isFinite(giftCardAmount)) throw new Error("Invalid gift card redemption.");
+      const cards = await transactionQuery("giftCards", [{ field: "code", value: giftCardCode }], transaction);
+      if (cards.length !== 1) throw new Error("Gift card was not found. Please check the code.");
+      const card = docToObj(cards[0]) as AnyObj;
+      const balance = Number(card.balance || 0);
+      if (card.status !== "ACTIVE" || (card.expiresAt && new Date(card.expiresAt).getTime() < now.getTime())) throw new Error("This gift card is inactive or expired.");
+      if (!Number.isFinite(balance) || balance < giftCardAmount) throw new Error("Gift card balance changed. Refresh checkout and try again.");
+      writes.push(firestorePatchWrite("giftCards", cards[0], { balance: Math.round((balance - giftCardAmount) * 100) / 100, updatedAt: now }, await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id")));
+      writes.push(firestoreCreateWrite("giftCardTransactions", { id: id(), giftCardId: card.id, type: "REDEEMED", amount: -giftCardAmount, balanceAfter: Math.round((balance - giftCardAmount) * 100) / 100, reference: "ORDER-" + orderId, orderId, metadata: { source: "checkout" }, createdAt: now, updatedAt: now }, await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id")));
+    }
     const variantDecrements = new Map<string, Map<string, number>>();
     const selectionKey = (o:AnyObj) => Object.entries(o || {}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>String(k)+"="+String(v)).join("|");
     for (const item of args.items) {
