@@ -25,7 +25,7 @@ export async function POST(req:NextRequest){
    if(existing){
     if((existing.userId||null)!==(session?.userId||null))return NextResponse.json({error:"Idempotency key is already in use."},{status:409});
     const expiry=existing.reservations.filter(r=>r.status==="HELD").reduce((min,r)=>r.expiresAt<min?r.expiresAt:min,new Date(8640000000000000));
-    return NextResponse.json({orderId:existing.id,orderNumber:existing.orderNumber,total:Number(existing.total),discount:Number(existing.discount),reservationExpiresAt:expiry.toISOString(),paymentToken:await createOrderAccessToken(existing.id),replayed:true},{status:200});
+    return NextResponse.json({orderId:existing.id,orderNumber:existing.orderNumber,total:Number(existing.total),discount:Number(existing.discount),reservationExpiresAt:expiry.toISOString(),paymentToken:await createOrderAccessToken(existing.id),cod:existing.paymentProvider===COD_PROVIDER,replayed:true},{status:200});
    }
   }
   const uniqueSelections=input.items.map(i=>i.productId+"|"+Object.entries(i.options||{}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+"="+v).join("|"));if(new Set(uniqueSelections).size!==uniqueSelections.length)return NextResponse.json({error:"Duplicate product variants are not allowed."},{status:400});
