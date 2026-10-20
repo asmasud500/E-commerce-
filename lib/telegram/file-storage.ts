@@ -1,5 +1,3 @@
-import { telegramApi } from "@/lib/notifications/telegram-admin";
-
 type TelegramResponse = { ok?: boolean; description?: string; result?: any };
 
 function botToken() {
@@ -19,7 +17,7 @@ export async function storeTelegramFile(bytes: Uint8Array, filename: string, mim
   const form = new FormData();
   form.set("chat_id", storageChat());
   if (caption) form.set("caption", caption.slice(0, 900));
-  form.set("document", new Blob([new Uint8Array(bytes)], { type: mime }), filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120));
+  form.set("document", new Blob([Uint8Array.from(bytes).buffer as ArrayBuffer], { type: mime }), filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120));
   const response = await fetch("https://api.telegram.org/bot" + botToken() + "/sendDocument", {
     method: "POST", body: form, cache: "no-store"
   });
