@@ -16,6 +16,7 @@ export default function AddToCart({p}:Props){
     if(timer.current)clearTimeout(timer.current);
     timer.current=setTimeout(()=>setDone(false),1600);
   }
+  if(p.hasVariants)return <Link href={"/products/"+(p.slug||p.id)} className="hp-atc" aria-label={`Choose options for ${p.name}`}><Icon name="check" size={16}/> Choose options</Link>;
   return (
     <button type="button" className="hp-atc" onClick={add} aria-label={`Add ${p.name} to cart`}>
       {done?<><Icon name="check" size={16}/> Added</>:<><Icon name="cart" size={16}/> Add to Cart</>}
