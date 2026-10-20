@@ -61,7 +61,8 @@ async function loadHome(){
   const list:HomeProduct[]=products.map((p:any)=>{
     const regular=Number(p.price);
     const sale=num(p.salePrice),compare=num(p.compareAtPrice);
-    const price=getEffectivePrice(p,flashSales);
+    const variantPrices=Array.isArray(p.variants)?p.variants.map((v:any)=>Number(v.salePrice!=null&&Number(v.salePrice)<Number(v.price)?v.salePrice:v.price)).filter((n:number)=>Number.isFinite(n)&&n>=0):[];
+    const price=getEffectivePrice(variantPrices.length?{...p,price:Math.min(...variantPrices),salePrice:null}:p,flashSales);
     const original=price<regular?regular:(compare&&compare>price?compare:null);
     const discount=original?Math.round((1-price/original)*100):0;
     const r=rating.get(p.id);
