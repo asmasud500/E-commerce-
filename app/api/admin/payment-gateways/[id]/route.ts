@@ -17,7 +17,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
   const storedSecrets=existing.encryptedSecrets?decryptSecrets(existing.encryptedSecrets):{};
   const candidateSecrets=b.secrets||storedSecrets;
   const hasCredentials=!!(String(candidateSecrets.storeId||"").trim()&&String(candidateSecrets.storePassword||"").trim());
-  if(b.enabled===true&&finalType!=="SSLCOMMERZ")return NextResponse.json({error:"This provider has no verified automatic adapter yet. Keep it disabled until an approved automatic integration is implemented."},{status:409});
+  const finalPublicConfig=(b.publicConfig??existing.publicConfig) as Record<string,unknown>|null;\n  const isCashOnDelivery=finalType==="CUSTOM"&&finalPublicConfig?.cod===true;\n  if(b.enabled===true&&finalType!=="SSLCOMMERZ"&&!isCashOnDelivery)return NextResponse.json({error:"This provider has no verified automatic adapter yet. Keep it disabled until an approved automatic integration is implemented."},{status:409});
   if(b.enabled===true&&finalType==="SSLCOMMERZ"&&!hasCredentials)return NextResponse.json({error:"Store ID and Store Password are required before enabling SSLCOMMERZ."},{status:409});
   if(b.secrets&&finalType==="SSLCOMMERZ"&&(!String(b.secrets.storeId||"").trim()||!String(b.secrets.storePassword||"").trim()))return NextResponse.json({error:"Save both SSLCOMMERZ Store ID and Store Password together."},{status:400});
   const {secrets,...rest}=b;
