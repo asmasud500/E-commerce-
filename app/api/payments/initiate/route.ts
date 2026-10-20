@@ -23,7 +23,13 @@ export async function POST(req:NextRequest){
   const adapter=paymentAdapters[gateway.type];if(!adapter)return NextResponse.json({error:"Payment adapter unavailable."},{status:400});
   const secrets=gateway.encryptedSecrets?decryptSecrets(gateway.encryptedSecrets):{};
   const config={...((gateway.publicConfig||{}) as Record<string,unknown>),mode:gateway.mode,apiBaseUrl:gateway.apiBaseUrl||undefined,qrImageUrl:gateway.qrImageUrl||undefined,qrMerchantName:gateway.qrMerchantName||undefined};
-  const result=await adapter.init({orderId:order.id,orderNumber:order.orderNumber,amount:Number(order.total),customerName:order.customerName,customerPhone:order.customerPhone,customerEmail:order.customerEmail||undefined,callbackBaseUrl:new URL("/",req.url).origin},config,secrets);
+  const configuredCallbackBase=process.env.PAYMENT_CALLBACK_BASE_URL||process.env.NEXT_PUBLIC_SITE_URL||"";
+  let callbackBaseUrl="";
+  try{
+   callbackBaseUrl=configuredCallbackBase?new URL(configuredCallbackBase).origin:(process.env.NODE_ENV==="production"?"":new URL("/",req.url).origin);
+  }catch{return NextResponse.json({error:"Invalid payment callback base URL configuration."},{status:503});}
+  if(!callbackBaseUrl||(process.env.NODE_ENV==="production"&&!callbackBaseUrl.startsWith("https://")))return NextResponse.json({error:"Payment callback URL is not configured. Set PAYMENT_CALLBACK_BASE_URL to your canonical HTTPS website URL."},{status:503});
+  const result=await adapter.init({orderId:order.id,orderNumber:order.orderNumber,amount:Number(order.total),customerName:order.customerName,customerPhone:order.customerPhone,customerEmail:order.customerEmail||undefined,callbackBaseUrl},config,secrets);
   return NextResponse.json({...result,amount:Number(order.total),gatewayName:gateway.name},result.ok?{status:200}:{status:400});
  }catch{return NextResponse.json({error:"Payment initiation failed."},{status:400});}
 }
