@@ -56,7 +56,8 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
   let list:HomeProduct[]=products.map((p:any)=>{
     const regular=Number(p.price);
     const sale=num(p.salePrice),compare=num(p.compareAtPrice);
-    const price=sale!=null&&sale>0&&sale<regular?sale:regular;
+    const variantPrices=Array.isArray(p.variants)?p.variants.map((v:any)=>Number(v.salePrice!=null&&Number(v.salePrice)<Number(v.price)?v.salePrice:v.price)).filter((n:number)=>Number.isFinite(n)&&n>=0):[];
+    const price=variantPrices.length?Math.min(...variantPrices):(sale!=null&&sale>0&&sale<regular?sale:regular);
     const original=price<regular?regular:(compare&&compare>price?compare:null);
     const discount=original?Math.round((1-price/original)*100):0;
     const r=rating.get(p.id);
