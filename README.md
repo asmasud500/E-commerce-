@@ -64,7 +64,7 @@ Call `POST /api/jobs/release-stock` with `Authorization: Bearer CRON_SECRET`. Sc
 
 ## Payments and safety
 
-- Never store gateway credentials in source code. Configure gateway secrets through the admin payment-gateway section.
+- Never store gateway credentials in source code. Configure SSLCOMMERZ, bKash, Nagad, Rocket, Upay, and Bangla QR credential fields from Admin → Payment Gateways → Set API credentials. Values are encrypted server-side and never returned to the browser.\n- `PAYMENT_ENCRYPTION_KEY` is the master key used to encrypt those saved credentials and must remain a strong Cloudflare encrypted environment secret; do not put it in the admin database or source code. A compromised/lost key requires rotating/re-entering saved provider credentials.\n- The admin credential form stores provider secrets but does not itself implement a provider API. Currently only SSLCOMMERZ has a verified automatic adapter; other providers remain disabled until their official merchant API integration is built and tested.
 - Set `PAYMENT_CALLBACK_BASE_URL` to the canonical HTTPS origin of your deployed store (for example `https://shop.example.com`). Production payment initiation fails closed when this is missing or not HTTPS, preventing provider callbacks from being generated from an untrusted request host.
 - SSLCOMMERZ validation must explicitly report BDT currency; a missing currency field is not accepted as proof of payment.
 - SSLCOMMERZ callbacks are validated against the provider validation API. Settlement rejects a missing/mismatched amount, an unexpected order reference, or a missing provider transaction ID.
