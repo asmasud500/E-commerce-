@@ -45,11 +45,16 @@ export async function readTelegramFile(fileId: string): Promise<{ bytes: Uint8Ar
 }
 
 export async function uploadPrivatePaymentProof(orderId: string, bytes: Uint8Array) {
-  const stored = await storeTelegramFile(bytes, "payment-proof-" + orderId.slice(0, 40) + ".jpg", "image/jpeg", "Private payment proof · Order " + orderId);
-  return stored.fileId;
+  return storeTelegramFile(bytes, "payment-proof-" + orderId.slice(0, 40) + ".jpg", "image/jpeg", "Private payment proof · Order " + orderId);
 }
-export async function deletePrivateStorageObject(_fileId: string) {
-  // Telegram Bot API does not provide a deleteFile method. Unclaimed uploads remain in the admin chat.
+export async function deletePrivateStorageObject(_fileId: string, messageId?: number | null) {
+  // Telegram has no deleteFile method, but a message uploaded by this bot can be deleted from the storage chat.
+  if (!messageId) return;
+  const response = await fetch("https://api.telegram.org/bot" + botToken() + "/deleteMessage", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: storageChat(), message_id: messageId }), cache: "no-store"
+  });
+  if (!response.ok) throw new Error("Unable to remove unclaimed Telegram upload.");
 }
 export async function readPrivatePaymentProof(fileId: string) {
   const file = await readTelegramFile(fileId);
