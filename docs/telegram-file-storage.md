@@ -4,6 +4,8 @@ The app uses the configured Telegram bot and a private admin chat as a file stor
 
 ## Configure secrets
 
+The existing Firestore database still requires `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`; these are database credentials, not file-storage credentials. Keep them in the secret store as before.
+
 Set these as Cloudflare Worker secrets (or GitHub Actions repository secrets, which the deployment workflow copies into Worker secrets):
 
 - `TELEGRAM_BOT_TOKEN`: token from BotFather
