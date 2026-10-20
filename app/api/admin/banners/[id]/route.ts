@@ -4,7 +4,7 @@ import {db} from "@/lib/prisma";
 
 const schema=z.object({
   title:z.string().trim().min(1).max(120).optional(),
-  imageUrl:z.string().trim().url().max(2000).optional(),
+  imageUrl:z.string().trim().max(480000).refine(v=>/^https?:\\/\\//i.test(v)||/^data:image\\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(v),{message:"Provide a valid image URL or an uploaded image."}).optional(),
   href:z.string().trim().max(500).optional(),
   startsAt:z.string().datetime().nullable().optional(),
   endsAt:z.string().datetime().nullable().optional(),
