@@ -9,7 +9,7 @@ type Gateway = {
   apiBaseUrl?: string | null; qrImageUrl?: string | null; qrMerchantName?: string | null;
   publicConfig?: Record<string, unknown>;
 };
-const types = ["SSLCOMMERZ", "BKASH", "NAGAD", "ROCKET", "BANGLA_QR", "CUSTOM"];
+const types = ["SSLCOMMERZ", "BKASH", "NAGAD", "ROCKET", "UPAY", "BANGLA_QR", "CUSTOM"];
 const initialForm = { name: "", type: "SSLCOMMERZ", mode: "SANDBOX", apiBaseUrl: "", qrImageUrl: "", qrMerchantName: "", merchantNumber: "", instructions: "", cod: false, storeId: "", storePassword: "" };
 const MANUAL_TYPES = ["BKASH", "NAGAD", "ROCKET", "BANGLA_QR", "CUSTOM"];
 const moneyLabel = (s: string) => s.replaceAll("_", " ");
@@ -17,7 +17,7 @@ const credentialFields: Record<string, { key: string; label: string; hint?: stri
   SSLCOMMERZ: [{ key: "storeId", label: "Store ID" }, { key: "storePassword", label: "Store Password" }],
   BKASH: [{ key: "appKey", label: "App Key" }, { key: "appSecret", label: "App Secret" }, { key: "username", label: "API Username" }, { key: "password", label: "API Password" }, { key: "idToken", label: "Optional ID Token" }],
   NAGAD: [{ key: "merchantId", label: "Merchant ID" }, { key: "merchantNumber", label: "Merchant Number" }, { key: "publicKey", label: "Public Key" }, { key: "privateKey", label: "Private Key" }],
-  ROCKET: [{ key: "merchantId", label: "Merchant ID" }, { key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }],
+  ROCKET: [{ key: "merchantId", label: "Merchant ID" }, { key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }],\n  UPAY: [{ key: "merchantId", label: "Merchant ID" }, { key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }, { key: "username", label: "API Username" }, { key: "password", label: "API Password" }],
   BANGLA_QR: [{ key: "merchantId", label: "Merchant ID" }, { key: "terminalId", label: "Terminal ID" }, { key: "apiKey", label: "API Key" }, { key: "apiSecret", label: "API Secret" }],
   CUSTOM: [{ key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }, { key: "username", label: "Username" }, { key: "password", label: "Password" }],
 };
