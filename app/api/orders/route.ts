@@ -32,6 +32,8 @@ export async function POST(req:NextRequest){
   }
   const uniqueSelections=input.items.map(i=>i.productId+"|"+Object.entries(i.options||{}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+"="+v).join("|"));if(new Set(uniqueSelections).size!==uniqueSelections.length)return NextResponse.json({error:"Duplicate product variants are not allowed."},{status:400});
   const gateway=await db.paymentGateway.findFirst({where:{id:input.paymentGatewayId,enabled:true}});if(!gateway)return NextResponse.json({error:"Selected payment gateway is unavailable."},{status:400});
+  const isCod=(gateway.publicConfig as Record<string,unknown>|null)?.cod===true;
+  if(!isCod&&gateway.type!=="SSLCOMMERZ")return NextResponse.json({error:"Only verified automatic merchant checkout or Cash on Delivery is available. Manual send-money methods are disabled."},{status:409});
   const quote=await buildQuote({items:input.items,couponCode:input.couponCode,shippingDivision:input.shippingDivision,shippingDistrict:input.shippingDistrict,shippingUpazila:input.shippingUpazila},{strictCoupon:true});
   const {subtotal,discount,shipping:shippingFee,taxAmount,total}=quote;
   if(quote.couponId&&quote.perCustomerLimit!=null){
@@ -48,7 +50,6 @@ export async function POST(req:NextRequest){
   }
   const orderItems=quote.lines.map(l=>({productId:l.productId,name:l.name,unitPrice:l.unitPrice,quantity:l.quantity,lineTotal:l.lineTotal,options:l.options||{},variantId:l.variantId||null}));
   const orderNumber="ORD-"+Date.now().toString(36).toUpperCase()+"-"+crypto.randomUUID().slice(0,5).toUpperCase(),expiresAt=new Date(Date.now()+30*60*1000);
-  const isCod=(gateway as any).publicConfig?.cod===true;
   const order=await createOrderWithStockReservation({
    orderData:{orderNumber,idempotencyKey:idempotencyKey||null,userId:session?.userId||null,customerName:input.customerName,customerPhone:input.customerPhone,customerEmail:input.customerEmail||null,shippingAddress:input.shippingAddress,shippingDistrict:input.shippingDistrict,shippingDivision:input.shippingDivision,shippingUpazila:input.shippingUpazila,shippingPostalCode:input.shippingPostalCode,shippingLocationDescription:input.shippingLocationDescription,shippingLatitude:input.shippingLatitude??null,shippingLongitude:input.shippingLongitude??null,subtotal,shippingFee,taxAmount,discount,total,couponCode:quote.couponCode||null,paymentGatewayId:gateway.id,...(isCod?{paymentProvider:COD_PROVIDER}:{})},
    items:orderItems,
