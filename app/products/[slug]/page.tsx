@@ -7,7 +7,7 @@ export default async function ProductDetails({params}:{params:Promise<{slug:stri
   if(!p||!p.published)return notFound();
   const regular=Number(p.price);
   const baseEffective=p.salePrice!=null&&Number(p.salePrice)<regular?Number(p.salePrice):regular;
-  const variantPrices=Array.isArray((p as any).variants)?(p as any).variants.map((v:any)=>Number(v.salePrice!=null&&Number(v.salePrice)<Number(v.price)?v.salePrice:v.price)).filter((n:number)=>Number.isFinite(n)&&n>=0):[];
+  const variantPrices=Array.isArray((p as any).variants)?(p as any).variants.filter((v:any)=>Number(v.stock)>0).map((v:any)=>Number(v.salePrice!=null&&Number(v.salePrice)<Number(v.price)?v.salePrice:v.price)).filter((n:number)=>Number.isFinite(n)&&n>=0):[];
   const effective=variantPrices.length?Math.min(...variantPrices):baseEffective;
   const compare=p.compareAtPrice!=null&&Number(p.compareAtPrice)>effective?Number(p.compareAtPrice):null;
   const original=effective<regular?regular:compare;
