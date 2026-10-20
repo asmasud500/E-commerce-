@@ -64,6 +64,7 @@ test("payment provider settlement verifies provider evidence, amount, and duplic
   const adapter = await read("../lib/payments/adapters.ts");
   const atomic = await read("../lib/firestore.ts");
   assert.match(settlement, /adapter\.verify\(payload,config,secrets\)/);
+  assert.match(settlement, /mode:gateway\.mode/);
   assert.match(settlement, /Number\.isFinite\(verifiedAmount\)/);
   assert.match(settlement, /confirmPaymentAtomically\(/);
   assert.match(adapter, /validStatus/);
