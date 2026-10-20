@@ -44,7 +44,7 @@ export default function AdminProducts(){
   <p className="catalog-import-description">Download a CSV template, edit product data in your spreadsheet, then import it back. CSV files work with Microsoft Excel and Google Sheets.</p>
   <div className="catalog-import-actions">
    <button type="button" onClick={()=>downloadCSV("product-import-template.csv",template)} className="catalog-secondary-action">Download Template</button>
-   <button type="button" onClick={exportProducts} style={{padding:"10px 14px",borderRadius:8,border:"1px solid #cbd5e1",background:"#fff"}}>Export Current Products</button>
+   <button type="button" onClick={exportProducts} className="catalog-secondary-action">Export Current Products</button>
    <button type="button" disabled={busy} onClick={()=>fileRef.current?.click()} className="catalog-import-action">{busy?"Importing…":"Choose CSV and Import"}</button>
    <input ref={fileRef} type="file" accept=".csv,text/csv" style={{display:"none"}} onChange={e=>importFile(e.target.files?.[0])}/>
   </div>
@@ -53,7 +53,8 @@ export default function AdminProducts(){
   {summary&&<div style={{display:"flex",gap:18,flexWrap:"wrap",marginTop:12}}><span>Created: <b>{summary.created}</b></span><span>Updated: <b>{summary.updated}</b></span><span>Failed: <b>{summary.failed}</b></span></div>}
   {results.length>0&&<div className="catalog-import-results"><strong>Import row details</strong><div className="catalog-import-results-table"><table><thead><tr><th>CSV row</th><th>SKU</th><th>Result</th><th>Details</th></tr></thead><tbody>{results.map((r,i)=><tr key={r.row+"-"+i}><td>{r.row}</td><td>{r.sku||"—"}</td><td><span className={"catalog-import-status "+r.status}>{r.status}</span></td><td>{r.message}</td></tr>)}</tbody></table></div></div>}
  </section>
- {notice&&!summary&&<div className="catalog-action-notice" role="status">{notice}</div>}\n <section className="catalog-metrics">
+
+ <section className="catalog-metrics">
   <article><span>All products</span><strong>{products.length}</strong><small>Catalog records</small></article>
   <article><span>Published</span><strong>{products.filter(p=>p.published).length}</strong><small>Visible in storefront</small></article>
   <article><span>Low stock</span><strong>{products.filter(p=>p.stock>0&&p.stock<=(p.lowStockThreshold??5)).length}</strong><small>Restock recommended</small></article>
