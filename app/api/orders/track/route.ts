@@ -12,7 +12,7 @@ const iso=(v:any)=>{const raw=v&&typeof v==="object"&&"toDate" in v?v.toDate():v
 /** Public order-number-only lookup. Returns only low-sensitivity delivery progress; no customer, item, address, or payment totals. */
 export async function POST(req:NextRequest){
   try{
-    const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-forwarded-for")||"unknown";
+    const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-real-ip")||"unknown";
     const rl=rateLimit("track:"+ip,15,60_000);
     if(!rl.ok)return NextResponse.json({error:"Too many attempts. Please wait a minute and try again."},{status:429,headers:{"Retry-After":String(rl.retryAfter)}});
     const parsed=schema.safeParse(await req.json().catch(()=>null));
@@ -20,10 +20,11 @@ export async function POST(req:NextRequest){
     const orderNumber=normalizeOrderNumber(parsed.data.orderNumber);
     // Resolve by the canonical order number first. Older orders may have been
     // created by the previous checkout schema, which used phone/email aliases.
-    let o:any=await db.order.findFirst({where:{orderNumber},include:{items:true,paymentGateway:true}});
+    const trackingSelect={id:true,orderNumber:true,status:true,paymentStatus:true,createdAt:true,courierName:true,trackingNumber:true,paymentProofSubmittedAt:true,shippedAt:true,deliveredAt:true,paymentProvider:true} as const;
+    let o:any=await db.order.findFirst({where:{orderNumber},select:trackingSelect});
     // Legacy records may store order numbers with different formatting.
     if(!o){
-      const recent:any[]=await db.order.findMany({take:500,orderBy:{createdAt:"desc"}});
+      const recent:any[]=await db.order.findMany({take:500,orderBy:{createdAt:"desc"},select:trackingSelect});
       o=recent.find(row=>normalizeOrderNumber(row.orderNumber)===orderNumber)||null;
     }
     if(!o)return NextResponse.json(NOT_FOUND,{status:404});
