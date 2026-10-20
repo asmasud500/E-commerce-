@@ -13,13 +13,13 @@ test("database schema has a unique provider transaction key per gateway", () => 
 
 test("personal-number SMS webhook is disabled and cannot auto-confirm Send Money receipts", () => {
   assert.match(smsWebhook, /Personal-number SMS payment confirmation is disabled/);
-  assert.match(smsWebhook, /status: 410/);
+  assert.match(smsWebhook, /status:\\s*410/);
   assert.doesNotMatch(smsWebhook, /confirmPaymentAtomically\(/);
 });
 
 test("manual payment proof route is permanently disabled in favor of provider verification", () => {
   assert.match(paymentProof, /Manual payment proof is disabled/);
-  assert.match(paymentProof, /status: 410/);
+  assert.match(paymentProof, /status:\\s*410/);
   assert.doesNotMatch(paymentProof, /claimPaymentProofAtomically/);
 });
 
@@ -72,7 +72,7 @@ test("SSLCOMMERZ adapter refuses validation responses without a valid amount and
 
 test("payment proof route rate-limits upload attempts", () => {
   assert.match(paymentProof, /rateLimit\("payment-proof:"/);
-  assert.match(paymentProof, /status: 429/);
+  assert.match(paymentProof, /status:\\s*429/);
 });
 
 
@@ -107,8 +107,8 @@ test("verified gateway settlement uses the native Firestore payment transaction"
 
 test("merchant settlement remains atomic while personal SMS and manual proof endpoints stay disabled", () => {
   assert.match(settlementRoute, /confirmPaymentAtomically\(/);
-  assert.match(smsProofRoute, /status: 410/);
-  assert.match(paymentProof, /status: 410/);
+  assert.match(smsProofRoute, /status:\\s*410/);
+  assert.match(paymentProof, /status:\\s*410/);
 });
 
 test("expired stock release restores inventory with a native transaction", () => {
