@@ -77,8 +77,8 @@ export default function Wishlist() {
           {!loading && !error && <span className="pg-pill">{items.length} saved {items.length === 1 ? "item" : "items"}</span>}
         </div>
 
-        {notice && <p className="wishlist-notice" role="status"><Icon name="check-circle" size={17}/>{notice}</p>}
-        {error && <section className="pg-card wishlist-error" role="alert"><span className="wishlist-state-icon"><Icon name="alert-circle" size={23}/></span><div><h2>Something went wrong</h2><p>{error}</p><button type="button" className="pg-btn" onClick={() => void load()} disabled={loading}>{loading ? "Retrying…" : "Try again"}</button></div></section>}
+        {notice && <p className="wishlist-notice" role="status"><Icon name="checkCircle" size={17}/>{notice}</p>}
+        {error && <section className="pg-card wishlist-error" role="alert"><span className="wishlist-state-icon"><Icon name="alertCircle" size={23}/></span><div><h2>Something went wrong</h2><p>{error}</p><button type="button" className="pg-btn" onClick={() => void load()} disabled={loading}>{loading ? "Retrying…" : "Try again"}</button></div></section>}
 
         {loading ? (
           <section className="wishlist-grid" aria-label="Loading wishlist" aria-busy="true">
@@ -106,7 +106,7 @@ export default function Wishlist() {
                     <div className="wishlist-price"><strong>{money(price)}</strong>{price < regular && <del>{money(regular)}</del>}</div>
                     <div className="wishlist-actions">
                       <Link href={"/products/" + product.slug} className="pg-btn">View product <Icon name="arrowRight" size={15}/></Link>
-                      <button type="button" className="pg-btn pg-btn-line" onClick={() => void remove(item.productId)} disabled={removing === item.productId || !!removing} aria-label={"Remove " + product.name + " from wishlist"}>{removing === item.productId ? "Removing…" : <><Icon name="trash-2" size={15}/> Remove</>}</button>
+                      <button type="button" className="pg-btn pg-btn-line" onClick={() => void remove(item.productId)} disabled={removing === item.productId || !!removing} aria-label={"Remove " + product.name + " from wishlist"}>{removing === item.productId ? "Removing…" : <><Icon name="trash" size={15}/> Remove</>}</button>
                     </div>
                   </div>
                 </article>
