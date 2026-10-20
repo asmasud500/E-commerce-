@@ -187,7 +187,7 @@ export default function NewProduct() {
           <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
             <div style={{ flex: "0 0 46px", width: 46, height: 46, display: "grid", placeItems: "center", borderRadius: 14, background: "#ea580c", color: "#fff", fontSize: 23, fontWeight: 800 }}>⌘</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><h2 style={{ margin: 0, fontSize: 21, color: "#111827" }}>3. Product options & variants</h2><span style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", background: "#ffedd5", color: "#9a3412", padding: "5px 8px", borderRadius: 999 }}>Important</span></div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><h2 style={{ margin: 0, fontSize: 21, color: "#111827" }}>2. Product options & variants</h2><span style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", background: "#ffedd5", color: "#9a3412", padding: "5px 8px", borderRadius: 999 }}>Important</span></div>
               <p style={{ margin: "6px 0 0", color: "#57534e", fontSize: 14, lineHeight: 1.65 }}>Build selectable product combinations for any category—electronics, food, furniture, cosmetics, bundles, digital goods and more. Each variant can have its own SKU, price and stock.</p>
             </div>
           </div>
@@ -205,7 +205,7 @@ export default function NewProduct() {
         </section>
 
         <section style={cardStyle}>
-          <div><h2 style={{ margin: 0, fontSize: 19 }}>4. Pricing (BDT)</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Set regular price and optional sale/compare price.</p></div>
+          <div><h2 style={{ margin: 0, fontSize: 19 }}>3. Pricing (BDT)</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Set regular price and optional sale/compare price.</p></div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
             {textField("price", "Regular price (৳)", { required: true, type: "number", min: "0", step: "0.01", placeholder: "e.g. 1200.00" })}
             {textField("compareAtPrice", "Compare-at price (৳)", { type: "number", min: "0", step: "0.01", placeholder: "Optional" })}
@@ -215,7 +215,7 @@ export default function NewProduct() {
         </section>
 
         <section style={cardStyle}>
-          <div><h2 style={{ margin: 0, fontSize: 19 }}>5. Inventory</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Control available stock and low-stock alerts.</p></div>
+          <div><h2 style={{ margin: 0, fontSize: 19 }}>4. Inventory</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Control available stock and low-stock alerts.</p></div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
             {textField("stock", "Available quantity", { required: true, type: "number", min: "0", step: "1" })}
             {textField("lowStockThreshold", "Low-stock threshold", { required: true, type: "number", min: "0", step: "1", help: "Used to identify products that need restocking." })}
@@ -223,7 +223,7 @@ export default function NewProduct() {
         </section>
 
         <section style={cardStyle}>
-          <div><h2 style={{ margin: 0, fontSize: 19 }}>6. Product images</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Add one or more direct image URLs (HTTPS recommended). Images are saved after the product is created.</p></div>
+          <div><h2 style={{ margin: 0, fontSize: 19 }}>5. Product images</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Add one or more direct image URLs (HTTPS recommended). Images are saved after the product is created.</p></div>
           {images.map((image, index) => <div key={index} style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) auto", gap: 10, alignItems: "end" }}>
             <label style={labelStyle}>Image URL {index + 1}
               <input style={fieldStyle} type="url" placeholder="https://example.com/product-image.webp" value={image.url} onChange={e => updateImage(index, "url", e.target.value)} />
@@ -242,7 +242,7 @@ export default function NewProduct() {
         <section style={{ ...cardStyle, borderColor: "#fed7aa", background: "linear-gradient(135deg, #fff 0%, #fff7ed 100%)" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
             <div style={{ width: 42, height: 42, flex: "0 0 42px", display: "grid", placeItems: "center", borderRadius: 12, background: "#ffedd5", color: "#c2410c", fontSize: 20 }}>↗</div>
-            <div><h2 style={{ margin: 0, fontSize: 19 }}>7. Delivery options</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14, lineHeight: 1.6 }}>Choose free delivery, set a product-specific fee, or leave the fee empty to use the configured delivery-area rate.</p></div>
+            <div><h2 style={{ margin: 0, fontSize: 19 }}>6. Delivery options</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14, lineHeight: 1.6 }}>Choose free delivery, set a product-specific fee, or leave the fee empty to use the configured delivery-area rate.</p></div>
           </div>
           <label style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 14, border: "1px solid #fed7aa", borderRadius: 11, background: form.freeShipping ? "#fff7ed" : "#fff", cursor: "pointer" }}>
             <input type="checkbox" checked={form.freeShipping} onChange={e => set("freeShipping", e.target.checked)} style={{ marginTop: 3, accentColor: "#ea580c", width: 17, height: 17 }} />
@@ -255,7 +255,7 @@ export default function NewProduct() {
         </section>
 
         <section style={cardStyle}>
-          <div><h2 style={{ margin: 0, fontSize: 19 }}>8. Store visibility</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14, lineHeight: 1.6 }}>Choose whether the item is highlighted on the storefront or available for customers to buy.</p></div>
+          <div><h2 style={{ margin: 0, fontSize: 19 }}>7. Store visibility</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14, lineHeight: 1.6 }}>Choose whether the item is highlighted on the storefront or available for customers to buy.</p></div>
           <label style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 14, border: "1px solid #e5e7eb", borderRadius: 11, background: form.featured ? "#fff7ed" : "#fff", cursor: "pointer" }}>
             <input type="checkbox" checked={form.featured} onChange={e => set("featured", e.target.checked)} style={{ marginTop: 3, accentColor: "#ea580c", width: 17, height: 17 }} />
             <span><strong style={{ display: "block", color: "#111827" }}>Featured product</strong><small style={{ display: "block", marginTop: 3, color: "#6b7280", fontWeight: 400 }}>Highlight this item in featured product sections where supported.</small></span>
