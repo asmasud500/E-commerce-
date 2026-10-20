@@ -2835,3 +2835,33 @@ img,video,svg,canvas{max-width:100%}
 .site-error-secondary:hover{border-color:#ffc29e;color:#c94e00}
 .site-error-help{margin:24px 0 0;padding-top:18px;border-top:1px solid #eef0f3;color:#8a94a6;font-size:12px}
 @media(max-width:420px){.site-error-page{padding:28px 14px!important}.site-error-card{border-radius:18px}.site-error-actions{display:grid}.site-error-primary,.site-error-secondary{width:100%}}
+
+
+/* Consistent loading, empty and mobile table states for admin resource modules */
+.admin-resource-skeleton{display:grid;gap:12px;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.admin-resource-skeleton span{display:block;height:16px;border-radius:8px;background:linear-gradient(90deg,#eef1f5 25%,#f8fafc 38%,#eef1f5 62%);background-size:400% 100%;animation:admin-resource-shimmer 1.35s ease infinite}
+.admin-resource-skeleton span:nth-child(1){width:42%}
+.admin-resource-skeleton span:nth-child(2){width:86%}
+.admin-resource-skeleton span:nth-child(3){width:68%}
+.admin-resource-skeleton span:nth-child(4){width:54%}
+@keyframes admin-resource-shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+.admin-empty{display:grid;gap:8px;justify-items:start;padding:24px;border:1px dashed #d8dee7;border-radius:14px;background:#fff;color:#475467}
+.admin-empty p{margin:0;color:#667085;font-size:13px}
+.admin-empty button{margin-top:4px}
+.admin-resource-form :where(input,select,textarea){width:100%;min-width:0}
+.admin-resource-form label{min-width:0}
+.admin-resource-form input[type="checkbox"]{width:auto}
+.admin-resource-form :where(input,select,textarea):invalid:not(:placeholder-shown){border-color:#dc2626}
+.admin-content .admin-table-wrap{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}
+.admin-content .admin-table-wrap table{min-width:640px;width:100%}
+.admin-content .admin-table-wrap th,.admin-content .admin-table-wrap td{vertical-align:middle}
+@media(max-width:760px){
+ .admin-resource-form{grid-template-columns:minmax(0,1fr)!important}
+ .admin-resource-form>*{min-width:0;max-width:100%}
+ .admin-content .admin-section-heading,.admin-content .delivery-zone-section-head{align-items:flex-start;gap:12px;flex-wrap:wrap}
+ .admin-content .admin-row-actions{display:flex;flex-wrap:wrap;gap:7px}
+ .admin-content .admin-row-actions>*{max-width:100%;min-width:0}
+ .admin-content .admin-table-wrap{border-radius:12px}
+ .admin-content .admin-resource-skeleton{padding:14px}
+}
+@media(prefers-reduced-motion:reduce){.admin-resource-skeleton span{animation:none}}
