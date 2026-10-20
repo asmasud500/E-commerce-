@@ -80,7 +80,13 @@ export async function POST(req: NextRequest) {
     if (!confirmed && result.reason === "evidence_mismatch") {
       return NextResponse.json({ ok: true, matched: false, message: "Payment evidence changed; manual review required." }, { status: 409 });
     }
-    if (confirmed) await sendPaidOrderTelegram(o.id, "SMS auto-match");
+    // Payment confirmation is already committed atomically. Telegram is only a
+    // notification channel; its outage must not make the SMS bridge retry a
+    // successfully processed payment as though confirmation had failed.
+    if (confirmed) {
+      try { await sendPaidOrderTelegram(o.id, "SMS auto-match"); }
+      catch { console.error("Telegram paid-order notification failed after SMS confirmation."); }
+    }
     return NextResponse.json({ ok: true, matched: true, confirmed });
   } catch (error: unknown) {
     // The database unique constraint on (gatewayId, providerTransactionId) is
