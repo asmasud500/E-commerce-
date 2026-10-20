@@ -94,3 +94,17 @@ test("payment proof retrieval is admin-session protected and never publicly cach
   assert.match(source, /if \(!session\)/);
   assert.match(source, /private, no-store/);
 });
+
+test("checkout disables manual payment instructions and uses gateway mode for automated SSLCOMMERZ", async () => {
+  const adapter = await read("../lib/payments/adapters.ts");
+  const initiate = await read("../app/api/payments/initiate/route.ts");
+  assert.match(adapter, /BKASH:unavailable\("bKash"\)/);
+  assert.match(adapter, /NAGAD:unavailable\("Nagad"\)/);
+  assert.match(adapter, /ROCKET:unavailable\("Rocket"\)/);
+  assert.match(adapter, /BANGLA_QR:unavailable\("Bangla QR"\)/);
+  assert.match(adapter, /securepay\.sslcommerz\.com/);
+  assert.match(adapter, /sandbox\.sslcommerz\.com/);
+  assert.match(adapter, /data\?\.GatewayPageURL\.startsWith\(base\+"\/"\)/);
+  assert.match(adapter, /validationserverAPI\.php/);
+  assert.match(initiate, /mode:gateway\.mode/);
+});
