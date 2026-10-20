@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     if (!(await verifyOrderAccessToken(orderId, String(b.accessToken || "")))) {
       return NextResponse.json({ error: "Invalid order payment access." }, { status: 403 });
     }
-    const o = await db.order.findUnique({ where: { id: orderId }, include: { paymentGateway: true } });
+    const o = await db.order.findUnique({ where: { id: orderId }, include: { paymentGateway: true, items: true } });
     if (!o) return NextResponse.json({ error: "Order not found." }, { status: 404 });
     if (o.paymentStatus === "PAID" || o.status !== "PENDING") {
       return NextResponse.json({ error: "This order has already been processed." }, { status: 409 });
@@ -73,12 +73,30 @@ export async function POST(req: NextRequest) {
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chat = process.env.TELEGRAM_CHAT_ID;
     if (token && chat) {
-      const caption = "🧾 PAYMENT PROOF SUBMITTED\nOrder: " + o.orderNumber +
-        "\nCustomer: " + o.customerName + "\nPhone: " + o.customerPhone +
-        "\nGateway: " + o.paymentGateway.name + "\nAmount: BDT " +
-        Number(o.total).toLocaleString("en-BD") + "\nTransaction ID: " + transactionId +
-        "\nSender last 4 digits: " + senderLast4 +
-        "\n\nAutomatic confirmation only occurs after matching the incoming credit SMS. Verify any uncertain payment manually.";
+      const itemSummary = (o.items || []).map(item =>
+        String(item.name) + " ×" + item.quantity + " (৳" + Number(item.lineTotal).toLocaleString("en-BD") + ")"
+      ).join("; ") || "No item details available";
+      const detailLines = [
+        "🧾 PAYMENT PROOF SUBMITTED",
+        "Order: " + o.orderNumber,
+        "Customer: " + o.customerName,
+        "Phone: " + o.customerPhone,
+        "Email: " + (o.customerEmail || "Not provided"),
+        "Delivery address: " + (o.shippingAddress || "Not provided"),
+        "Items: " + itemSummary,
+        "Subtotal: ৳" + Number(o.subtotal).toLocaleString("en-BD"),
+        "Delivery fee: ৳" + Number(o.shippingFee).toLocaleString("en-BD"),
+        "Discount: ৳" + Number(o.discount).toLocaleString("en-BD"),
+        "Total to verify: ৳" + Number(o.total).toLocaleString("en-BD"),
+        "Gateway: " + o.paymentGateway.name,
+        "Transaction ID: " + transactionId,
+        "Sender last 4 digits: " + senderLast4,
+        "Submitted: " + new Date().toLocaleString("en-BD"),
+        "Verify the incoming payment before confirming."
+      ];
+      // Telegram photo captions are limited to 1,024 characters.
+      let caption = detailLines.join("\n");
+      if (caption.length > 1000) caption = caption.slice(0, 985) + "\n…Details shortened; open the admin order for full information.";
       try {
         const bytes = Uint8Array.from(atob(screenshot.split(",")[1]), c => c.charCodeAt(0));
         const form = new FormData();
