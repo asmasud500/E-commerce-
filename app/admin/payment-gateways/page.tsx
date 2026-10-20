@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { fileToCompressedDataUrl } from "@/lib/client-image";
 
 type Gateway = {
-  id: string; name: string; type: string; mode: string; enabled: boolean;
+  id: string; name: string; type: string; mode: string; enabled: boolean; credentialsConfigured?: boolean;
   apiBaseUrl?: string | null; qrImageUrl?: string | null; qrMerchantName?: string | null;
   publicConfig?: Record<string, unknown>;
 };
@@ -216,7 +216,7 @@ export default function PaymentGateways() {
       {loading ? <p className="admin-empty">Loading payment methods…</p> : filtered.length === 0 ? <p className="admin-empty">No payment methods match your search. Add a method or change the filter.</p> :
         <div className="admin-module-grid">{filtered.map(g => <article className="admin-module-card" key={g.id}>
           <div className="admin-module-top"><span className="admin-module-icon" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",overflow:"hidden",background:"#fff",border:"1px solid #e2e8f0",borderRadius:12,width:54,height:54,padding:6}}>{gatewayLogoUrl(g.type) ? <img src={gatewayLogoUrl(g.type)} alt={moneyLabel(g.type)+" logo"} loading="lazy" referrerPolicy="no-referrer" onError={e=>{e.currentTarget.style.display="none";}} style={{width:"100%",height:"100%",objectFit:"contain"}} /> : <span aria-label="Payment provider icon">৳</span>}</span><span className="admin-module-tag">{g.enabled ? "Enabled" : "Disabled"}</span></div>
-          <h3>{g.name}</h3><p>{moneyLabel(g.type)} · {g.mode === "LIVE" ? "Live production" : "Sandbox / test"}</p>
+          <h3>{g.name}</h3><p>{moneyLabel(g.type)} · {g.mode === "LIVE" ? "Live production" : "Sandbox / test"}</p><p style={{fontSize:12,color:g.credentialsConfigured?"#15803d":"#b45309"}}>{g.credentialsConfigured ? "Encrypted credentials saved" : "Credentials not configured"}</p>
           {typeof g.publicConfig?.merchantNumber === "string" && g.publicConfig.merchantNumber.length > 0 && <p>Merchant: {g.publicConfig.merchantNumber}</p>}
           {typeof g.publicConfig?.instructions === "string" && g.publicConfig.instructions.length > 0 && <p style={{ whiteSpace: "pre-line", fontSize: 13 }}>Instructions: {g.publicConfig.instructions}</p>}
           {credentialEdit?.id === g.id && <div style={{ display: "grid", gap: 10, margin: "10px 0", padding: 12, border: "1px solid var(--admin-border,#cbd5e1)", borderRadius: 12 }}>
