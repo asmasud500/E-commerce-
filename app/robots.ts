@@ -1,2 +1,13 @@
-import type {MetadataRoute}from"next";
-export default function robots():MetadataRoute.Robots{const base=(process.env.NEXT_PUBLIC_SITE_URL||"http://localhost:3000").replace(/\/$/,"");return{rules:{userAgent:"*",allow:"/",disallow:["/admin/","/api/","/account/"]},sitemap:base+"/sitemap.xml"}}
+import type { MetadataRoute } from "next";
+
+export default function robots(): MetadataRoute.Robots {
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+  return {
+    rules: {
+      userAgent: "*",
+      allow: ["/", "/products"],
+      disallow: ["/admin/", "/api/", "/account/", "/cart", "/checkout", "/order-success", "/track", "/wishlist"],
+    },
+    sitemap: base + "/sitemap.xml",
+  };
+}
