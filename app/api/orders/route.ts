@@ -16,7 +16,7 @@ export async function POST(req:NextRequest){
  let reservedCouponId:string|null=null;
  let couponUseCommitted=false;
  try{
-  const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-forwarded-for")||"unknown";
+  const ip=req.headers.get("cf-connecting-ip")||"unknown";
   const rl=rateLimit("order:"+ip,10,60_000);if(!rl.ok)return NextResponse.json({error:"Too many order attempts. Try again later."},{status:429,headers:{"Retry-After":String(rl.retryAfter)}});
   const input=schema.parse(await req.json());
   const idempotencyKey=req.headers.get("idempotency-key")?.trim();
