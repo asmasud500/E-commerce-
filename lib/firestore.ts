@@ -102,7 +102,7 @@ db.$transaction=async(fn:any)=>fn(db);
  */
 export async function createOrderWithStockReservation(args: {
   orderData: AnyObj;
-  items: Array<{ productId: string; name: string; unitPrice: number; quantity: number; lineTotal: number }>;
+  items: Array<{ productId: string; name: string; unitPrice: number; quantity: number; lineTotal: number; options?: Record<string,string>; variantId?: string | null }>;
   expiresAt: Date;
 }) {
   const orderId = args.orderData.idempotencyKey ? await deterministicId("order:" + String(args.orderData.idempotencyKey)) : id();
@@ -117,27 +117,39 @@ export async function createOrderWithStockReservation(args: {
 
   try {
     const productSnapshots = new Map<string, { document: any; product: AnyObj }>();
+    const requiredByProduct = new Map<string, number>();
+    for (const item of args.items) requiredByProduct.set(item.productId, (requiredByProduct.get(item.productId) || 0) + item.quantity);
     for (const item of args.items) {
-      if (productSnapshots.has(item.productId)) throw new Error("Duplicate products are not allowed");
+      if (productSnapshots.has(item.productId)) continue;
       const document: any = await req(`/products/${encodeURIComponent(item.productId)}?transaction=${encodeURIComponent(transaction)}`);
       const product = docToObj(document) as AnyObj | null;
       if (!product || product.published !== true) throw new Error("Product is unavailable");
       const stock = Number(product.stock ?? 0);
-      if (!Number.isFinite(stock) || stock < item.quantity) throw new Error("Stock changed during checkout");
+      if (!Number.isFinite(stock) || stock < Number(requiredByProduct.get(item.productId) || 0)) throw new Error("Stock changed during checkout");
       productSnapshots.set(item.productId, { document, product });
     }
 
     const writes: AnyObj[] = [];
+    const variantUpdates = new Map<string, AnyObj[]>();
     for (const item of args.items) {
       const snapshot = productSnapshots.get(item.productId)!;
-      const product = snapshot.product;
-      writes.push({
-        update: {
-          name: snapshot.document.name,
-          fields: { stock: enc(Number(product.stock) - item.quantity), updatedAt: enc(now) }
-        },
-        updateMask: { fieldPaths: ["stock", "updatedAt"] }
-      });
+      const variants = Array.isArray(snapshot.product.variants) ? snapshot.product.variants as AnyObj[] : [];
+      if (variants.length) {
+        const selected = item.options || {};
+        const key = (o:AnyObj) => Object.entries(o || {}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>String(k)+"="+String(v)).join("|");
+        const chosen = variants.find(v => key(v.options || {}) === key(selected));
+        if (!chosen) throw new Error("Selected size/colour combination is unavailable");
+        if (Number(chosen.stock || 0) < item.quantity) throw new Error("Selected size/colour is out of stock");
+        const updated = variants.map(v => v === chosen || (v.id && chosen.id && v.id === chosen.id) ? {...v,stock:Number(v.stock||0)-item.quantity} : v);
+        variantUpdates.set(item.productId, updated);
+      }
+    }
+    for (const [productId, snapshot] of productSnapshots) {
+      const required = Number(requiredByProduct.get(productId) || 0);
+      const variants = variantUpdates.get(productId);
+      const fields:AnyObj = {stock:enc(Number(snapshot.product.stock)-required),updatedAt:enc(now)};
+      if (variants) fields.variants = enc(variants);
+      writes.push({update:{name:snapshot.document.name,fields},updateMask:{fieldPaths:["stock","updatedAt",...(variants?["variants"]:[])]}});
     }
 
     const orderItems = args.items.map(item => ({
