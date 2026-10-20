@@ -5,6 +5,7 @@ import Link from "next/link";
 import AdminSidebar from "@/components/AdminSidebar";
 import { parseOptionsText } from "@/lib/options";
 import { fileToCompressedDataUrl } from "@/lib/client-image";
+import { generateVariantCombinations, variantKey } from "@/lib/product-variants";
 
 type Category = { id: string; name: string };
 type ImageDraft = { url: string; alt: string };
@@ -22,6 +23,7 @@ export default function NewProduct() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState({ name: "", sku: "", slug: "", price: "", compareAtPrice: "", salePrice: "", stock: "0", lowStockThreshold: "5", categoryId: "", description: "", published: false, featured: false, freeShipping: false, shippingFee: "", options: "" });
   const [files, setFiles] = useState<File[]>([]);
+  const [variants, setVariants] = useState<any[]>([]);
   const [images, setImages] = useState<ImageDraft[]>([{ url: "", alt: "" }]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -40,6 +42,15 @@ export default function NewProduct() {
   const validImages = images.filter(i => i.url.trim());
 
   function addImage() { setImages(old => [...old, { url: "", alt: "" }]); }
+  function generateVariants() {
+    const combos = generateVariantCombinations(parseOptionsText(form.options));
+    const previous = new Map(variants.map(v => [variantKey(v.options), v]));
+    setVariants(combos.map(options => previous.get(variantKey(options)) || { id: variantKey(options), options, sku: [form.sku, ...Object.values(options)].filter(Boolean).join("-").replace(/[^a-zA-Z0-9-]/g,"-").toUpperCase().slice(0,100), price: Number(form.price)||0, salePrice: "", compareAtPrice: "", stock: 0, lowStockThreshold: 5 }));
+    if (!combos.length) setMessage("Add options such as Size: S, M, L and Color: Black, White first.");
+    else setMessage(combos.length + " variant combinations generated. Set a price and stock for each.");
+  }
+  function updateVariant(index: number, key: string, value: string) { setVariants(old => old.map((v,i) => i===index ? {...v,[key]:value} : v)); }
+
   function updateImage(index: number, key: keyof ImageDraft, value: string) {
     setImages(old => old.map((image, i) => i === index ? { ...image, [key]: value } : image));
   }
@@ -70,7 +81,7 @@ export default function NewProduct() {
           description: form.description.trim() || null, price, compareAtPrice: compare,
           salePrice: sale, stock, lowStockThreshold: threshold,
           featured: form.featured, published: form.published, categoryId: form.categoryId || null,
-          options: parseOptionsText(form.options), freeShipping: form.freeShipping, shippingFee: form.shippingFee === "" ? null : Number(form.shippingFee)
+          options: parseOptionsText(form.options), variants: variants.map(v => ({...v, price: Number(v.price), salePrice: v.salePrice === "" ? null : Number(v.salePrice), compareAtPrice: v.compareAtPrice === "" ? null : Number(v.compareAtPrice), stock: Number(v.stock), lowStockThreshold: Number(v.lowStockThreshold)})), freeShipping: form.freeShipping, shippingFee: form.shippingFee === "" ? null : Number(form.shippingFee)
         })
       });
       const product = await response.json();
@@ -187,6 +198,8 @@ export default function NewProduct() {
         <section style={cardStyle}>
           <div><h2 style={{ margin: 0, fontSize: 19 }}>Options (size, colour…)</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>One option per line, e.g. <code>Size: S, M, L</code>. Customers must choose each option. Stock is shared across all options.</p></div>
           <textarea rows={3} value={form.options} onChange={e => set("options", e.target.value)} style={fieldStyle} placeholder={"Size: S, M, L\nColor: Red, Blue"} />
+          <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}><button type="button" onClick={generateVariants} style={{padding:"10px 14px",borderRadius:9,border:0,background:"#f97316",color:"#fff",fontWeight:700}}>Generate size/colour variants</button><small style={{color:"#6b7280"}}>Generate up to 200 combinations from the options above.</small></div>
+          {variants.length>0 && <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:760}}><thead><tr>{["Variant","SKU","Price (৳)","Sale price (৳)","Stock","Low-stock alert"].map(h=><th key={h} style={{textAlign:"left",padding:9,borderBottom:"1px solid #e5e7eb"}}>{h}</th>)}</tr></thead><tbody>{variants.map((v,i)=><tr key={variantKey(v.options)}><td style={{padding:9,borderBottom:"1px solid #f1f5f9",fontWeight:600}}>{Object.entries(v.options).map(([k,val])=>k+": "+val).join(" · ")}</td><td style={{padding:6}}><input style={{...fieldStyle,minWidth:110}} value={v.sku||""} onChange={e=>updateVariant(i,"sku",e.target.value)} /></td><td style={{padding:6}}><input required type="number" min="0" step=".01" style={{...fieldStyle,minWidth:100}} value={v.price} onChange={e=>updateVariant(i,"price",e.target.value)} /></td><td style={{padding:6}}><input type="number" min="0" step=".01" style={{...fieldStyle,minWidth:100}} value={v.salePrice} onChange={e=>updateVariant(i,"salePrice",e.target.value)} /></td><td style={{padding:6}}><input required type="number" min="0" step="1" style={{...fieldStyle,minWidth:80}} value={v.stock} onChange={e=>updateVariant(i,"stock",e.target.value)} /></td><td style={{padding:6}}><input type="number" min="0" step="1" style={{...fieldStyle,minWidth:90}} value={v.lowStockThreshold} onChange={e=>updateVariant(i,"lowStockThreshold",e.target.value)} /></td></tr>)}</tbody></table><p style={{color:"#64748b",fontSize:13}}>Total variant stock: {variants.reduce((n,v)=>n+Math.max(0,Number(v.stock)||0),0)} units. Product inventory will use this total.</p></div>}
         </section>
 
         <section style={cardStyle}>
