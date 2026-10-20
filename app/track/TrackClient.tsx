@@ -50,10 +50,9 @@ export default function TrackClient({initialOrder}:{initialOrder:string}){
       <nav className="pg-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><Icon name="chevronRight" size={14}/><b>Track order</b></nav>
       <section className="pg-card trk-form">
         <h1>Track your order</h1>
-        <p>Enter your order number to check the latest status and delivery progress.</p>
+        <p>Enter your order number to check the latest status and delivery progress. No phone number or email needed.</p>
         <form onSubmit={submit}>
           <label className="fld"><span>Order number</span><input required value={orderNumber} onChange={e=>setOrderNumber(e.target.value)} placeholder="ORD-XXXXXXXX-XXXXX" autoComplete="off" autoCapitalize="characters" maxLength={60}/></label>
-          <label className="fld"><span>Phone number or email</span><input required value={contact} onChange={e=>setContact(e.target.value)} placeholder="01XXXXXXXXX or you@example.com" autoComplete="off" maxLength={254}/></label>
           {error&&<p className="form-error" role="alert">{error}</p>}
           <button className="pg-btn pg-btn-block" disabled={busy} type="submit">{busy?"Checking...":"Track order"}{!busy&&<Icon name="arrowRight" size={18}/>}</button>
         </form>
@@ -88,7 +87,8 @@ export default function TrackClient({initialOrder}:{initialOrder:string}){
           </li>)}
         </ol>
         {result.status==="DELIVERED"&&(result.returnStatus?<p className="trk-return"><b>Return request:</b> {result.returnStatus.toLowerCase()}</p>:<form onSubmit={requestReturn} className="trk-return">
-          <h3>Need to return something?</h3>\n          <label className="fld"><span>Phone number or email used for this order</span><input required value={contact} onChange={e=>setContact(e.target.value)} placeholder="Phone number or email" autoComplete="off" maxLength={254}/></label>
+          <h3>Need to return something?</h3>
+          <label className="fld"><span>Phone number or email used for this order</span><input required value={contact} onChange={e=>setContact(e.target.value)} placeholder="Phone number or email" autoComplete="off" maxLength={254}/></label>
           <select value={reason} onChange={e=>setReason(e.target.value)}><option>Wrong or damaged item</option><option>Not as described</option><option>Changed my mind</option><option>Other</option></select>
           <textarea value={details} onChange={e=>setDetails(e.target.value)} placeholder="Tell us more (optional)" rows={3} maxLength={1000}/>
           <button className="pg-btn" type="submit">Request return</button>
