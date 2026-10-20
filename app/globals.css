@@ -1711,3 +1711,74 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(255,104,1,.6);outlin
 
 /* Remove the YouTube-style skeleton placeholder screen entirely. */
 .yt-loading-screen{display:none!important}
+
+
+/* Responsive scale and overflow pass: storefront, checkout, account and admin */
+html{width:100%;max-width:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:clip}
+body{width:100%;max-width:100%;overflow-x:clip}
+img,video,canvas,svg{max-width:100%}
+input,select,textarea,button{max-width:100%;min-width:0}
+main,.pg,.container,.page-container{min-width:0}
+:where(.pg,.container,.page-container,.site-header-inner,.site-footer-inner,.sh-in,.sf-in,.home-container,.products-container,.checkout-container){width:100%;max-width:1180px;margin-left:auto;margin-right:auto}
+:where(.pg,.container,.page-container){padding-left:clamp(14px,3vw,28px);padding-right:clamp(14px,3vw,28px)}
+:where(.grid,.products-grid,.product-grid,.ac-orders){min-width:0}
+:where(.products-grid,.product-grid){grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+:where(.site-header-inner,.site-footer-inner,.sh-in,.sf-in){padding-left:clamp(14px,3vw,28px);padding-right:clamp(14px,3vw,28px)}
+:where(table){width:100%;border-collapse:collapse}
+:where(.table-wrap,.table-responsive){max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+:where(.admin-layout){min-width:0;grid-template-columns:250px minmax(0,1fr)}
+:where(.admin-main,.admin-content,.admin-page,.admin-panel){min-width:0;max-width:100%}
+:where(.admin-content,.admin-page){padding:clamp(16px,2.5vw,32px)}
+:where(.admin-sidebar){min-width:0}
+:where(.pg-card,.ac-order,.card,.product-card){min-width:0}
+:where(.ac-order-top){display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+:where(.ac-order ul){padding-left:20px;overflow-wrap:anywhere}
+:where(.ac-order li){overflow-wrap:anywhere}
+:where(.sh-in){gap:clamp(10px,2vw,24px)}
+:where(.sh-logo){min-width:0;max-width:100%;overflow-wrap:anywhere}
+:where(.sh-search){min-width:0}
+:where(.sf-in){grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+@media(max-width:1024px){
+ .site-header-inner{gap:14px;padding-top:14px;padding-bottom:14px}
+ .site-nav{gap:14px;flex-wrap:wrap}
+ .admin-layout{grid-template-columns:210px minmax(0,1fr)}
+ .admin-sidebar{padding:18px 10px}
+}
+@media(max-width:768px){
+ main{min-height:60vh}
+ .site-header-inner{flex-wrap:wrap}
+ .site-nav{width:100%;justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;white-space:nowrap;padding-bottom:3px}
+ .site-footer{margin-top:44px}
+ .site-footer-inner{grid-template-columns:1fr;gap:20px;padding-top:28px;padding-bottom:28px}
+ .footer-links{flex-wrap:wrap}
+ .checkout-steps{margin-left:-2px;margin-right:-2px;padding-bottom:4px}
+ .admin-layout{display:block}
+ .admin-sidebar{position:relative;top:auto;height:auto;max-height:none;padding:12px;gap:8px}
+ .admin-brand{padding:6px 8px 12px}
+ .admin-sidebar nav{display:flex;gap:8px;overflow-x:auto;white-space:nowrap;padding-bottom:6px}
+ .admin-sidebar nav a{flex:0 0 auto}
+ .admin-content,.admin-page{padding:16px}
+ :where(.admin-main,.admin-content,.admin-page){width:100%;overflow-wrap:anywhere}
+ :where(.admin-content .grid,.admin-page .grid){grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+ :where(.ac-orders){grid-template-columns:minmax(0,1fr)}
+ :where(.pg-card){border-radius:14px}
+}
+@media(max-width:480px){
+ body{font-size:14px}
+ h1{font-size:clamp(24px,7vw,32px)}
+ h2{font-size:clamp(20px,5.8vw,26px)}
+ .site-header-inner{padding-left:14px;padding-right:14px}
+ .brand{font-size:20px}
+ .site-nav{gap:12px;font-size:13px}
+ input,select,textarea{padding:11px 12px;font-size:16px}
+ button{padding:10px 12px}
+ .pg,.container,.page-container{padding-left:12px;padding-right:12px}
+ .admin-content,.admin-page{padding:12px}
+ :where(.admin-content .grid,.admin-page .grid){grid-template-columns:minmax(0,1fr)}
+ :where(.ac-btns){width:100%;display:flex;flex-wrap:wrap}
+ :where(.ac-btns .pg-btn){flex:1 1 auto;text-align:center}
+ :where(.ac-order-top){gap:8px}
+ :where(.ac-tags){display:flex;flex-wrap:wrap;gap:6px}
+ :where(.checkout-steps span){padding:8px 10px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
