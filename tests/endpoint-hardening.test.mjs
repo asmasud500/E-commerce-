@@ -109,3 +109,13 @@ test("checkout disables manual payment instructions and uses gateway mode for au
   assert.match(adapter, /validationserverAPI\.php/);
   assert.match(initiate, /mode:gateway\.mode/);
 });
+test("MART Pay presents a branded automatic checkout and sends customers to the verified provider session", async () => {
+  const page = await read("../app/checkout/payment/PaymentClient.tsx");
+  const adapter = await read("../lib/payments/adapters.ts");
+  assert.match(page, /MART Pay/);
+  assert.match(page, /Secure payment hub/);
+  assert.match(page, /window\.location\.assign\(result\.paymentUrl\)/);
+  assert.match(page, /exact options shown.*depend on your merchant account/s);
+  assert.doesNotMatch(page, /Submit mobile banking payment|sender's mobile number|Payment screenshot/);
+  assert.match(adapter, /validationserverAPI\.php/);
+});
