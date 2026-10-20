@@ -4,7 +4,7 @@ import {encryptSecrets} from "@/lib/security/gateway-secrets";
 import {z} from "zod";
 import {recordAdminAudit} from "@/lib/auth/audit";
 
-const input=z.object({name:z.string().trim().min(1).max(100).optional(),type:z.enum(["SSLCOMMERZ","BKASH","NAGAD","ROCKET","BANGLA_QR","CUSTOM"]).optional(),mode:z.enum(["SANDBOX","LIVE"]).optional(),enabled:z.boolean().optional(),sortOrder:z.coerce.number().int().optional(),apiBaseUrl:z.string().url().nullable().optional(),publicConfig:z.record(z.string(),z.unknown()).optional(),qrImageUrl:z.string().max(500).refine(v=>!v||/^https?:\/\//i.test(v)||/^\/api\/img\/[a-z0-9]+$/.test(v),{message:"Provide a valid image URL or uploaded image."}).nullable().optional(),qrMerchantName:z.string().max(200).nullable().optional(),secrets:z.record(z.string(),z.unknown()).optional()});
+const input=z.object({name:z.string().trim().min(1).max(100).optional(),type:z.enum(["SSLCOMMERZ","BKASH","NAGAD","ROCKET","BANGLA_QR","CUSTOM"]).optional(),mode:z.enum(["SANDBOX","LIVE"]).optional(),enabled:z.boolean().optional(),sortOrder:z.coerce.number().int().optional(),apiBaseUrl:z.string().url().nullable().optional(),publicConfig:z.record(z.string(),z.unknown()).optional(),qrImageUrl:z.string().max(500).refine(v=>!v||/^https?:\/\//i.test(v)||/^\/api\/img\/[a-z0-9]+$/.test(v),{message:"Provide a valid image URL or uploaded image."}).nullable().optional(),qrMerchantName:z.string().max(200).nullable().optional(),secrets:z.record(z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/),z.string().max(10000)).refine(v=>Object.keys(v).length<=30,{message:"Too many credential fields"}).optional()});
 const safe={id:true,name:true,type:true,mode:true,enabled:true,sortOrder:true,apiBaseUrl:true,publicConfig:true,qrImageUrl:true,qrMerchantName:true,createdAt:true,updatedAt:true} as const;
 
 export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}>}){
@@ -17,6 +17,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
   const hasCredentials=!!(b.secrets?String(b.secrets.storeId||"").trim()&&String(b.secrets.storePassword||"").trim():existing.encryptedSecrets);
   if(b.enabled===true&&finalType!=="SSLCOMMERZ")return NextResponse.json({error:"This provider has no verified automatic adapter yet. Keep it disabled until an approved automatic integration is implemented."},{status:409});
   if(b.enabled===true&&finalType==="SSLCOMMERZ"&&!hasCredentials)return NextResponse.json({error:"Store ID and Store Password are required before enabling SSLCOMMERZ."},{status:409});
+  if(b.secrets&&finalType==="SSLCOMMERZ"&&(!String(b.secrets.storeId||"").trim()||!String(b.secrets.storePassword||"").trim()))return NextResponse.json({error:"Save both SSLCOMMERZ Store ID and Store Password together."},{status:400});
   const {secrets,...rest}=b;
   const data:any={...rest,...(secrets?{encryptedSecrets:encryptSecrets(secrets)}:{})};
   const g=await db.paymentGateway.update({where:{id},data,select:safe});
