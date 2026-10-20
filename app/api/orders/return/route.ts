@@ -11,7 +11,7 @@ const RETURN_WINDOW_DAYS=7;
 /** Customer return/refund request. Same proof as tracking (order no + phone/email); only delivered orders, one open request per order. */
 export async function POST(req:NextRequest){
   try{
-    const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-forwarded-for")||"unknown";
+    const ip=req.headers.get("cf-connecting-ip")||"unknown";
     const rl=rateLimit("return:"+ip,6,60_000);
     if(!rl.ok)return NextResponse.json({error:"Too many attempts. Please wait a minute."},{status:429,headers:{"Retry-After":String(rl.retryAfter)}});
     const p=schema.safeParse(await req.json().catch(()=>null));
