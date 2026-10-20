@@ -4,7 +4,7 @@ import {z} from "zod";
 import {encryptSecrets} from "@/lib/security/gateway-secrets";
 import {recordAdminAudit} from "@/lib/auth/audit";
 
-const schema=z.object({name:z.string().min(2),type:z.enum(["SSLCOMMERZ","BKASH","NAGAD","ROCKET","BANGLA_QR","CUSTOM"]),mode:z.enum(["SANDBOX","LIVE"]).default("SANDBOX"),enabled:z.boolean().default(false),sortOrder:z.number().int().default(0),apiBaseUrl:z.string().url().optional().or(z.literal("")),publicConfig:z.record(z.string(),z.any()).optional(),secrets:z.record(z.string(),z.any()).optional(),qrImageUrl:z.string().url().optional().or(z.literal("")),qrMerchantName:z.string().optional()});
+const schema=z.object({name:z.string().min(2),type:z.enum(["SSLCOMMERZ","BKASH","NAGAD","ROCKET","BANGLA_QR","CUSTOM"]),mode:z.enum(["SANDBOX","LIVE"]).default("SANDBOX"),enabled:z.boolean().default(false),sortOrder:z.number().int().default(0),apiBaseUrl:z.string().url().optional().or(z.literal("")),publicConfig:z.record(z.string(),z.any()).optional(),secrets:z.record(z.string(),z.any()).optional(),qrImageUrl:z.string().max(500).refine(v=>!v||/^https?:\/\//i.test(v)||/^\/api\/img\/[a-z0-9]+$/.test(v),{message:"Provide a valid image URL or upload an image."}).optional(),qrMerchantName:z.string().optional()});
 const safe={id:true,name:true,type:true,mode:true,enabled:true,sortOrder:true,apiBaseUrl:true,publicConfig:true,qrImageUrl:true,qrMerchantName:true,createdAt:true,updatedAt:true} as const;
 
 export async function GET(){return NextResponse.json(await db.paymentGateway.findMany({select:safe,orderBy:{sortOrder:"asc"}}))}
