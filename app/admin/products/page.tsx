@@ -36,8 +36,8 @@ export default function AdminProducts(){
   }catch(e){setNotice(e instanceof Error?e.message:"Could not read this CSV file.");}
   finally{setBusy(false);if(fileRef.current)fileRef.current.value="";}
  }
- return <div className="admin-layout"><AdminSidebar/><main className="admin-content" style={{maxWidth:1180,margin:"auto",padding:32}}>
- <header style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,flexWrap:"wrap",marginBottom:24}}><div><Link href="/admin">← Dashboard</Link><h1>Products</h1><p>Manage catalog, pricing and inventory.</p></div><div style={{display:"flex",gap:10,flexWrap:"wrap"}}><Link href="/admin/categories" style={{marginRight:4}}>Categories</Link><Link href="/admin/products/new" style={{background:"#111",color:"#fff",padding:"12px 18px",borderRadius:8}}>+ Add Product</Link></div></header>
+ return <div className="admin-layout"><AdminSidebar/><main className="admin-content">
+ <header className="admin-heading-row"><div><div className="admin-kicker">MART · CATALOG</div><Link href="/admin">← Dashboard</Link><h1>Products</h1><p>Manage catalog, pricing and inventory.</p></div><div style={{display:"flex",gap:10,flexWrap:"wrap"}}><Link href="/admin/categories" style={{marginRight:4}}>Categories</Link><Link href="/admin/products/new" style={{background:"#111",color:"#fff",padding:"12px 18px",borderRadius:8}}>+ Add Product</Link></div></header>
  <section style={{border:"1px solid #d8dee8",borderRadius:12,padding:20,marginBottom:24,background:"#f8fafc"}}>
   <h2 style={{fontSize:20,margin:"0 0 8px"}}>Excel / Spreadsheet Bulk Import & Export</h2>
   <p style={{margin:"0 0 14px",color:"#475569"}}>Excel-এ CSV template খুলে একসঙ্গে অনেক product-এর SKU, price, stock, name ও status edit করুন। CSV format ব্যবহার করুন; এটি Microsoft Excel ও Google Sheets-এ খোলা যায়।</p>
