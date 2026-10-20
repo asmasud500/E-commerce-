@@ -1424,3 +1424,14 @@ img{max-width:100%}
 .admin-login-card button[type=submit]{min-height:46px;background:var(--admin-orange)!important;border-color:var(--admin-orange)!important}
 .admin-restricted{max-width:560px;padding:32px;background:#fff;border:1px solid var(--admin-line);border-radius:20px;box-shadow:0 20px 55px #17203312}
 @media(max-width:760px){.admin-inline-form{grid-template-columns:1fr}.admin-review-card{flex-direction:column}.admin-review-card>.admin-row-actions{width:100%}.admin-content .admin-settings-grid{grid-template-columns:1fr}.admin-content .admin-resource-form{grid-template-columns:1fr}.admin-content .admin-resource-form .delivery-zone-group-title,.admin-content .admin-resource-form button[type=submit]{grid-column:auto}.admin-content .admin-report-bars{gap:5px;padding:12px 6px}.admin-toolbar input{flex-basis:100%}}
+
+@media(max-width:760px){
+ .admin-content form div[style*="repeat(3,1fr)"],.admin-content form div[style*="repeat(3, 1fr)"],.admin-content form div[style*="grid-template-columns: 1fr 1fr"],.admin-content form div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:minmax(0,1fr)!important}
+ .admin-content form[style*="grid-template-columns"]{grid-template-columns:minmax(0,1fr)!important}
+ .admin-content header.admin-heading-row>div:last-child{width:100%}
+ .admin-content header.admin-heading-row>div:last-child>a{display:inline-flex;align-items:center;justify-content:center}
+ .admin-content .admin-page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:8px 0 22px}
+ .admin-content .admin-page-head h1{margin-top:8px}
+}
+.admin-login-back{display:block;margin-top:18px;text-align:center;font-size:12px;color:#68758a}
+.admin-login-back:hover{color:#e65c00}
