@@ -1,23 +1,21 @@
 "use client";
-import {useEffect,useState} from "react";
+import {useCallback,useEffect,useMemo,useState} from "react";
 import Link from "next/link";
 import AdminSidebar from "@/components/AdminSidebar";
-type R={id:string;orderNumber:string;customerName:string;customerPhone:string;reason:string;details?:string;status:string;total:number;adminNote?:string};
+type R={id:string;orderNumber:string;customerName:string;customerPhone:string;reason:string;details?:string;status:string;total:number;adminNote?:string;createdAt?:string};
+const money=(n:number)=>"৳"+Number(n||0).toLocaleString("en-BD",{maximumFractionDigits:2});
 export default function Returns(){
-  const [rows,setRows]=useState<R[]>([]),[err,setErr]=useState("");
-  const load=()=>fetch("/api/admin/returns").then(r=>r.json()).then(d=>setRows(Array.isArray(d)?d:[])).catch(()=>setErr("Could not load"));
-  useEffect(()=>{load()},[]);
-  async function act(r:R,status:string){
-    const note=window.prompt("Note (optional)","")||"";
-    const res=await fetch("/api/admin/returns/"+r.id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status,adminNote:note||undefined})});
-    const d=await res.json().catch(()=>({}));if(!res.ok)setErr(d.error||"Failed");else{setErr("");load()}
-  }
-  return <div className="admin-layout"><AdminSidebar/><main className="admin-content"><Link href="/admin">← Dashboard</Link><h1>Return requests</h1><p>Approve or reject customer returns. Refund the money from the order's refund action, then mark it Refunded.</p>{err&&<p role="alert" style={{color:"#b91c1c"}}>{err}</p>}
-    <section className="admin-card" style={{display:"grid",gap:12}}>{rows.length===0&&<p>No return requests.</p>}
-      {rows.map(r=><article key={r.id} style={{border:"1px solid #e5e7eb",borderRadius:10,padding:12}}>
-        <b>{r.orderNumber}</b> · {r.customerName} · {r.customerPhone} · ৳{Number(r.total).toLocaleString("en-BD")} · <b>{r.status}</b><br/>Reason: {r.reason}{r.details?" — "+r.details:""}{r.adminNote?<><br/><small>Note: {r.adminNote}</small></>:null}<br/>
-        {r.status==="REQUESTED"&&<><button onClick={()=>act(r,"APPROVED")}>Approve</button> <button onClick={()=>act(r,"REJECTED")}>Reject</button></>}
-        {r.status==="APPROVED"&&<><button onClick={()=>act(r,"REFUNDED")}>Mark refunded</button> <button onClick={()=>act(r,"REJECTED")}>Reject</button></>}
-      </article>)}
-    </section></main></div>;
+ const [rows,setRows]=useState<R[]>([]),[err,setErr]=useState(""),[notice,setNotice]=useState(""),[query,setQuery]=useState(""),[filter,setFilter]=useState("ALL"),[loading,setLoading]=useState(true),[busyId,setBusyId]=useState("");
+ const load=useCallback(async()=>{setLoading(true);try{const r=await fetch("/api/admin/returns",{cache:"no-store"});const d=await r.json();if(!r.ok)throw new Error(d.error||"Could not load return requests");setRows(Array.isArray(d)?d:[]);setErr("")}catch(e){setErr(e instanceof Error?e.message:"Request failed")}finally{setLoading(false)}},[]);
+ useEffect(()=>{void load()},[load]);
+ const filtered=useMemo(()=>rows.filter(r=>(filter==="ALL"||r.status===filter)&&[r.orderNumber,r.customerName,r.customerPhone,r.reason,r.details,r.status].some(v=>String(v||"").toLowerCase().includes(query.trim().toLowerCase()))),[rows,filter,query]);
+ async function act(row:R,status:string){const note=window.prompt("Add an optional admin note","") ;if(note===null)return;setBusyId(row.id);setErr("");setNotice("");try{const res=await fetch("/api/admin/returns/"+encodeURIComponent(row.id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status,adminNote:note.trim()||undefined})});const d=await res.json().catch(()=>({}));if(!res.ok)throw new Error(d.error||"Could not update return request");setNotice("Return request updated.");await load()}catch(e){setErr(e instanceof Error?e.message:"Request failed")}finally{setBusyId("")}}
+ return <div className="admin-layout"><AdminSidebar/><main className="admin-content">
+  <div className="admin-kicker">MART · AFTER-SALES</div><div className="admin-heading-row"><div><h1>Returns & refunds</h1><p>Review return requests, record decisions and track refund status.</p></div><Link className="admin-primary-action" href="/admin/orders">Manage orders →</Link></div>
+  <div className="admin-stat-grid"><article className="admin-stat"><span>Total requests</span><strong>{rows.length.toLocaleString("en-BD")}</strong><small>All return records</small></article><article className="admin-stat"><span>Awaiting review</span><strong>{rows.filter(r=>r.status==="REQUESTED").length.toLocaleString("en-BD")}</strong><small>Need a decision</small></article><article className="admin-stat"><span>Approved</span><strong>{rows.filter(r=>r.status==="APPROVED").length.toLocaleString("en-BD")}</strong><small>Approved for refund processing</small></article><article className="admin-stat"><span>Refunded</span><strong>{rows.filter(r=>r.status==="REFUNDED").length.toLocaleString("en-BD")}</strong><small>Marked as refunded</small></article></div>
+  <div className="admin-alert"><div><span className="admin-alert-eyebrow">REFUND CONTROL</span><h2>Record the real refund separately</h2><p>Mark a request as refunded only after the money has actually been returned through the payment provider.</p></div><Link href="/admin/payment-transactions">View transactions →</Link></div>
+  {err&&<div className="admin-inline-error" role="alert">{err}<button type="button" onClick={()=>void load()}>Retry</button></div>}{notice&&<p className="admin-notice" role="status">{notice}</p>}
+  <section className="admin-recent"><div className="admin-section-heading"><div><h2>Return request queue</h2><p>Search by order number, customer or return reason.</p></div><button type="button" onClick={()=>void load()} disabled={loading}>↻ Refresh</button></div><div className="admin-toolbar"><input aria-label="Search return requests" placeholder="Search order, customer, phone or reason…" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="Filter return status" value={filter} onChange={e=>setFilter(e.target.value)}><option value="ALL">All statuses</option>{Array.from(new Set(rows.map(r=>r.status))).sort().map(s=><option key={s} value={s}>{s.replaceAll("_"," ")}</option>)}</select></div>
+  <div className="admin-review-list">{filtered.map(r=><article className="admin-review-card" key={r.id}><div className="admin-review-main"><div className="admin-review-top"><div><h3>{r.orderNumber||"Order"}</h3><p>{r.customerName||"Customer"} · {r.customerPhone||"No phone"}{r.createdAt?" · "+new Date(r.createdAt).toLocaleDateString("en-BD"):""}</p></div><span className="admin-status">{r.status.replaceAll("_"," ")}</span></div><p><strong>Amount:</strong> {money(r.total)} &nbsp; <strong>Reason:</strong> {r.reason}</p>{r.details&&<p className="admin-review-comment">{r.details}</p>}{r.adminNote&&<p><strong>Admin note:</strong> {r.adminNote}</p>}</div><div className="admin-row-actions">{r.status==="REQUESTED"&&<><button type="button" disabled={busyId===r.id} onClick={()=>void act(r,"APPROVED")}>Approve</button><button type="button" disabled={busyId===r.id} onClick={()=>void act(r,"REJECTED")}>Reject</button></>}{r.status==="APPROVED"&&<><button type="button" disabled={busyId===r.id} onClick={()=>void act(r,"REFUNDED")}>Mark refunded</button><button type="button" disabled={busyId===r.id} onClick={()=>void act(r,"REJECTED")}>Reject</button></>}{busyId===r.id&&<span>Saving…</span>}</div></article>)}{loading&&<p className="admin-empty">Loading return requests…</p>}{!loading&&!filtered.length&&<p className="admin-empty">No return requests match these filters.</p>}</div></section>
+ </main></div>;
 }
