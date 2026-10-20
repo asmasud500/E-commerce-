@@ -11,7 +11,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
  const {id}=await params;
  try{
   const b=input.parse(await req.json());
-  const existing=await db.paymentGateway.findUnique({where:{id},select:{id:true,type:true,enabled:true,encryptedSecrets:true}});
+  const existing=await db.paymentGateway.findUnique({where:{id},select:{id:true,type:true,enabled:true,encryptedSecrets:true,publicConfig:true}});
   if(!existing)return NextResponse.json({error:"Gateway not found"},{status:404});
   const finalType=b.type||existing.type;
   const storedSecrets=existing.encryptedSecrets?decryptSecrets(existing.encryptedSecrets):{};
