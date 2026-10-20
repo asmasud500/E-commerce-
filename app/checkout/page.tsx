@@ -8,17 +8,19 @@ export default function Checkout(){
  const subtotal=useMemo(()=>items.reduce((s,i)=>s+i.price*i.quantity,0),[items]);
  const availableDistricts=findDivision(form.shippingDivision)?.districts||[];const availableUpazilas=findDistrict(form.shippingDivision,form.shippingDistrict)?.upazilas||[];
  const selectedZone=storeConfig.zones.find(z=>z.district.trim().toLocaleLowerCase()===form.shippingDistrict.trim().toLocaleLowerCase()&&(!z.division||z.division.trim().toLocaleLowerCase()===form.shippingDivision.trim().toLocaleLowerCase())&&(!z.upazila||z.upazila.trim().toLocaleLowerCase()===form.shippingUpazila.trim().toLocaleLowerCase()));
- const[quote,setQuote]=useState<any>(null),[quoteError,setQuoteError]=useState(""),[appliedCoupon,setAppliedCoupon]=useState("");
+ const[quote,setQuote]=useState<any>(null),[quoteError,setQuoteError]=useState(""),[quoteLoading,setQuoteLoading]=useState(false),[appliedCoupon,setAppliedCoupon]=useState("");
  // The server prices everything (flash sales, voucher, per-product and area delivery, tax) so the total shown here is exactly what the order will charge.
  useEffect(()=>{const ph=form.customerPhone.replace(/\D/g,"");if(ph.length<10||!items.length)return;const t=setTimeout(()=>{fetch("/api/cart/abandon",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone:form.customerPhone,name:form.customerName,items:items.map(i=>({productId:i.productId,quantity:i.quantity,options:i.options}))})}).catch(()=>{})},2500);return()=>clearTimeout(t)},[form.customerPhone,form.customerName,items]);
  useEffect(()=>{
-  if(!items.length){setQuote(null);return}
+  if(!items.length){setQuote(null);setQuoteError("");setQuoteLoading(false);return}
   let off=false;
+  setQuote(null);setQuoteError("");setQuoteLoading(true);
   const t=setTimeout(()=>{
    fetch("/api/checkout/quote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({couponCode:appliedCoupon||undefined,shippingDivision:form.shippingDivision,shippingDistrict:form.shippingDistrict,shippingUpazila:form.shippingUpazila,items:items.map(i=>({productId:i.productId,quantity:i.quantity,options:i.options}))})})
     .then(async r=>({ok:r.ok,d:await r.json()}))
     .then(({ok,d})=>{if(off)return;if(ok){setQuote(d);setQuoteError("")}else{setQuote(null);setQuoteError(d.error||"Could not calculate the total.")}})
-    .catch(()=>{if(!off)setQuoteError("Could not calculate the total.")});
+    .catch(()=>{if(!off){setQuote(null);setQuoteError("Could not calculate the total. Please retry.")}})
+    .finally(()=>{if(!off)setQuoteLoading(false)});
   },250);
   return()=>{off=true;clearTimeout(t)};
  },[items,appliedCoupon,form.shippingDivision,form.shippingDistrict,form.shippingUpazila]);
@@ -26,7 +28,7 @@ export default function Checkout(){
  const shipping=quote?quote.shipping:0,estimatedTax=quote?quote.taxAmount:0,grandTotal=quote?quote.total:subtotal;
  const lineMode=(id:string)=>quote?.lines?.find((l:any)=>l.productId===id)?.delivery;
  const freeCount=quote?quote.lines.filter((l:any)=>l.delivery==="free").length:0;
- async function submit(e:React.FormEvent){e.preventDefault();if(!gatewayId||!items.length||loading)return;setLoading(true);setMessage("");let key=sessionStorage.getItem("checkout_idempotency_key");if(!key){key=crypto.randomUUID();sessionStorage.setItem("checkout_idempotency_key",key)}
+ async function submit(e:React.FormEvent){e.preventDefault();if(!gatewayId||!items.length||loading)return;if(quoteLoading||!quote||quoteError){setMessage(quoteError||"Please wait while we verify current prices and delivery charges.");return}setLoading(true);setMessage("");let key=sessionStorage.getItem("checkout_idempotency_key");if(!key){key=crypto.randomUUID();sessionStorage.setItem("checkout_idempotency_key",key)}
  try{const res=await fetch("/api/orders",{method:"POST",headers:{"Content-Type":"application/json","Idempotency-Key":key},body:JSON.stringify({...form,shippingAddress:[form.shippingLocationDescription,form.shippingUpazila,form.shippingDistrict,form.shippingDivision,form.shippingPostalCode?"Postal code "+form.shippingPostalCode:""].filter(Boolean).join(", "),couponCode:couponCode.trim(),paymentGatewayId:gatewayId,items:items.map(i=>({productId:i.productId,quantity:i.quantity,options:i.options}))})});const data=await res.json();if(!res.ok){setMessage(data.error||"Order failed. Please try again.");return}sessionStorage.removeItem("checkout_idempotency_key");sessionStorage.setItem("lastOrderId",data.orderId);sessionStorage.setItem("orderPaymentToken",data.paymentToken||"");saveCart([]);window.location.href=data.cod?"/order-success?cod=true&order="+encodeURIComponent(data.orderNumber):"/checkout/payment?order="+encodeURIComponent(data.orderId)}catch{setMessage("Unable to connect. Please check your internet connection and try again.")}finally{setLoading(false)}}
  return <><StoreHeader/><main className="pg">
  <nav className="pg-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><Icon name="chevronRight" size={14}/><Link href="/cart">Cart</Link><Icon name="chevronRight" size={14}/><b>Checkout</b></nav>
@@ -47,12 +49,12 @@ export default function Checkout(){
  <div className="fld"><span>Voucher code (optional)</span><div className="coupon-row"><input maxLength={50} placeholder="Voucher code" value={couponCode} onChange={e=>setCouponCode(e.target.value)} onBlur={()=>setAppliedCoupon(couponCode.trim())} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();setAppliedCoupon(couponCode.trim())}}}/><button type="button" className="pg-btn pg-btn-navy" onClick={()=>setAppliedCoupon(couponCode.trim())}>Apply</button></div>{appliedCoupon&&quote?.couponError&&<small className="coupon-bad">{quote.couponError}</small>}{quote?.couponCode&&<small className="coupon-good">Voucher {quote.couponCode} applied: −{tk(quote.discount)}</small>}</div>
  <fieldset><legend>Payment method</legend>{gatewayLoading?<p>Loading payment methods...</p>:gateways.length?gateways.map(g=><label className={"gateway-option"+(gatewayId===g.id?" on":"")} key={g.id}><input type="radio" name="gateway" checked={gatewayId===g.id} onChange={()=>setGatewayId(g.id)}/><span><b>{g.name}</b><small>{g.type}{g.mode==="SANDBOX"?" · Sandbox":""}</small></span></label>):<p>No payment method is currently available.</p>}</fieldset>
  {message&&<p className="form-error" role="alert">{message}</p>}
- <button className="pg-btn pg-btn-block" disabled={loading||gatewayLoading||!gateways.length} type="submit">{loading?"Creating order...":"Continue to payment"}{!loading&&<Icon name="arrowRight" size={18}/>}</button></form>
+ <button className="pg-btn pg-btn-block" disabled={loading||gatewayLoading||!gateways.length||quoteLoading||!quote||!!quoteError} type="submit">{loading?"Creating order...":quoteLoading?"Verifying order total...":quoteError?"Total unavailable":"Continue to payment"}{!loading&&<Icon name="arrowRight" size={18}/>}</button></form>
  <aside className="pg-card checkout-summary"><h2>Order summary</h2>
  <ul className="co-items">{items.map(i=><li key={i.productId}><span className="co-thumb">{i.imageUrl?<img src={i.imageUrl} alt="" loading="lazy" decoding="async"/>:i.name.slice(0,1).toUpperCase()}</span><span className="co-name">{i.name}<small>Qty {i.quantity}{lineMode(i.productId)==="free"?" · Free delivery":lineMode(i.productId)==="custom"?" · Own delivery charge":""}</small></span><b>৳{(i.price*i.quantity).toLocaleString("en-BD")}</b></li>)}</ul>
  <div className="checkout-summary-row"><span>Subtotal</span><b>{tk(quote?quote.subtotal:subtotal)}</b></div>
  {quote&&quote.discount>0&&<div className="checkout-summary-row"><span>Voucher</span><b>−{tk(quote.discount)}</b></div>}
- <div className="checkout-summary-row"><span>Delivery</span><b>{quote?(shipping===0?"Free":tk(shipping)):"…"}</b></div>
+ <div className="checkout-summary-row"><span>Delivery</span><b>{quote?(shipping===0?"Free":tk(shipping)):quoteLoading?"Calculating…":"—"}</b></div>
  {quote&&quote.standardWaived&&<small className="coupon-good">Free delivery unlocked on orders over {tk(quote.freeThreshold)}.</small>}
  {quote&&quote.hasStandard&&!quote.standardWaived&&quote.freeThreshold!=null&&<small>Add {tk(Math.max(0,quote.freeThreshold-(quote.subtotal-quote.discount)))} more for free delivery on regular items.</small>}
  {quote&&quote.customFee>0&&<small>Includes {tk(quote.customFee)} for items with their own delivery charge.</small>}
