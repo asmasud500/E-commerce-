@@ -1782,3 +1782,27 @@ main,.pg,.container,.page-container{min-width:0}
  :where(.checkout-steps span){padding:8px 10px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+
+/* Store banner management + storefront promotion cards */
+.admin-banner-active{display:flex;align-items:center;gap:10px;padding:13px 15px;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:rgba(255,104,1,.055);font-weight:650}
+.admin-banner-active input{width:18px;height:18px;accent-color:var(--accent,#ff6801);flex:0 0 auto}
+.hp-promo-section{margin:30px 0 38px}
+.hp-promo-heading{margin:0 0 16px}
+.hp-promo-heading>span{font-size:11px;letter-spacing:.16em;font-weight:800;color:var(--accent,#ff6801)}
+.hp-promo-heading h2{margin:5px 0 4px;font-size:clamp(22px,3vw,30px);letter-spacing:-.035em;color:var(--brand,#131921)}
+.hp-promo-heading p{margin:0;color:var(--muted,#6b7280);font-size:14px}
+.hp-promo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.hp-promo-card{display:block;min-width:0;overflow:hidden;border:1px solid var(--line,#e5e7eb);border-radius:18px;background:var(--surface,#fff);color:inherit;text-decoration:none;box-shadow:0 7px 24px rgba(19,25,33,.055);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.hp-promo-card:hover{transform:translateY(-3px);box-shadow:0 16px 36px rgba(19,25,33,.12);border-color:rgba(255,104,1,.5)}
+.hp-promo-image{position:relative;aspect-ratio:16/5;min-height:130px;overflow:hidden;background:#eef0f3}
+.hp-promo-image img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .45s ease}
+.hp-promo-card:hover .hp-promo-image img{transform:scale(1.035)}
+.hp-promo-badge{position:absolute;top:13px;left:13px;padding:6px 9px;border-radius:999px;background:var(--accent,#ff6801);color:#fff;font-size:10px;font-weight:800;letter-spacing:.06em;box-shadow:0 3px 12px #0002}
+.hp-promo-arrow{position:absolute;right:13px;bottom:13px;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#fff;color:var(--brand,#131921);font-size:20px;box-shadow:0 3px 12px #0002}
+.hp-promo-copy{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px}
+.hp-promo-copy h3{margin:0;min-width:0;font-size:16px;font-weight:800;overflow-wrap:anywhere}
+.hp-promo-copy>span{flex:0 0 auto;color:var(--accent,#ff6801);font-size:12px;font-weight:750}
+.hp-promo-copy>span b{margin-left:3px}
+@media(max-width:640px){.hp-promo-grid{grid-template-columns:minmax(0,1fr);gap:12px}.hp-promo-section{margin:22px 0 28px}.hp-promo-image{aspect-ratio:16/6;min-height:110px}.hp-promo-copy{padding:12px 13px}.hp-promo-copy h3{font-size:14px}.hp-promo-copy>span{font-size:11px}.admin-banner-active{align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){.hp-promo-card,.hp-promo-image img{transition:none}.hp-promo-card:hover{transform:none}}
