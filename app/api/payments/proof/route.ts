@@ -3,6 +3,7 @@ import { db } from "@/lib/prisma";
 import { claimPaymentProofAtomically } from "@/lib/firestore";
 import { verifyOrderAccessToken } from "@/lib/auth/order-access";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { uploadPrivatePaymentProof, deletePrivateStorageObject } from "@/lib/firebase-storage";
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for") || "unknown";
@@ -52,6 +53,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This transaction ID is already linked to another order." }, { status: 409 });
     }
 
+    const imageBytes = Uint8Array.from(atob(screenshot.split(",")[1]), c => c.charCodeAt(0));
+    let storagePath: string;
+    try {
+      storagePath = await uploadPrivatePaymentProof(orderId, imageBytes);
+    } catch (storageError) {
+      console.error("Payment proof could not be persisted to Firebase Storage:", storageError instanceof Error ? storageError.message : String(storageError));
+      return NextResponse.json({ error: "Payment proof storage is temporarily unavailable. Please try again later." }, { status: 503 });
+    }
+
     const claim = await claimPaymentProofAtomically({
       orderId,
       gatewayId: o.paymentGatewayId,
@@ -60,11 +70,23 @@ export async function POST(req: NextRequest) {
       senderLast4
     });
     if (!claim.accepted) {
+      await deletePrivateStorageObject(storagePath).catch(() => {});
       return NextResponse.json({
         error: claim.reason === "reference_used" || claim.reason === "duplicate"
           ? "This transaction ID has already been submitted."
           : "Order or payment evidence changed. Refresh and try again."
       }, { status: 409 });
+    }
+
+    try {
+      await db.order.update({ where: { id: orderId }, data: {
+        paymentProofStoragePath: storagePath,
+        paymentProofContentType: "image/jpeg",
+        paymentProofFileName: "payment-proof.jpg",
+        paymentProofSize: imageBytes.byteLength
+      } });
+    } catch (metadataError) {
+      console.error("Payment proof uploaded but order metadata could not be saved:", metadataError instanceof Error ? metadataError.message : String(metadataError));
     }
 
     // The proof has already been atomically claimed. Telegram is a notification
