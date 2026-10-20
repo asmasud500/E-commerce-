@@ -18,8 +18,14 @@ export async function POST(req:NextRequest){
     const parsed=schema.safeParse(await req.json().catch(()=>null));
     if(!parsed.success)return NextResponse.json({error:"Enter your order number and the phone number or email you ordered with."},{status:400});
     const orderNumber=normalizeOrderNumber(parsed.data.orderNumber);
-    const o:any=await db.order.findUnique({where:{orderNumber},include:{items:true,paymentGateway:true}});
-    if(!o||!contactMatches(o,parsed.data.contact))return NextResponse.json(NOT_FOUND,{status:404});
+    // Resolve by the canonical order number first. Older orders may have been
+    // created by the previous checkout schema, which used phone/email aliases.
+    const o:any=await db.order.findFirst({where:{orderNumber},include:{items:true,paymentGateway:true}});
+    const contactMatchesOrder=!!o&&contactMatches({
+      customerPhone:o.customerPhone??o.phone??o.mobile??o.contactPhone,
+      customerEmail:o.customerEmail??o.email??o.contactEmail
+    },parsed.data.contact);
+    if(!o||!contactMatchesOrder)return NextResponse.json(NOT_FOUND,{status:404});
     return NextResponse.json({
       orderNumber:o.orderNumber,status:o.status,paymentStatus:o.paymentStatus,createdAt:iso(o.createdAt),
       paymentMethod:o.paymentGateway?.name||null,
