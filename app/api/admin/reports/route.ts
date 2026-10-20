@@ -16,15 +16,16 @@ export async function GET() {
       db.product.findMany({ select: { id: true } }),
       db.user.findMany({ where: { role: "CUSTOMER" }, select: { id: true } }),
       db.product.findMany({
-        where: { stock: { lte: 5 } },
+        where: { published: true },
         select: { id: true, name: true, sku: true, stock: true, lowStockThreshold: true },
-        orderBy: { stock: "asc" },
-        take: 20
+        orderBy: { stock: "asc" }
       }),
       db.paymentTransaction.findMany({ select: { id: true } })
     ]);
 
-    const paidOrders = allOrders.filter((o: any) => o.paymentStatus === "PAID");
+    const saleEligible = (o: any) => o.status !== "CANCELLED" && o.status !== "REFUNDED";
+    const paidOrders = allOrders.filter((o: any) => o.paymentStatus === "PAID" && saleEligible(o));
+    const lowStockProducts = products.filter((p: any) => Number(p.stock) <= Number(p.lowStockThreshold ?? 5)).slice(0, 20);
     const pending = allOrders.filter((o: any) => o.status === "PENDING").length;
     const daily = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(start);
@@ -40,7 +41,7 @@ export async function GET() {
         const day = daily.find(item => item.date === created.toISOString().slice(0, 10));
         if (day) {
           day.orders += 1;
-          if (order.paymentStatus === "PAID") day.paidRevenue += Number(order.total || 0);
+          if (order.paymentStatus === "PAID" && saleEligible(order)) day.paidRevenue += Number(order.total || 0);
         }
       }
     }
