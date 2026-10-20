@@ -15,6 +15,15 @@ export async function saveProductImage(productId:string,bytes:Uint8Array,mime:st
   return db.productImage.create({data:{productId,url:"/api/telegram/files/"+encodeURIComponent(stored.fileId),alt:alt||null,sortOrder:existing.length}});
 }
 
+/** Reuse a photo already delivered to this bot instead of uploading a duplicate copy. */
+export async function saveProductImageFromTelegramFileId(productId:string,fileId:string,alt?:string|null){
+  if(!fileId||fileId.length>512||!/^[A-Za-z0-9_-]+$/.test(fileId))throw new Error("Invalid Telegram image reference.");
+  const product=await db.product.findUnique({where:{id:productId},select:{sku:true,name:true}});
+  if(!product)throw new Error("Product not found.");
+  const existing=await db.productImage.findMany({where:{productId}});
+  return db.productImage.create({data:{productId,url:"/api/telegram/files/"+encodeURIComponent(fileId),alt:alt||null,sortOrder:existing.length}});
+}
+
 export function parseDataUrl(dataUrl:string){
   const m=/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl||"");
   if(!m)return null;
