@@ -35,7 +35,7 @@ export async function POST(req:NextRequest){
   const quote=await buildQuote({items:input.items,couponCode:input.couponCode,shippingDivision:input.shippingDivision,shippingDistrict:input.shippingDistrict,shippingUpazila:input.shippingUpazila},{strictCoupon:true});
   const {subtotal,discount,shipping:shippingFee,taxAmount,total}=quote;
   if(quote.couponId&&quote.perCustomerLimit!=null){
-   const customerOrders=await db.order.count({where:{couponCode:quote.couponCode,...(session?.userId?{userId:session.userId}:{customerPhone:input.customerPhone})}});
+   const customerOrders=await db.order.count({where:{couponCode:quote.couponCode,OR:[{customerPhone:input.customerPhone},...(session?.userId?[{userId:session.userId}]:[])]}});
    if(customerOrders>=quote.perCustomerLimit)throw new QuoteError("This voucher has reached its per-customer usage limit.");
   }
   if(quote.couponId){
