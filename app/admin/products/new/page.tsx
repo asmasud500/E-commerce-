@@ -122,7 +122,7 @@ export default function NewProduct() {
 
   return <div className="admin-layout">
     <AdminSidebar />
-    <main className="admin-content">
+    <main className="admin-content product-editor-page">
       <div className="admin-page-head">
         <div><div className="admin-kicker">MART · CATALOG</div><Link href="/admin/products">← Back to products</Link><h1>Add Product</h1><p>Build a complete product listing before publishing it to your storefront.</p></div>
       </div>
