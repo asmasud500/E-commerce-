@@ -1,15 +1,21 @@
 export default function Loading(){
   return (
-    <main className="mart-page-loading" aria-label="Loading page" role="status">
-      <section className="mart-loading-card">
-        <div className="mart-loading-brand"><span className="mart-loading-mark">M</span><span>MART Store</span></div>
-        <div className="mart-spinner" aria-hidden="true"/>
-        <p style={{fontWeight:700,margin:"14px 0 18px"}}>Getting everything ready…</p>
-        <div className="mart-loading-title"/>
-        <div className="mart-loading-line"/>
-        <div className="mart-loading-line short"/>
-        <div className="mart-loading-progress" aria-hidden="true"/>
-        <span style={{display:"block",fontSize:12,color:"#64748b",marginTop:12}}>Please wait while the page loads.</span>
+    <main className="yt-loading-screen" role="status" aria-label="Loading MART Store">
+      <div className="yt-top-progress" aria-hidden="true"/>
+      <header className="yt-loading-header">
+        <span className="yt-loading-menu" aria-hidden="true"/>
+        <div className="yt-loading-logo"><span className="yt-loading-play">▶</span><span>MART Store</span></div>
+        <div className="yt-loading-search" aria-hidden="true"/>
+        <span className="yt-loading-user" aria-hidden="true"/>
+      </header>
+      <section className="yt-loading-body" aria-hidden="true">
+        <div className="yt-loading-chips">{[1,2,3,4,5,6].map(n=><span key={n} className="yt-loading-chip"/>)}</div>
+        <div className="yt-loading-grid">
+          {[1,2,3,4,5,6].map(n=><article className="yt-loading-video" key={n}>
+            <div className="yt-loading-thumb"/>
+            <div className="yt-loading-meta"><div className="yt-loading-avatar"/><div className="yt-loading-copy"><div className="yt-loading-line long"/><div className="yt-loading-line short"/></div></div>
+          </article>)}
+        </div>
       </section>
     </main>
   );
