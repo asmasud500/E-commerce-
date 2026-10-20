@@ -5,7 +5,7 @@ import {BANGLADESH_LOCATIONS,findDivision,findDistrict} from "@/lib/bangladesh-l
 
 type Kind="delivery-zones"|"banners"|"flash-sales";
 type Row=Record<string,any>&{id:string};
-const blank={name:"",division:"",district:"",upazila:"",postalCode:"",locationDescription:"",latitude:"",longitude:"",fee:"120",freeAbove:"",estimatedDays:"3",title:"",imageUrl:"",href:"",sortOrder:"0",productIds:"",discountPercent:"10",startsAt:"",endsAt:"",active:"false"};
+const blank={name:"",division:"",district:"",upazila:"",postalCode:"",locationDescription:"",latitude:"",longitude:"",fee:"120",freeAbove:"",estimatedDays:"3",title:"",imageUrl:"",href:"",sortOrder:"0",productIds:"",discountPercent:"10",startsAt:"",endsAt:"",active:"true"};
 
 export default function AdminResourceManager({kind}:{kind:Kind}){
  const meta:Record<Kind,{title:string;description:string;endpoint:string}>={
