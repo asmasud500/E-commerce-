@@ -16,7 +16,7 @@ Native payment and stock transactions use compound Firestore queries. Before ena
 
 1. Copy `.env.example` to `.env`.
 2. Set the Firebase project ID and service-account credentials. Use a dedicated service account with only the required Firestore access.
-3. Set unique, strong values for `PAYMENT_ENCRYPTION_KEY`, `ADMIN_SESSION_SECRET`, `TELEGRAM_WEBHOOK_SECRET`, `PAYMENT_WEBHOOK_SECRET`, `MOBILE_MONEY_SMS_WEBHOOK_SECRET`, and `CRON_SECRET`.
+3. Set unique, strong values for `PAYMENT_ENCRYPTION_KEY`, `ADMIN_SESSION_SECRET`, `TELEGRAM_WEBHOOK_SECRET`, `PAYMENT_WEBHOOK_SECRET`, and `CRON_SECRET`.
 4. Configure `ADMIN_EMAIL` and a strong `ADMIN_PASSWORD`.
 5. Install dependencies and start the app:
 
@@ -64,7 +64,7 @@ Call `POST /api/jobs/release-stock` with `Authorization: Bearer CRON_SECRET`. Sc
 
 ## Payments and safety
 
-- Never store gateway credentials in source code. Configure SSLCOMMERZ, bKash, Nagad, Rocket, Upay, and Bangla QR credential fields from Admin → Payment Gateways → Set API credentials. Values are encrypted server-side and never returned to the browser.\n- `PAYMENT_ENCRYPTION_KEY` is the master key used to encrypt those saved credentials and must remain a strong Cloudflare encrypted environment secret; do not put it in the admin database or source code. A compromised/lost key requires rotating/re-entering saved provider credentials.\n- The admin credential form stores provider secrets but does not itself implement a provider API. Currently only SSLCOMMERZ has a verified automatic adapter; other providers remain disabled until their official merchant API integration is built and tested.
+- Never store gateway credentials in source code. Configure SSLCOMMERZ, bKash, Nagad, Rocket, Upay, and Bangla QR credential fields from Admin → Payment Gateways → Set API credentials. Values are encrypted server-side and never returned to the browser.\n- `PAYMENT_ENCRYPTION_KEY` is the master key used to encrypt those saved credentials and must remain a strong Cloudflare encrypted environment secret; do not put it in the admin database or source code. A compromised/lost key requires rotating/re-entering saved provider credentials.\n- The admin credential form stores provider secrets but does not itself implement a provider API. Currently only SSLCOMMERZ has a verified automatic adapter; other direct providers remain unavailable until their official merchant API integration is built and tested. Personal-number SMS forwarding is disabled and cannot settle orders.
 - Set `PAYMENT_CALLBACK_BASE_URL` to the canonical HTTPS origin of your deployed store (for example `https://shop.example.com`). Production payment initiation fails closed when this is missing or not HTTPS, preventing provider callbacks from being generated from an untrusted request host.
 - SSLCOMMERZ validation must explicitly report BDT currency; a missing currency field is not accepted as proof of payment.
 - SSLCOMMERZ callbacks are validated against the provider validation API. Settlement rejects a missing/mismatched amount, an unexpected order reference, or a missing provider transaction ID.
@@ -75,7 +75,7 @@ Call `POST /api/jobs/release-stock` with `Authorization: Bearer CRON_SECRET`. Sc
 
 Checkout inventory reservation now uses Firestore's native read-write transaction: product stock decrements, order creation, order items, and held reservations are committed atomically. A deterministic order document ID also makes a repeated idempotency key fail safely at the atomic commit rather than creating a second order.
 
-**Important remaining limitation:** the generic Prisma-compatible `db.$transaction` wrapper is still not a real transaction and other application paths still use it. Core checkout, verified payment settlement, mobile-money SMS auto-confirmation, proof-reference claiming, expired-stock release, admin payment confirm/reject, pending-order cancellation, and manual refund recording now use dedicated native Firestore transactions. This does not make every endpoint transactional: other admin edits, general order-status updates, and unrelated multi-document operations still need review. The current REST adapter also needs staging/load testing against the configured Firestore project before production traffic.
+**Important remaining limitation:** the generic Prisma-compatible `db.$transaction` wrapper is still not a real transaction and other application paths still use it. Core checkout, verified merchant-payment settlement, expired-stock release, admin payment confirm/reject, pending-order cancellation, and manual refund recording use dedicated native Firestore transactions. The legacy personal-number SMS confirmation endpoint and manual payment-proof endpoint are disabled. This does not make every endpoint transactional: other admin edits, general order-status updates, and unrelated multi-document operations still need review. The current REST adapter also needs staging/load testing against the configured Firestore project before production traffic.
 
 ## CI checks
 
