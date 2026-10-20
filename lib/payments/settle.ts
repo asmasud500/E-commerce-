@@ -6,7 +6,7 @@ export async function settlePayment(orderNumber:string,payload:Record<string,unk
  if(order.status!=="PENDING")return {paid:false,duplicate:false};
  const gateway=order.paymentGateway,adapter=paymentAdapters[gateway.type];if(!adapter)throw new Error("Adapter unavailable");
  const secrets=gateway.encryptedSecrets?decryptSecrets(gateway.encryptedSecrets):{};
- const config={...((gateway.publicConfig||{}) as Record<string,unknown>),apiBaseUrl:gateway.apiBaseUrl||undefined,qrImageUrl:gateway.qrImageUrl||undefined};
+ const config={...((gateway.publicConfig||{}) as Record<string,unknown>),apiBaseUrl:gateway.apiBaseUrl||undefined,qrImageUrl:gateway.qrImageUrl||undefined,mode:gateway.mode};
  const verification=await adapter.verify(payload,config,secrets);if(!verification.ok)return {paid:false};
  const verifiedAmount=Number(verification.amount);if(!Number.isFinite(verifiedAmount)||Math.abs(verifiedAmount-Number(order.total))>0.01)throw new Error("Payment amount missing or mismatch");
  const reference=verification.reference||String(payload.reference||"");if(gateway.type==="SSLCOMMERZ"&&reference!==order.orderNumber)throw new Error("Verified transaction reference mismatch");const providerId=verification.providerTransactionId||String(payload.providerTransactionId||payload.tran_id||"");
