@@ -9,7 +9,7 @@ export async function GET() {
     const today = new Date(now); today.setHours(0, 0, 0, 0);
     const start = new Date(today); start.setDate(start.getDate() - 6);
 
-    const [allOrders, products, customers, lowStock, transactions] = await Promise.all([
+    const [allOrders, products, customers, lowStockCandidates, transactions] = await Promise.all([
       db.order.findMany({
         select: { id: true, createdAt: true, total: true, paymentStatus: true, status: true }
       }),
@@ -25,7 +25,7 @@ export async function GET() {
 
     const saleEligible = (o: any) => o.status !== "CANCELLED" && o.status !== "REFUNDED";
     const paidOrders = allOrders.filter((o: any) => o.paymentStatus === "PAID" && saleEligible(o));
-    const lowStockProducts = products.filter((p: any) => Number(p.stock) <= Number(p.lowStockThreshold ?? 5)).slice(0, 20);
+    const lowStockProducts = lowStockCandidates.filter((p: any) => Number(p.stock) <= Number(p.lowStockThreshold ?? 5)).slice(0, 20);
     const pending = allOrders.filter((o: any) => o.status === "PENDING").length;
     const daily = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(start);
@@ -56,7 +56,7 @@ export async function GET() {
         transactions: transactions.length
       },
       daily,
-      lowStock,
+      lowStock: lowStockProducts,
       statuses: Array.from(statuses, ([status, count]) => ({ status, count }))
     });
   } catch (error) {
