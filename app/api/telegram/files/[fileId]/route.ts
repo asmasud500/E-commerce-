@@ -16,7 +16,7 @@ export async function GET(_:NextRequest,{params}:{params:Promise<{fileId:string}
     if(!file)return NextResponse.json({error:"Image not found."},{status:404});
     const mime=mimeFor(file.filePath);
     if(!mime.startsWith("image/"))return NextResponse.json({error:"Unsupported image file."},{status:415});
-    return new Response(file.bytes,{headers:{
+    return new Response(file.bytes.buffer.slice(file.bytes.byteOffset,file.bytes.byteOffset+file.bytes.byteLength) as ArrayBuffer,{headers:{
       "Content-Type":mime,
       "Content-Length":String(file.bytes.byteLength),
       "Cache-Control":"public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
