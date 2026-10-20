@@ -31,7 +31,7 @@ test("admin permissions fail closed for unknown roles and restrict sensitive mod
   assert.match(permissions, /return false/);
   assert.match(permissions, /\/api\/admin\/staff/);
   assert.match(permissions, /\/api\/admin\/payment-gateways/);
-  assert.match(permissions, /\/api\/admin\/orders\/\[\^\/\]\+\/refund/);
+  assert.ok(permissions.includes("refund(?:\\\\/|$)"));
 });
 
 test("generic Telegram file route does not expose private files to unauthenticated visitors", async () => {
