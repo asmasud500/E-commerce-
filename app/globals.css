@@ -2865,3 +2865,27 @@ img,video,svg,canvas{max-width:100%}
  .admin-content .admin-resource-skeleton{padding:14px}
 }
 @media(prefers-reduced-motion:reduce){.admin-resource-skeleton span{animation:none}}
+
+
+/* Admin route skeleton mirrors the real workspace without decorative video UI */
+.admin-loading-layout{background:#f5f6f8}
+.admin-loading-sidebar{gap:12px}
+.admin-loading-brand,.admin-loading-nav,.admin-loading-kicker,.admin-loading-heading span,.admin-loading-stats span,.admin-loading-stats strong,.admin-loading-panel span{display:block;background:linear-gradient(90deg,#e9edf2 25%,#f8fafc 38%,#e9edf2 62%);background-size:400% 100%;animation:admin-resource-shimmer 1.35s ease infinite;border-radius:9px}
+.admin-loading-brand{height:28px;width:68%;margin:6px 12px 18px;background:linear-gradient(90deg,#293548 25%,#3a4659 38%,#293548 62%);background-size:400% 100%}
+.admin-loading-nav{height:38px;width:100%;background:linear-gradient(90deg,#1e293b 25%,#2b374a 38%,#1e293b 62%);background-size:400% 100%}
+.admin-loading-content{display:grid;align-content:start;gap:22px}
+.admin-loading-kicker{width:155px;height:12px}
+.admin-loading-heading{display:grid;gap:12px;margin-bottom:4px}
+.admin-loading-heading span:first-child{width:min(360px,70%);height:34px}
+.admin-loading-heading span:last-child{width:min(520px,90%);height:15px}
+.admin-loading-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.admin-loading-stats>div{display:grid;gap:18px;min-width:0;padding:20px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.admin-loading-stats span{height:13px;width:58%}
+.admin-loading-stats strong{height:28px;width:74%}
+.admin-loading-panel{display:grid;gap:18px;padding:22px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.admin-loading-panel span{height:17px}
+.admin-loading-panel span:nth-child(odd){width:88%}
+.admin-loading-panel span:nth-child(even){width:65%}
+@media(max-width:900px){.admin-loading-sidebar{position:relative;height:auto}.admin-loading-sidebar .admin-loading-nav{display:none}.admin-loading-brand{margin-bottom:0}.admin-loading-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.admin-loading-content{padding:20px 14px}.admin-loading-stats{gap:10px}.admin-loading-stats>div{padding:14px}}
+@media(prefers-reduced-motion:reduce){.admin-loading-brand,.admin-loading-nav,.admin-loading-kicker,.admin-loading-heading span,.admin-loading-stats span,.admin-loading-stats strong,.admin-loading-panel span{animation:none}}
