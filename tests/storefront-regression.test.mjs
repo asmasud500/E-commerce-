@@ -20,7 +20,7 @@ test("product details emit product-specific title, description, canonical, Open 
   assert.match(source, /twitter:\{card:"summary_large_image",title:p\.name,description/);
   assert.match(source, /"@type":"Product"/);
   assert.match(source, /"@type":"Offer"/);
-  assert.match(source, /"price",effective/);
+  assert.match(source, /price:effective/);
   assert.match(source, /InStock/);
 });
 
