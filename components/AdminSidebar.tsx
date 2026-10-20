@@ -23,6 +23,7 @@ const groups = [
     ["/admin/payment-transactions", "Transactions", "⇄"],
     ["/admin/payment-gateways", "Payment gateways", "৳"],
     ["/admin/coupons", "Coupons & discounts", "％"],
+    ["/admin/gift-cards", "Gift cards", "🎁"],
     ["/admin/marketing", "Marketing", "✦"],
     ["/admin/flash-sales", "Flash sales", "⚡"],
   ]},
