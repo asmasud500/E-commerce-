@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {db} from "@/lib/prisma";
-import {encryptSecrets} from "@/lib/security/gateway-secrets";
+import {decryptSecrets,encryptSecrets} from "@/lib/security/gateway-secrets";
 import {z} from "zod";
 import {recordAdminAudit} from "@/lib/auth/audit";
 
@@ -14,7 +14,9 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
   const existing=await db.paymentGateway.findUnique({where:{id},select:{id:true,type:true,enabled:true,encryptedSecrets:true}});
   if(!existing)return NextResponse.json({error:"Gateway not found"},{status:404});
   const finalType=b.type||existing.type;
-  const hasCredentials=!!(b.secrets?String(b.secrets.storeId||"").trim()&&String(b.secrets.storePassword||"").trim():existing.encryptedSecrets);
+  const storedSecrets=existing.encryptedSecrets?decryptSecrets(existing.encryptedSecrets):{};
+  const candidateSecrets=b.secrets||storedSecrets;
+  const hasCredentials=!!(String(candidateSecrets.storeId||"").trim()&&String(candidateSecrets.storePassword||"").trim());
   if(b.enabled===true&&finalType!=="SSLCOMMERZ")return NextResponse.json({error:"This provider has no verified automatic adapter yet. Keep it disabled until an approved automatic integration is implemented."},{status:409});
   if(b.enabled===true&&finalType==="SSLCOMMERZ"&&!hasCredentials)return NextResponse.json({error:"Store ID and Store Password are required before enabling SSLCOMMERZ."},{status:409});
   if(b.secrets&&finalType==="SSLCOMMERZ"&&(!String(b.secrets.storeId||"").trim()||!String(b.secrets.storePassword||"").trim()))return NextResponse.json({error:"Save both SSLCOMMERZ Store ID and Store Password together."},{status:400});
