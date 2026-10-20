@@ -2723,3 +2723,18 @@ table{max-width:100%}
  .pd-qty-row{gap:8px}
  .pd-details-panel{padding:13px}
 }
+
+
+/* Global route loading: lightweight shimmer skeleton for all App Router pages. */
+.app-skeleton-page{min-height:100vh;background:#f8fafc;color:#111827}
+.app-skeleton-header{height:76px;padding:0 clamp(16px,4vw,48px);display:flex;align-items:center;gap:clamp(12px,2vw,24px);border-bottom:1px solid #e8edf3;background:rgba(255,255,255,.94)}
+.app-skeleton-logo{width:148px;height:26px;flex:0 0 auto}.app-skeleton-search{height:42px;max-width:560px;flex:1;margin-left:auto;margin-right:auto;border-radius:999px}.app-skeleton-actions{display:flex;gap:10px}.app-skeleton-actions i{display:block;width:38px;height:38px;border-radius:50%}
+.app-skeleton-content{max-width:1240px;margin:0 auto;padding:clamp(20px,3.5vw,42px) clamp(16px,3vw,30px) 48px}
+.app-skeleton-heading{display:grid;gap:12px;margin-bottom:28px}.app-skeleton-eyebrow{height:12px;width:100px}.app-skeleton-title{height:34px;width:min(380px,75%);border-radius:9px}.app-skeleton-subtitle{height:14px;width:min(520px,90%);border-radius:7px}
+.app-skeleton-feature{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(18px,3vw,34px);padding:clamp(14px,2vw,24px);margin-bottom:30px;border:1px solid #e8edf3;border-radius:18px;background:#fff}
+.app-skeleton-feature-image{width:100%;aspect-ratio:16/9;border-radius:13px}.app-skeleton-feature-copy{display:flex;flex-direction:column;justify-content:center;gap:14px;padding:8px}.app-skeleton-line{height:13px;width:85%;border-radius:7px}.app-skeleton-line.wide{width:100%}.app-skeleton-line.medium{width:62%}.app-skeleton-line.price{width:30%;height:20px;margin-top:5px}.app-skeleton-button{width:150px;height:43px;border-radius:10px;margin-top:6px}
+.app-skeleton-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.app-skeleton-card{overflow:hidden;border:1px solid #e8edf3;border-radius:15px;background:#fff;box-shadow:0 5px 18px rgba(15,23,42,.035)}.app-skeleton-card-image{width:100%;aspect-ratio:1/1;border-radius:0}.app-skeleton-card-copy{display:grid;gap:11px;padding:14px}.app-skeleton-card-copy .app-skeleton-line{height:12px}
+.loading-skeleton{background:linear-gradient(100deg,#edf1f6 20%,#f8fafc 40%,#edf1f6 60%);background-size:200% 100%;animation:app-skeleton-shimmer 1.25s ease-in-out infinite;border-radius:10px}@keyframes app-skeleton-shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@media(max-width:760px){.app-skeleton-header{height:62px;gap:10px}.app-skeleton-logo{width:100px;height:22px}.app-skeleton-search{height:36px;min-width:35px}.app-skeleton-actions{gap:6px}.app-skeleton-actions i{width:30px;height:30px}.app-skeleton-content{padding-top:22px}.app-skeleton-heading{margin-bottom:20px}.app-skeleton-title{height:29px}.app-skeleton-feature{grid-template-columns:1fr;gap:14px;padding:12px;margin-bottom:20px}.app-skeleton-feature-image{aspect-ratio:16/9}.app-skeleton-feature-copy{gap:11px;padding:5px}.app-skeleton-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.app-skeleton-card{border-radius:12px}.app-skeleton-card-copy{padding:10px;gap:9px}}
+@media(max-width:360px){.app-skeleton-logo{width:78px}.app-skeleton-actions i{width:26px;height:26px}.app-skeleton-grid{gap:8px}.app-skeleton-card-copy{padding:8px}}
+@media(prefers-reduced-motion:reduce){.loading-skeleton{animation:none;background:#eef2f7}}
