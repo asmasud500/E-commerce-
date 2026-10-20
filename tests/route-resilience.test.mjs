@@ -25,6 +25,10 @@ test("health endpoint reports readiness without exposing database exception deta
 test("public order tracking rate-limits requests and returns only delivery progress", async () => {
   const source = await read("../app/api/orders/track/route.ts");
   assert.match(source, /rateLimit\("track:"\+ip,15,60_000\)/);
+  assert.match(source, /cf-connecting-ip.*x-real-ip/);
+  assert.doesNotMatch(source, /x-forwarded-for/);
+  assert.match(source, /select:trackingSelect/);
+  assert.doesNotMatch(source, /include:\{items:true,paymentGateway:true\}/);
   assert.match(source, /status:429/);
   assert.match(source, /Cache-Control/);
   assert.match(source, /courierName:o\.courierName/);
