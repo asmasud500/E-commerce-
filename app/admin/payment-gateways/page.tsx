@@ -13,6 +13,14 @@ const types = ["SSLCOMMERZ", "BKASH", "NAGAD", "ROCKET", "BANGLA_QR", "CUSTOM"];
 const initialForm = { name: "", type: "SSLCOMMERZ", mode: "SANDBOX", apiBaseUrl: "", qrImageUrl: "", qrMerchantName: "", merchantNumber: "", instructions: "", cod: false, storeId: "", storePassword: "" };
 const MANUAL_TYPES = ["BKASH", "NAGAD", "ROCKET", "BANGLA_QR", "CUSTOM"];
 const moneyLabel = (s: string) => s.replaceAll("_", " ");
+const credentialFields: Record<string, { key: string; label: string; hint?: string }[]> = {
+  SSLCOMMERZ: [{ key: "storeId", label: "Store ID" }, { key: "storePassword", label: "Store Password" }],
+  BKASH: [{ key: "appKey", label: "App Key" }, { key: "appSecret", label: "App Secret" }, { key: "username", label: "API Username" }, { key: "password", label: "API Password" }, { key: "idToken", label: "Optional ID Token" }],
+  NAGAD: [{ key: "merchantId", label: "Merchant ID" }, { key: "merchantNumber", label: "Merchant Number" }, { key: "publicKey", label: "Public Key" }, { key: "privateKey", label: "Private Key" }],
+  ROCKET: [{ key: "merchantId", label: "Merchant ID" }, { key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }],
+  BANGLA_QR: [{ key: "merchantId", label: "Merchant ID" }, { key: "terminalId", label: "Terminal ID" }, { key: "apiKey", label: "API Key" }, { key: "apiSecret", label: "API Secret" }],
+  CUSTOM: [{ key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }, { key: "username", label: "Username" }, { key: "password", label: "Password" }],
+};
 const gatewayLogoDomain: Record<string, string> = {
   SSLCOMMERZ: "sslcommerz.com",
   BKASH: "bkash.com",
@@ -34,7 +42,7 @@ export default function PaymentGateways() {
   const [filter, setFilter] = useState("ALL");
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [qrUploadBusy, setQrUploadBusy] = useState(false);
+  const [qrUploadBusy, setQrUploadBusy] = useState(false);\n  const [credentialEdit, setCredentialEdit] = useState<{ id: string; values: Record<string, string> } | null>(null);\n  const [credentialBusy, setCredentialBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -80,6 +88,27 @@ export default function PaymentGateways() {
       setMsg("Payment method updated."); await load();
     } catch (e) { setError(e instanceof Error ? e.message : "Update failed."); }
   }
+  function openCredentialEdit(g: Gateway) {
+    const fields = credentialFields[g.type] || [];
+    setCredentialEdit({ id: g.id, values: Object.fromEntries(fields.map(field => [field.key, ""])) });
+    setMsg(""); setError("");
+  }
+  async function saveCredentials(g: Gateway) {
+    if (!credentialEdit || credentialEdit.id !== g.id) return;
+    const values = Object.fromEntries(Object.entries(credentialEdit.values).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value.length > 0));
+    if (!Object.keys(values).length) { setError("Enter at least one credential value. Empty fields are not saved."); return; }
+    if (g.type === "SSLCOMMERZ" && (!values.storeId || !values.storePassword)) { setError("SSLCOMMERZ requires both Store ID and Store Password."); return; }
+    setCredentialBusy(true);
+    try {
+      const r = await fetch("/api/admin/payment-gateways/" + encodeURIComponent(g.id), { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ secrets: values, enabled: false }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "Could not save encrypted credentials.");
+      setMsg("Credentials saved encrypted. They are never returned to the browser. Keep this gateway disabled until its approved automatic adapter is implemented and tested.");
+      setCredentialEdit(null); await load();
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not save credentials."); }
+    finally { setCredentialBusy(false); }
+  }
+
   async function uploadQrImage(file?: File) {
     if (!file) return;
     if (!file.type.startsWith("image/")) { setError("Choose an image file."); return; }
@@ -190,6 +219,11 @@ export default function PaymentGateways() {
           <h3>{g.name}</h3><p>{moneyLabel(g.type)} · {g.mode === "LIVE" ? "Live production" : "Sandbox / test"}</p>
           {typeof g.publicConfig?.merchantNumber === "string" && g.publicConfig.merchantNumber.length > 0 && <p>Merchant: {g.publicConfig.merchantNumber}</p>}
           {typeof g.publicConfig?.instructions === "string" && g.publicConfig.instructions.length > 0 && <p style={{ whiteSpace: "pre-line", fontSize: 13 }}>Instructions: {g.publicConfig.instructions}</p>}
+          {credentialEdit?.id === g.id && <div style={{ display: "grid", gap: 10, margin: "10px 0", padding: 12, border: "1px solid var(--admin-border,#cbd5e1)", borderRadius: 12 }}>
+            <div><strong>Secure API credentials</strong><p style={{ fontSize: 12, margin: "4px 0", color: "var(--admin-muted,#64748b)" }}>Values are sent only to the server and encrypted before storage. Saved secrets are never displayed again. Leave a field blank to omit it from this update.</p></div>
+            {(credentialFields[g.type] || []).map(field => <label key={field.key} style={{ display: "grid", gap: 4, fontSize: 13 }}>{field.label}<input type="password" autoComplete="new-password" spellCheck={false} value={credentialEdit.values[field.key] || ""} onChange={e => setCredentialEdit({ ...credentialEdit, values: { ...credentialEdit.values, [field.key]: e.target.value } })} placeholder="Enter credential value" /></label>)}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button type="button" disabled={credentialBusy} onClick={() => void saveCredentials(g)}>{credentialBusy ? "Encrypting & saving…" : "Save encrypted credentials"}</button><button type="button" disabled={credentialBusy} onClick={() => setCredentialEdit(null)}>Cancel</button></div>
+          </div>}
           {MANUAL_TYPES.includes(g.type) && payEdit?.id === g.id && <div style={{ display: "grid", gap: 8, margin: "8px 0" }}>
             <label style={{ display: "grid", gap: 4, fontSize: 13 }}>Payment number<input value={payEdit.number} onChange={e => setPayEdit({ ...payEdit, number: e.target.value })} placeholder="01XXXXXXXXX" /></label>
             <label style={{ display: "grid", gap: 4, fontSize: 13 }}>Instructions for customers<textarea rows={5} value={payEdit.instructions} onChange={e => setPayEdit({ ...payEdit, instructions: e.target.value })} placeholder={"Send {amount} to {number} and use {order} as the reference."} /></label>
@@ -199,7 +233,7 @@ export default function PaymentGateways() {
           {g.apiBaseUrl && <p style={{ overflowWrap: "anywhere" }}>API: {g.apiBaseUrl}</p>}
           {g.type === "BANGLA_QR" && g.qrImageUrl && <img src={g.qrImageUrl} alt="Bangla QR payment code" loading="lazy" style={{ width: 180, maxWidth: "100%", borderRadius: 12, margin: "8px 0" }} />}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: "auto", paddingTop: 12 }}>
-            <button type="button" onClick={() => void edit(g)}>Edit</button>
+            <button type="button" onClick={() => void edit(g)}>Edit</button>\n            <button type="button" onClick={() => openCredentialEdit(g)}>Set API credentials</button>
             {MANUAL_TYPES.includes(g.type) && <button type="button" onClick={() => openPayEdit(g)}>Number &amp; instructions</button>}
             <button type="button" onClick={() => void patch(g, { enabled: !g.enabled })}>{g.enabled ? "Disable" : "Enable"}</button>
             <button type="button" onClick={() => void remove(g)}>Delete</button>
@@ -207,6 +241,6 @@ export default function PaymentGateways() {
           {g.enabled && g.mode === "LIVE" && <small style={{ color: "#b45309" }}>Check provider credentials and callback verification before accepting live payments.</small>}
         </article>)}</div>}
     </section>
-    <p className="admin-footnote">Security: API secrets are not displayed in this page. Keep provider credentials and Telegram tokens in encrypted server-side storage / deployment secrets. A gateway being enabled here does not itself guarantee a provider integration is fully configured or verified.</p>
+    <p className="admin-footnote">Security: gateway credentials entered here are encrypted in server-side storage and are never displayed again. PAYMENT_ENCRYPTION_KEY and platform-wide secrets still belong in Cloudflare encrypted environment settings. Saving credentials does not create an API integration: only SSLCOMMERZ currently has a verified automatic adapter; other providers must remain disabled until their approved API adapters are implemented and tested.</p>
   </main></div>;
 }
