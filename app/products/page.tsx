@@ -65,7 +65,7 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
       price,original:discount>0?original:null,discount,image:firstImage.get(p.id)||null,
       rating:r?r.sum/r.n:0,reviews:r?.n||0,sold:0,soldPct:0,
       categoryId:p.categoryId||null,category:p.categoryId?catName.get(p.categoryId)||null:null,
-      freeDelivery:isFreeDelivery(p)
+      freeDelivery:isFreeDelivery(p),hasVariants:Array.isArray(p.variants)&&p.variants.length>0
     };
   });
   if(freeOnly)list=list.filter(p=>p.freeDelivery);
