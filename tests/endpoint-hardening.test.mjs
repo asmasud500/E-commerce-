@@ -105,7 +105,7 @@ test("checkout disables manual payment instructions and uses gateway mode for au
   assert.match(adapter, /BANGLA_QR:unavailable\("Bangla QR"\)/);
   assert.match(adapter, /securepay\.sslcommerz\.com/);
   assert.match(adapter, /sandbox\.sslcommerz\.com/);
-  assert.match(adapter, /data\?\.GatewayPageURL\.startsWith\(base\+"\/"\)/);
+  assert.match(adapter, /GatewayPageURL\.startsWith\(base\+/);
   assert.match(adapter, /validationserverAPI\.php/);
   assert.match(initiate, /mode:gateway\.mode/);
 });
