@@ -14,6 +14,8 @@ export async function POST(req:NextRequest){
  if(!session)return NextResponse.json({error:"Admin authentication required."},{status:401});
  try{
   const b=schema.parse(await req.json());
+  if(b.enabled&&b.type!=="SSLCOMMERZ")return NextResponse.json({error:"This provider has no verified automatic adapter yet. Keep it disabled until an approved automatic integration is implemented."},{status:409});
+  if(b.enabled&&b.type==="SSLCOMMERZ"&&(!String(b.secrets?.storeId||"").trim()||!String(b.secrets?.storePassword||"").trim()))return NextResponse.json({error:"Store ID and Store Password are required before enabling SSLCOMMERZ."},{status:409});
   const data:any={name:b.name,type:b.type,mode:b.mode,enabled:b.enabled,sortOrder:b.sortOrder,apiBaseUrl:b.apiBaseUrl||null,publicConfig:b.publicConfig||{},qrImageUrl:b.qrImageUrl||null,qrMerchantName:b.qrMerchantName||null};
   if(b.secrets)data.encryptedSecrets=encryptSecrets(b.secrets);
   const row=await db.paymentGateway.create({data,select:safe});
