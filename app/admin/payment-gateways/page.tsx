@@ -2,6 +2,7 @@
 
 import AdminSidebar from "@/components/AdminSidebar";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { fileToCompressedDataUrl } from "@/lib/client-image";
 
 type Gateway = {
   id: string; name: string; type: string; mode: string; enabled: boolean;
@@ -33,6 +34,7 @@ export default function PaymentGateways() {
   const [filter, setFilter] = useState("ALL");
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [qrUploadBusy, setQrUploadBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -78,12 +80,46 @@ export default function PaymentGateways() {
       setMsg("Payment method updated."); await load();
     } catch (e) { setError(e instanceof Error ? e.message : "Update failed."); }
   }
+  async function uploadQrImage(file?: File) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setError("Choose an image file."); return; }
+    setQrUploadBusy(true); setError(""); setMsg("");
+    try {
+      const dataUrl = await fileToCompressedDataUrl(file, 500_000);
+      const r = await fetch("/api/admin/image-upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dataUrl }) });
+      const d = await r.json();
+      if (!r.ok || !d.url) throw new Error(d.error || "QR image upload failed.");
+      set("qrImageUrl", d.url); setMsg("QR image uploaded. Save the payment method to keep the change.");
+    } catch (e) { setError(e instanceof Error ? e.message : "QR image upload failed."); }
+    finally { setQrUploadBusy(false); }
+  }
+  async function chooseQrImageForEdit(): Promise<string | null> {
+    return new Promise(resolve => {
+      const input = document.createElement("input"); input.type = "file"; input.accept = "image/jpeg,image/png,image/webp";
+      input.onchange = async () => {
+        const file = input.files?.[0]; if (!file) { resolve(null); return; }
+        try {
+          const dataUrl = await fileToCompressedDataUrl(file, 500_000);
+          const r = await fetch("/api/admin/image-upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dataUrl }) });
+          const d = await r.json(); if (!r.ok || !d.url) throw new Error(d.error || "QR image upload failed.");
+          resolve(d.url);
+        } catch (e) { setError(e instanceof Error ? e.message : "QR image upload failed."); resolve(null); }
+      };
+      input.click();
+    });
+  }
+
   async function edit(g: Gateway) {
     const name = window.prompt("Payment method name", g.name); if (name === null || !name.trim()) return;
     const apiBaseUrl = window.prompt("API base URL (optional)", g.apiBaseUrl || ""); if (apiBaseUrl === null) return;
     const body: Record<string, unknown> = { name: name.trim(), apiBaseUrl: apiBaseUrl || null };
     if (g.type === "BANGLA_QR") {
-      const qrImageUrl = window.prompt("Bangla QR image URL", g.qrImageUrl || ""); if (qrImageUrl === null) return;
+      let qrImageUrl: string | null = g.qrImageUrl || "";
+      if (window.confirm("Upload a QR image directly from your phone/computer? Choose Cancel to enter an image URL instead.")) {
+        const uploaded = await chooseQrImageForEdit(); if (!uploaded) return; qrImageUrl = uploaded;
+      } else {
+        const entered = window.prompt("Bangla QR image URL (or /api/img/...)", g.qrImageUrl || ""); if (entered === null) return; qrImageUrl = entered;
+      }
       const qrMerchantName = window.prompt("QR merchant name", g.qrMerchantName || ""); if (qrMerchantName === null) return;
       Object.assign(body, { qrImageUrl: qrImageUrl || null, qrMerchantName: qrMerchantName || null });
     }
@@ -137,7 +173,7 @@ export default function PaymentGateways() {
         {MANUAL_TYPES.includes(form.type) && <><label>Number customers send money to<input placeholder="01XXXXXXXXX" value={form.merchantNumber} onChange={e => set("merchantNumber", e.target.value)} /></label>
         <label style={{ gridColumn: "1 / -1" }}>Payment instructions shown to the customer<textarea rows={5} placeholder={"Example:\nSend {amount} by bKash Send Money to {number}.\nUse {order} as the reference, then submit the transaction ID."} value={form.instructions} onChange={e => set("instructions", e.target.value)} /><small>{"You can use {amount}, {order} and {number}; they are filled in for each order."}</small></label></>}
         {form.type === "SSLCOMMERZ" && <><label>Store ID<input required value={form.storeId} onChange={e => set("storeId", e.target.value)} /></label><label>Store password<input type="password" required autoComplete="new-password" value={form.storePassword} onChange={e => set("storePassword", e.target.value)} /></label></>}
-        {form.type === "BANGLA_QR" && <><label>Bangla QR image URL<input type="url" placeholder="https://…" value={form.qrImageUrl} onChange={e => set("qrImageUrl", e.target.value)} /></label><label>Merchant name<input value={form.qrMerchantName} onChange={e => set("qrMerchantName", e.target.value)} /></label></>}
+        {form.type === "BANGLA_QR" && <><label>Bangla QR image URL<input type="text" placeholder="https://… or uploaded image" value={form.qrImageUrl} onChange={e => set("qrImageUrl", e.target.value)} /></label><label style={{ display: "grid", gap: 7 }}>Or upload QR image directly<input type="file" accept="image/jpeg,image/png,image/webp" disabled={qrUploadBusy} onChange={e => { void uploadQrImage(e.target.files?.[0]); e.currentTarget.value = ""; }} /><small>{qrUploadBusy ? "Uploading and compressing…" : "JPG, PNG or WebP · compressed automatically"}</small></label>{form.qrImageUrl && <img src={form.qrImageUrl} alt="QR image preview" style={{ width: 150, maxWidth: "100%", borderRadius: 10, objectFit: "contain" }} />}<label>Merchant name<input value={form.qrMerchantName} onChange={e => set("qrMerchantName", e.target.value)} /></label></>}
         <button className="admin-primary-action" type="submit" disabled={busy}>{busy ? "Saving…" : "Save payment method"}</button>
       </form>
     </section>}
