@@ -1,6 +1,6 @@
 import {db} from "@/lib/prisma";
 import {esc,telegramApi,orderDetailsText} from "@/lib/notifications/telegram-admin";
-import {saveProductImage,MAX_IMAGE_BYTES} from "@/lib/store/images";
+import {saveProductImage,saveProductImageFromTelegramFileId} from "@/lib/store/images";
 import {collectCodPaymentAtomically} from "@/lib/firestore";
 import {parseOptionsText} from "@/lib/options";
 import {bookCourier} from "@/lib/integrations/courier";
@@ -282,14 +282,13 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
 }
 
 async function attachPhoto(p:any,fileId:string){
-  const token=process.env.TELEGRAM_BOT_TOKEN;
   try{
-    const f=await telegramApi("getFile",{file_id:fileId});const path=f?.result?.file_path;if(!path||!token)throw new Error("no file");
-    const r=await fetch("https://api.telegram.org/file/bot"+token+"/"+path,{cache:"no-store"});if(!r.ok)throw new Error("download");
-    const bytes=new Uint8Array(await r.arrayBuffer());
-    const mime=/\.png$/i.test(path)?"image/png":/\.webp$/i.test(path)?"image/webp":"image/jpeg";
-    if(bytes.length>MAX_IMAGE_BYTES){await reply("❌ ছবি বড় ("+Math.round(bytes.length/1000)+" KB)। Telegram-এ 'compress' করে (ছবি হিসেবে, file নয়) পাঠান — সর্বোচ্চ 650 KB।");return}
-    await saveProductImage(p.id,bytes,mime,p.name);await audit("PRODUCT_IMAGE_ADDED_TELEGRAM","Product",p.id,{});
-    await reply("🖼 ছবি যোগ হয়েছে: "+esc(p.name));
-  }catch{await reply("❌ ছবি যোগ করা যায়নি, আবার চেষ্টা করুন")}
+    const f=await telegramApi("getFile",{file_id:fileId});
+    if(!f?.ok||!f?.result?.file_path)throw new Error("Telegram file unavailable");
+    await saveProductImageFromTelegramFileId(p.id,fileId,p.name);
+    await audit("PRODUCT_IMAGE_ADDED_TELEGRAM","Product",p.id,{source:"telegram",fileId});
+    await reply("🖼 ছবি Telegram storage-এ যোগ হয়েছে: "+esc(p.name));
+  }catch{
+    await reply("❌ ছবি যোগ করা যায়নি, আবার চেষ্টা করুন");
+  }
 }
