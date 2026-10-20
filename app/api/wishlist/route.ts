@@ -14,7 +14,7 @@ async function customer(req: NextRequest) {
 }
 
 function limited(req: NextRequest, userId: string, action: string) {
-  const ip = req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for") || "unknown";
+  const ip = req.headers.get("cf-connecting-ip") || "unknown";
   return rateLimit("wishlist:" + action + ":" + userId + ":" + ip, 60, 60_000);
 }
 
