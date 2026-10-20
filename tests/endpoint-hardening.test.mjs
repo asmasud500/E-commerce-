@@ -119,7 +119,7 @@ test("MART Pay presents a branded automatic checkout and sends customers to the 
   assert.match(page, /MART Pay/);
   assert.match(page, /Secure payment hub/);
   assert.match(page, /window\.location\.assign\(result\.paymentUrl\)/);
-  assert.match(page, /exact options shown.*depend on your merchant account/s);
+  assert.match(page, /Only payment channels enabled on the store\x27s approved merchant account will appear there/);
   assert.doesNotMatch(page, /Submit mobile banking payment|sender's mobile number|Payment screenshot/);
   assert.match(adapter, /validationserverAPI\.php/);
 });
