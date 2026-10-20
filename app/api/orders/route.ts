@@ -40,9 +40,9 @@ export async function POST(req:NextRequest){
    items:orderItems,
    expiresAt:isCod?COD_RESERVATION_EXPIRY:expiresAt
   });
-  sendNewOrderTelegram(order.id).catch(()=>{});
-  db.abandonedCart.update({where:{id:"c"+normalizePhone(input.customerPhone)},data:{recovered:true}}).catch(()=>{});
-  notifyLowStock(input.items.map(i=>i.productId)).catch(()=>{});
+  await sendNewOrderTelegram(order.id).catch(()=>{});
+  await db.abandonedCart.update({where:{id:"c"+normalizePhone(input.customerPhone)},data:{recovered:true}}).catch(()=>{});
+  await notifyLowStock(input.items.map(i=>i.productId)).catch(()=>{});
   return NextResponse.json({orderId:order.id,orderNumber:order.orderNumber,total:Number(order.total),discount:Number(order.discount),shippingFee,taxAmount,gateway:{id:gateway.id,type:gateway.type,mode:gateway.mode},reservationExpiresAt:expiresAt,cod:isCod,paymentToken:await createOrderAccessToken(order.id)},{status:201});
  }catch(error){if(error instanceof QuoteError)return NextResponse.json({error:error.message},{status:error.status});console.error("Order creation error:",error instanceof Error?error.message:String(error));return NextResponse.json({error:"Unable to create order. Please check your information and try again."},{status:400});}
 }

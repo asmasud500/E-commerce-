@@ -32,7 +32,7 @@ export default async function ProductDetails({params}:{params:Promise<{slug:stri
         const price=sale!=null&&sale>0&&sale<reg?sale:reg;
         const orig=price<reg?reg:(o.compareAtPrice!=null&&Number(o.compareAtPrice)>price?Number(o.compareAtPrice):null);
         const disc=orig?Math.round((1-price/orig)*100):0;
-        return {id:o.id,slug:o.slug,name:o.name,sku:o.sku,stock:Number(o.stock),price,original:disc>0?orig:null,discount:disc,image:first.get(o.id)||null,rating:0,reviews:0,sold:0,soldPct:0,categoryId:o.categoryId||null,category:p.category?.name||null,freeDelivery:isFreeDelivery(o)};
+        return {id:o.id,slug:o.slug,name:o.name,sku:o.sku,stock:Number(o.stock),price,original:disc>0?orig:null,discount:disc,image:first.get(o.id)||null,rating:0,reviews:0,sold:0,soldPct:0,categoryId:o.categoryId||null,category:p.category?.name||null,freeDelivery:isFreeDelivery(o),hasVariants:(Array.isArray((o as any).variants)&&(o as any).variants.length>0)||(Array.isArray((o as any).options)&&(o as any).options.length>0)};
       });
     }
   }catch(error){console.error("Related products error:",error instanceof Error?error.message:String(error))}

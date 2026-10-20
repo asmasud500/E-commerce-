@@ -73,7 +73,7 @@ async function loadHome(){
       rating:r?r.sum/r.n:0,reviews:r?.n||0,
       sold,soldPct:Math.min(100,Math.round((sold/(sold+Number(p.stock)))*100)),
       categoryId:p.categoryId||null,category:p.categoryId?catName.get(p.categoryId)||null:null,
-      freeDelivery:isFreeDelivery(p),hasVariants:Array.isArray(p.variants)&&p.variants.length>0
+      freeDelivery:isFreeDelivery(p),hasVariants:(Array.isArray(p.variants)&&p.variants.length>0)||(Array.isArray(p.options)&&p.options.length>0)
     };
   });
 

@@ -25,7 +25,7 @@ export async function POST(req:NextRequest){
     const existing=await db.returnRequest.findFirst({where:{orderId:o.id}});
     if(existing)return NextResponse.json({error:"A return request already exists for this order ("+existing.status.toLowerCase()+")."},{status:409});
     const r=await db.returnRequest.create({data:{orderId:o.id,orderNumber:o.orderNumber,customerName:o.customerName,customerPhone:o.customerPhone,reason:p.data.reason,details:p.data.details||null,status:"REQUESTED",total:Number(o.total),createdAt:new Date()}});
-    telegramApi("sendMessage",{chat_id:process.env.TELEGRAM_CHAT_ID,parse_mode:"HTML",text:"↩️ <b>Return request</b>\nOrder: <code>"+esc(o.orderNumber)+"</code>\n"+esc(o.customerName)+" · "+esc(o.customerPhone)+"\nReason: "+esc(p.data.reason)+(p.data.details?"\n"+esc(p.data.details):"")+"\n\n<code>/return "+esc(r.id)+" approve</code> বা <code>reject</code>"}).catch(()=>{});
+    await telegramApi("sendMessage",{chat_id:process.env.TELEGRAM_CHAT_ID,parse_mode:"HTML",text:"↩️ <b>Return request</b>\nOrder: <code>"+esc(o.orderNumber)+"</code>\n"+esc(o.customerName)+" · "+esc(o.customerPhone)+"\nReason: "+esc(p.data.reason)+(p.data.details?"\n"+esc(p.data.details):"")+"\n\n<code>/return "+esc(r.id)+" approve</code> বা <code>reject</code>"}).catch(()=>{});
     return NextResponse.json({ok:true,status:"REQUESTED"},{status:201});
   }catch(e){console.error("Return request error:",e instanceof Error?e.message:String(e));return NextResponse.json({error:"Could not submit the request. Please try again."},{status:500});}
 }
