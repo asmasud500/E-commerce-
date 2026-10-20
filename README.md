@@ -33,7 +33,7 @@ For a PostgreSQL-to-Firestore migration only, configure `DATABASE_URL`, then run
 - Stock reservations and expiry-release endpoint
 - Checkout idempotency
 - Payment gateway management with encrypted gateway secrets
-- SSLCOMMERZ validation plus manual bKash/Nagad/Rocket/Bangla QR flows
+- Branded MART Pay checkout hub with SSLCOMMERZ hosted automatic payment session and provider-side transaction validation
 - Payment transaction records and manual refund recording
 - Admin order/status management, staff roles and audit records
 - Telegram admin notifications, order actions and bot commands
@@ -66,7 +66,7 @@ Call `POST /api/jobs/release-stock` with `Authorization: Bearer CRON_SECRET`. Sc
 
 - Never store gateway credentials in source code. Configure gateway secrets through the admin payment-gateway section.
 - SSLCOMMERZ callbacks are validated against the provider validation API. Settlement rejects a missing/mismatched amount, an unexpected order reference, or a missing provider transaction ID.
-- bKash/Nagad/Rocket and Bangla QR manual flows do not become provider-verified merely because a customer submits a transaction ID or screenshot. Automatic SMS matching requires the trusted Android bridge to call `/api/webhooks/mobile-money-sms` using `MOBILE_MONEY_SMS_WEBHOOK_SECRET`; validate that bridge and its secret before enabling it.
+- MART Pay is the branded checkout layer; payment methods are processed and verified by the configured provider. Available bKash/Nagad/Rocket/Upay, card, internet banking, or Bangla QR options depend on the merchant contract and provider account. Do not display a method as live unless it is enabled and tested with the provider. Never treat a transaction ID, screenshot, or ordinary QR image as automatic payment confirmation.
 - Keep payment webhooks and admin endpoints protected by their configured secrets and role checks.
 
 ## Production readiness caveat
