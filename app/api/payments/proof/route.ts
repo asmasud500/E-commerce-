@@ -55,8 +55,11 @@ export async function POST(req: NextRequest) {
 
     const imageBytes = Uint8Array.from(atob(screenshot.split(",")[1]), c => c.charCodeAt(0));
     let storagePath: string;
+    let storageMessageId: number | null = null;
     try {
-      storagePath = await uploadPrivatePaymentProof(o.orderNumber, imageBytes);
+      const stored = await uploadPrivatePaymentProof(o.orderNumber, imageBytes);
+      storagePath = stored.fileId;
+      storageMessageId = stored.messageId;
     } catch (storageError) {
       console.error("Payment proof could not be persisted to Telegram storage:", storageError instanceof Error ? storageError.message : String(storageError));
       return NextResponse.json({ error: "Payment proof storage is temporarily unavailable. Please try again later." }, { status: 503 });
@@ -72,7 +75,7 @@ export async function POST(req: NextRequest) {
       proofFileSize: imageBytes.byteLength
     });
     if (!claim.accepted) {
-      await deletePrivateStorageObject(storagePath).catch(() => {});
+      await deletePrivateStorageObject(storagePath, storageMessageId).catch(() => {});
       return NextResponse.json({
         error: claim.reason === "reference_used" || claim.reason === "duplicate"
           ? "This transaction ID has already been submitted."
