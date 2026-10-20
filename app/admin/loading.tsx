@@ -1,15 +1,21 @@
 export default function AdminLoading(){
   return (
-    <main className="mart-loading" role="status" aria-label="Loading admin page">
-      <section className="mart-loading-card">
-        <div className="mart-loading-brand"><span className="mart-loading-mark">M</span><span>Admin Workspace</span></div>
-        <div className="mart-loading-title"/>
-        <div className="mart-loading-line"/>
-        <div className="mart-loading-line short"/>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:12,marginTop:22}}>
-          {[1,2,3,4].map(n=><div key={n} style={{height:76,borderRadius:12,background:"linear-gradient(90deg,#edf0f4 20%,#fff 38%,#edf0f4 56%)",backgroundSize:"200% 100%",animation:"mart-skeleton 1.25s linear infinite"}}/>)}
+    <main className="yt-loading-screen" role="status" aria-label="Loading admin workspace">
+      <div className="yt-top-progress" aria-hidden="true"/>
+      <header className="yt-loading-header">
+        <span className="yt-loading-menu" aria-hidden="true"/>
+        <div className="yt-loading-logo"><span className="yt-loading-play">▶</span><span>MART Admin</span></div>
+        <div className="yt-loading-search" aria-hidden="true"/>
+        <span className="yt-loading-user" aria-hidden="true"/>
+      </header>
+      <section className="yt-loading-admin" aria-hidden="true">
+        <div className="yt-loading-chips">{[1,2,3,4].map(n=><span key={n} className="yt-loading-chip"/>)}</div>
+        <div className="yt-loading-grid">
+          {[1,2,3,4,5,6,7,8].map(n=><article className="yt-loading-video" key={n}>
+            <div className="yt-loading-thumb"/>
+            <div className="yt-loading-meta"><div className="yt-loading-avatar"/><div className="yt-loading-copy"><div className="yt-loading-line long"/><div className="yt-loading-line short"/></div></div>
+          </article>)}
         </div>
-        <div className="mart-loading-progress" aria-hidden="true"/>
       </section>
     </main>
   );
