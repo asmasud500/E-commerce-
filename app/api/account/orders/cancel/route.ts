@@ -9,7 +9,7 @@ export async function POST(req:NextRequest){
     const token=req.cookies.get("customer_session")?.value;
     const session=token?await verifyCustomerToken(token):null;
     if(!session)return NextResponse.json({error:"Please log in to cancel an order."},{status:401});
-    const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-forwarded-for")||"unknown";
+    const ip=req.headers.get("cf-connecting-ip")||"unknown";
     const rl=rateLimit("customer-cancel:"+ip,8,60_000);
     if(!rl.ok)return NextResponse.json({error:"Too many attempts. Please wait a minute."},{status:429});
     const body=await req.json().catch(()=>null);
