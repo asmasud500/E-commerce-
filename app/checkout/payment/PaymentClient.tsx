@@ -26,12 +26,9 @@ export default function PaymentClient(){
    <div><div style={{fontSize:12,color:"var(--muted,#64748b)",marginBottom:5}}>ORDER REFERENCE</div><b style={{overflowWrap:"anywhere"}}>{orderId}</b></div>
    {result?.amount!=null&&<div style={{textAlign:"right"}}><div style={{fontSize:12,color:"var(--muted,#64748b)",marginBottom:5}}>TOTAL TO PAY</div><strong style={{fontSize:25,color:"#ff6801"}}>{tk(result.amount)}</strong></div>}
   </div>
-  <div style={{marginTop:22}}>
-   <h2 style={{fontSize:18,margin:"0 0 12px"}}>Payment methods you may see</h2>
-   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
-    {[["bKash","Mobile banking"],["Nagad","Mobile banking"],["Rocket","Mobile banking"],["Upay","Mobile banking"],["Cards","Visa / Mastercard"],["Internet banking","Participating banks"],["Bangla QR","If enabled by provider"]].map(([name,kind])=><div key={name} style={{border:"1px solid var(--border,#e5e7eb)",borderRadius:12,padding:12,minHeight:72,display:"flex",flexDirection:"column",justifyContent:"center",gap:5}}><b style={{fontSize:14}}>{name}</b><span style={{fontSize:11,color:"var(--muted,#64748b)"}}>{kind}</span></div>)}
-   </div>
-   <p style={{fontSize:12,lineHeight:1.6,color:"var(--muted,#64748b)",marginTop:10}}>The exact options shown on the secure provider page depend on your merchant account and the channels enabled by your payment partner.</p>
+  <div style={{marginTop:22,border:"1px solid var(--border,#e5e7eb)",borderRadius:14,padding:16}}>
+   <h2 style={{fontSize:18,margin:"0 0 8px"}}>Automatic merchant payment</h2>
+   <p style={{fontSize:13,lineHeight:1.7,color:"var(--muted,#64748b)",margin:0}}>Continue to the secure merchant checkout. Only payment channels enabled on the store's approved merchant account will appear there. No personal-number Send Money transfer, screenshot upload, sender digits, or manual transaction-ID verification is required.</p>
   </div>
   {loading&&<div role="status" style={{marginTop:20,padding:14,borderRadius:12,background:"var(--surface-secondary,#f8fafc)"}}>Preparing your secure payment session…</div>}
   {result?.ok&&result.paymentUrl&&<div style={{marginTop:22,border:"1px solid #bbf7d0",background:"#f0fdf4",borderRadius:14,padding:16}}>
