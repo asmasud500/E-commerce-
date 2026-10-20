@@ -163,6 +163,13 @@ model Order {
   paymentSenderLast4 String?
   paymentProvider String?
   paymentProofSubmittedAt DateTime?
+  // Telegram file_id is the durable reference; never store the bot token or a public Telegram download URL.
+  paymentProofStoragePath String?
+  paymentProofContentType String?
+  paymentProofFileName String?
+  paymentProofSize Int?
+  invoiceTelegramFileId String?
+  invoiceTelegramMessageId Int?
   paymentAutoConfirmedAt DateTime?
   refundReference String?
   refundReason String?
