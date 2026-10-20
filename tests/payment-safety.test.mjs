@@ -88,7 +88,7 @@ test("checkout uses Firestore native read-write transaction for stock and order 
   assert.match(firestoreAdapter, /req\(":beginTransaction"/);
   assert.match(firestoreAdapter, /req\(":commit"/);
   assert.match(firestoreAdapter, /req\(":rollback"/);
-  assert.match(firestoreAdapter, /updateMask: \{ fieldPaths: \["stock", "updatedAt"\] \}/);
+  assert.match(firestoreAdapter, /updateMask:\s*\{\s*fieldPaths:\s*\["stock","updatedAt",\.\.\.\(variants\?\["variants"\]:\[\]\)\]\s*\}/);
   assert.match(checkoutRoute, /createOrderWithStockReservation\(/);
   assert.doesNotMatch(checkoutRoute, /const order=await db\.\$transaction\(async tx=>/);
 });
