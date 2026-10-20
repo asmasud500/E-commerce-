@@ -5,7 +5,7 @@ import {BANGLADESH_LOCATIONS,findDivision,findDistrict} from "@/lib/bangladesh-l
 
 type Kind="delivery-zones"|"banners"|"flash-sales";
 type Row=Record<string,any>&{id:string};
-const blank={name:"",division:"",district:"",upazila:"",postalCode:"",locationDescription:"",latitude:"",longitude:"",fee:"120",freeAbove:"",estimatedDays:"3",title:"",imageUrl:"",href:"",sortOrder:"0",productIds:"",discountPercent:"10",startsAt:"",endsAt:""};
+const blank={name:"",division:"",district:"",upazila:"",postalCode:"",locationDescription:"",latitude:"",longitude:"",fee:"120",freeAbove:"",estimatedDays:"3",title:"",imageUrl:"",href:"",sortOrder:"0",productIds:"",discountPercent:"10",startsAt:"",endsAt:"",active:"false"};
 
 export default function AdminResourceManager({kind}:{kind:Kind}){
  const meta:Record<Kind,{title:string;description:string;endpoint:string}>={
@@ -26,7 +26,7 @@ export default function AdminResourceManager({kind}:{kind:Kind}){
  const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setNotice("");try{
   const body:Record<string,any>={...form};
   if(kind==="delivery-zones"){body.fee=Number(body.fee);body.estimatedDays=Number(body.estimatedDays);body.freeAbove=body.freeAbove===""?null:Number(body.freeAbove);body.latitude=body.latitude===""?null:Number(body.latitude);body.longitude=body.longitude===""?null:Number(body.longitude);body.active=true;body.name=body.name.trim()||[body.upazila,body.district].filter(Boolean).join(", ");}
-  if(kind==="banners"){body.sortOrder=Number(body.sortOrder||0);body.active=false;}
+  if(kind==="banners"){body.sortOrder=Number(body.sortOrder||0);body.active=body.active==="true";body.startsAt=body.startsAt?new Date(body.startsAt).toISOString():null;body.endsAt=body.endsAt?new Date(body.endsAt).toISOString():null;}
   if(kind==="flash-sales"){body.productIds=String(body.productIds).split(",").map(x=>x.trim()).filter(Boolean);body.discountPercent=Number(body.discountPercent);body.startsAt=new Date(body.startsAt).toISOString();body.endsAt=new Date(body.endsAt).toISOString();body.active=false;}
   const r=await fetch(m.endpoint,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error||"Could not save record");setForm(blank);setNotice("Saved successfully.");await load();
  }catch(e){setNotice(e instanceof Error?e.message:"Request failed");}finally{setBusy(false);}};
@@ -60,7 +60,7 @@ export default function AdminResourceManager({kind}:{kind:Kind}){
   {input("freeAbove","Free delivery above (৳, optional)","number")}
   {input("estimatedDays","Estimated days","number",true)}
  </>:kind==="banners"?<>
-  {input("title","Banner title","text",true)}{input("imageUrl","Image URL (https)","url",true)}{input("href","Destination URL","text")}{input("sortOrder","Sort order","number",true)}
+  {input("title","Banner title","text",true,"e.g. Eid Mega Sale")}{input("imageUrl","Banner image URL (https)","url",true,"https://…")}{input("href","Destination URL (internal path or https URL)","text",false,"/products or https://…")}{input("sortOrder","Display order (lower appears first)","number",true)}{input("startsAt","Schedule start (optional)","datetime-local")}{input("endsAt","Schedule end (optional)","datetime-local")}<label className="admin-banner-active"><input type="checkbox" checked={form.active==="true"} onChange={e=>set("active",e.target.checked?"true":"false")}/> Publish this banner on the storefront immediately</label><p className="admin-footnote">Use a wide landscape image (recommended 1600 × 500). Published banners appear on the home page while their schedule is active.</p>
  </>:<>
   {input("title","Flash sale title","text",true)}{input("productIds","Product IDs (comma separated)","text",true)}{input("discountPercent","Discount percent (1–90)","number",true)}{input("startsAt","Start time","datetime-local",true)}{input("endsAt","End time","datetime-local",true)}
  </>}
