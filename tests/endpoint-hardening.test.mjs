@@ -122,3 +122,13 @@ test("MART Pay presents a branded automatic checkout and sends customers to the 
   assert.doesNotMatch(page, /Submit mobile banking payment|sender's mobile number|Payment screenshot/);
   assert.match(adapter, /validationserverAPI\.php/);
 });
+
+
+test("payment gateway admin cannot enable unimplemented adapters or SSLCOMMERZ without credentials", async () => {
+  const create = await read("../app/api/admin/payment-gateways/route.ts");
+  const update = await read("../app/api/admin/payment-gateways/[id]/route.ts");
+  assert.match(create, /b\.enabled&&b\.type!==\"SSLCOMMERZ\"/);
+  assert.match(create, /b\.secrets\?\.storeId/);
+  assert.match(update, /finalType!==\"SSLCOMMERZ\"/);
+  assert.match(update, /!hasCredentials/);
+});
