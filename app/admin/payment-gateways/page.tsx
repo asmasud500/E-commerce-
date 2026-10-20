@@ -96,6 +96,7 @@ export default function PaymentGateways() {
   async function chooseQrImageForEdit(): Promise<string | null> {
     return new Promise(resolve => {
       const input = document.createElement("input"); input.type = "file"; input.accept = "image/jpeg,image/png,image/webp";
+      input.oncancel = () => resolve(null);
       input.onchange = async () => {
         const file = input.files?.[0]; if (!file) { resolve(null); return; }
         try {
