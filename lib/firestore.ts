@@ -450,7 +450,7 @@ export async function recordRefundAtomically(args: {
  */
 export async function claimPaymentProofAtomically(args: {
   orderId: string; gatewayId: string; provider: string; transactionId: string;
-  senderLast4: string;
+  senderLast4: string; proofFileId?: string; proofFileSize?: number;
 }) {
   const now = new Date();
   const claimId = await deterministicId("payment-proof:" + args.provider + ":" + args.transactionId);
@@ -481,7 +481,13 @@ export async function claimPaymentProofAtomically(args: {
     const writes = [
       firestorePatchWrite("orders", orderDocument, {
         paymentReference: args.transactionId, paymentSenderLast4: args.senderLast4,
-        paymentProvider: args.provider, paymentProofSubmittedAt: now, updatedAt: now
+        paymentProvider: args.provider, paymentProofSubmittedAt: now, updatedAt: now,
+        ...(args.proofFileId ? {
+          paymentProofStoragePath: args.proofFileId,
+          paymentProofContentType: "image/jpeg",
+          paymentProofFileName: "payment-proof.jpg",
+          paymentProofSize: Number(args.proofFileSize || 0)
+        } : {})
       }, project),
       firestoreCreateWrite("paymentReferenceClaims", {
         id: claimId, orderId: args.orderId, gatewayId: args.gatewayId,
