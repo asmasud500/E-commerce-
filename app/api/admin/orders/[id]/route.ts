@@ -10,6 +10,31 @@ const inputSchema=z.object({
  courierName:z.string().trim().max(120).optional(),
  trackingNumber:z.string().trim().max(160).optional()
 }).strict().refine(v=>v.status!==undefined||v.courierName!==undefined||v.trackingNumber!==undefined,{message:"Provide an order status or tracking details."});
+export async function GET(req:NextRequest,{params}:{params:Promise<{id:string}>}){
+ const session=await readAdminSession(req.cookies.get("admin_session")?.value||"");
+ if(!session)return NextResponse.json({error:"Admin authentication required."},{status:401});
+ const {id}=await params;
+ try{
+  const order=await db.order.findUnique({
+   where:{id},
+   include:{
+    items:true,
+    paymentGateway:{select:{id:true,name:true,type:true,mode:true,enabled:true}},
+    transactions:{orderBy:{createdAt:"desc"},include:{gateway:{select:{name:true,type:true}}}}
+   }
+  });
+  if(!order)return NextResponse.json({error:"Order not found."},{status:404});
+  return NextResponse.json({
+   ...order,total:Number(order.total),subtotal:Number(order.subtotal),shippingFee:Number(order.shippingFee),discount:Number(order.discount),
+   items:order.items.map(i=>({...i,unitPrice:Number(i.unitPrice),lineTotal:Number(i.lineTotal)})),
+   transactions:order.transactions.map(t=>({...t,amount:Number(t.amount),gatewayName:t.gateway.name,gatewayType:t.gateway.type})),
+   gateway:order.paymentGateway?.name||null
+  });
+ }catch(error){
+  console.error("Admin order details failed:",error instanceof Error?error.message:String(error));
+  return NextResponse.json({error:"Unable to load order details."},{status:500});
+ }
+}
 export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;
  try{
