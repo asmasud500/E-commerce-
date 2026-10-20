@@ -5,11 +5,16 @@ import {recordAdminAudit} from "@/lib/auth/audit";
 
 const schema=z.object({
  name:z.string().max(100).nullable().optional(),
+ campaignName:z.string().max(120).nullable().optional(),
+ campaignDescription:z.string().max(500).nullable().optional(),
  code:z.string().trim().min(2).max(50).transform(v=>v.toUpperCase().replace(/\\s+/g,"")).optional(),
  type:z.enum(["PERCENT","FIXED"]).optional(),
  value:z.coerce.number().positive().optional(),
  minOrder:z.coerce.number().nonnegative().nullable().optional(),
+ startsAt:z.string().datetime().nullable().optional(),
  expiresAt:z.string().datetime().nullable().optional(),
+ usageLimit:z.coerce.number().int().positive().nullable().optional(),
+ perCustomerLimit:z.coerce.number().int().positive().nullable().optional(),
  active:z.boolean().optional()
 }).strict();
 type Ctx={params:Promise<{id:string}>};
@@ -21,7 +26,7 @@ export async function PATCH(req:NextRequest,ctx:Ctx){
   if(b.type==="PERCENT"&&b.value!==undefined&&b.value>100)return NextResponse.json({error:"Percent cannot exceed 100."},{status:400});
   const existing=await db.coupon.findUnique({where:{id}});
   if(!existing)return NextResponse.json({error:"Coupon not found."},{status:404});
-  const row=await db.coupon.update({where:{id},data:{...b,expiresAt:b.expiresAt===undefined?undefined:b.expiresAt?new Date(b.expiresAt):null}});
+  const row=await db.coupon.update({where:{id},data:{...b,startsAt:b.startsAt===undefined?undefined:b.startsAt?new Date(b.startsAt):null,expiresAt:b.expiresAt===undefined?undefined:b.expiresAt?new Date(b.expiresAt):null}});
   await recordAdminAudit(req,{action:"COUPON_UPDATED",entity:"coupon",entityId:id,metadata:{code:row.code,active:row.active,changedFields:Object.keys(b)}});
   return NextResponse.json(row);
  }catch(error){console.error("Coupon update failed:",error instanceof Error?error.message:String(error));return NextResponse.json({error:"Could not update coupon. Check for a duplicate code or invalid value."},{status:400});}
