@@ -2643,3 +2643,7 @@ table{max-width:100%}
 .hp-dots button{position:relative;display:block;flex:0 0 auto;width:10px!important;height:10px!important;min-width:0!important;min-height:0!important;padding:0!important;border:0;border-radius:50%!important;background:rgba(255,255,255,.55);line-height:0;font-size:0}
 .hp-dots button::after{content:"";position:absolute;inset:-12px}
 .hp-dots button.on{width:10px!important;background:var(--or);transform:scale(1.25)}
+.info-page{max-width:820px;margin:24px auto;padding:28px 30px;line-height:1.7}.info-page h1{margin:0 0 6px}.info-page h2{margin:22px 0 6px;font-size:18px}.info-page .info-intro{color:#64748b;margin:0 0 12px}.info-page ul{padding-left:20px}.info-page a:not(.pg-btn){color:var(--or);font-weight:600}
+@media(max-width:600px){.info-page{margin:12px 0;padding:20px 16px}}
+.sf-links{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px}.sf-links a{font-size:13px}
+.sf-links{grid-column:1/-1}.info-page .pg-btn{display:inline-flex;margin:4px 6px}

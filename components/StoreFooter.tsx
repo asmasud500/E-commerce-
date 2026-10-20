@@ -47,6 +47,7 @@ export default function StoreFooter(){
           {supportEmail&&<a href={"mailto:"+supportEmail}>Email: {supportEmail}</a>}
           {!supportPhone&&!supportEmail&&<p>For order assistance, visit your account or check your order details.</p>}
         </div>
+        <nav className="sf-links" aria-label="Store policies"><Link href="/about">About us</Link><Link href="/contact">Contact</Link><Link href="/shipping-policy">Delivery</Link><Link href="/return-policy">Returns &amp; refunds</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav>
         <small className="sf-copyright">© {new Date().getFullYear()} {storeName}. All rights reserved.</small>
       </div>
     </footer>
