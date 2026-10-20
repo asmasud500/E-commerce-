@@ -25,7 +25,7 @@ export default function Checkout(){
     .finally(()=>{if(!off)setQuoteLoading(false)});
   },250);
   return()=>{off=true;clearTimeout(t)};
- },[items,appliedCoupon,form.shippingDivision,form.shippingDistrict,form.shippingUpazila]);
+ },[items,appliedCoupon,appliedGiftCard,form.shippingDivision,form.shippingDistrict,form.shippingUpazila]);
  const tk=(n:number)=>"৳"+Number(n).toLocaleString("en-BD");
  const shipping=quote?quote.shipping:0,estimatedTax=quote?quote.taxAmount:0,grandTotal=quote?quote.total:subtotal;
  const lineMode=(id:string)=>quote?.lines?.find((l:any)=>l.productId===id)?.delivery;
