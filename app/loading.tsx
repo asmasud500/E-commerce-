@@ -1,7 +1,6 @@
 export default function Loading(){
   return (
     <main className="yt-loading-screen" role="status" aria-label="Loading MART Store">
-      <div className="yt-top-progress" aria-hidden="true"/>
       <header className="yt-loading-header">
         <span className="yt-loading-menu" aria-hidden="true"/>
         <div className="yt-loading-logo"><span className="yt-loading-play">▶</span><span>MART Store</span></div>
