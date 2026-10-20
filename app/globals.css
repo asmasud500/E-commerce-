@@ -1815,3 +1815,10 @@ main,.pg,.container,.page-container{min-width:0}
 .admin-banner-preview img{display:block;width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#f1f5f9}
 .admin-banner-preview button{align-self:flex-start}
 .admin-banner-url-label{display:flex;flex-direction:column;gap:6px}
+
+
+/* Variant-specific price and availability on product details */
+.pd-variant-summary{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0;padding:11px 13px;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed;color:#7c2d12;font-size:14px}
+.pd-variant-summary strong{font-size:20px;color:#9a3412}
+.pd-variant-summary span{color:#64748b}
+@media(max-width:640px){.pd-variant-summary{padding:10px 11px}.pd-variant-summary strong{font-size:18px}}
