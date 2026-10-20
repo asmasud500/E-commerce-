@@ -15,10 +15,10 @@ const MANUAL_TYPES = ["BKASH", "NAGAD", "ROCKET", "BANGLA_QR", "CUSTOM"];
 const moneyLabel = (s: string) => s.replaceAll("_", " ");
 const credentialFields: Record<string, { key: string; label: string; hint?: string }[]> = {
   SSLCOMMERZ: [{ key: "storeId", label: "Store ID" }, { key: "storePassword", label: "Store Password" }],
-  BKASH: [{ key: "appKey", label: "App Key" }, { key: "appSecret", label: "App Secret" }, { key: "username", label: "API Username" }, { key: "password", label: "API Password" }, { key: "idToken", label: "Optional ID Token" }],
-  NAGAD: [{ key: "merchantId", label: "Merchant ID" }, { key: "merchantNumber", label: "Merchant Number" }, { key: "publicKey", label: "Public Key" }, { key: "privateKey", label: "Private Key" }],
-  ROCKET: [{ key: "merchantId", label: "Merchant ID" }, { key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }],
-  UPAY: [{ key: "merchantId", label: "Merchant ID" }, { key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }, { key: "username", label: "API Username" }, { key: "password", label: "API Password" }],
+  BKASH: [{ key: "appKey", label: "App Key" }, { key: "appSecret", label: "App Secret" }, { key: "username", label: "API Username" }, { key: "password", label: "API Password" }, { key: "idToken", label: "Optional ID Token" }, { key: "webhookSecret", label: "Webhook Secret (if issued)" }],
+  NAGAD: [{ key: "merchantId", label: "Merchant ID" }, { key: "merchantNumber", label: "Merchant Number" }, { key: "publicKey", label: "Public Key" }, { key: "privateKey", label: "Merchant Private Key" }, { key: "webhookSecret", label: "Callback Secret (if issued)" }],
+  ROCKET: [{ key: "merchantId", label: "Merchant ID" }, { key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key (if issued)" }, { key: "privateKey", label: "Signing Private Key (if issued)" }],
+  UPAY: [{ key: "merchantId", label: "Merchant ID" }, { key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }, { key: "apiSecret", label: "API Secret" }, { key: "platformPublicKey", label: "Platform Public Key" }, { key: "privateKey", label: "Merchant Signing Private Key (if issued)" }, { key: "username", label: "API Username (if issued)" }, { key: "password", label: "API Password (if issued)" }],
   BANGLA_QR: [{ key: "merchantId", label: "Merchant ID" }, { key: "terminalId", label: "Terminal ID" }, { key: "apiKey", label: "API Key" }, { key: "apiSecret", label: "API Secret" }],
   CUSTOM: [{ key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }, { key: "username", label: "Username" }, { key: "password", label: "Password" }],
 };
@@ -47,6 +47,8 @@ export default function PaymentGateways() {
   const [qrUploadBusy, setQrUploadBusy] = useState(false);
   const [credentialEdit, setCredentialEdit] = useState<{ id: string; values: Record<string, string> } | null>(null);
   const [credentialBusy, setCredentialBusy] = useState(false);
+  const [apiConfigEdit, setApiConfigEdit] = useState<{ id: string; baseUrl: string; docsUrl: string; tokenUrl: string; createPaymentUrl: string; executePaymentUrl: string; queryPaymentUrl: string; callbackUrl: string; webhookUrl: string; extraJson: string } | null>(null);
+  const [apiConfigBusy, setApiConfigBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -92,6 +94,52 @@ export default function PaymentGateways() {
       setMsg("Payment method updated."); await load();
     } catch (e) { setError(e instanceof Error ? e.message : "Update failed."); }
   }
+  function openApiConfigEdit(g: Gateway) {
+    const p = g.publicConfig || {};
+    const json = { ...p };
+    for (const key of ["docsUrl", "tokenUrl", "createPaymentUrl", "executePaymentUrl", "queryPaymentUrl", "callbackUrl", "webhookUrl"]) delete json[key];
+    setApiConfigEdit({
+      id: g.id, baseUrl: g.apiBaseUrl || "",
+      docsUrl: String(p.docsUrl || ""), tokenUrl: String(p.tokenUrl || ""),
+      createPaymentUrl: String(p.createPaymentUrl || ""), executePaymentUrl: String(p.executePaymentUrl || ""),
+      queryPaymentUrl: String(p.queryPaymentUrl || ""), callbackUrl: String(p.callbackUrl || ""),
+      webhookUrl: String(p.webhookUrl || ""), extraJson: JSON.stringify(json, null, 2)
+    });
+    setMsg(""); setError("");
+  }
+  async function saveApiConfig(g: Gateway) {
+    if (!apiConfigEdit || apiConfigEdit.id !== g.id) return;
+    let extra: Record<string, unknown>;
+    try {
+      const parsed: unknown = JSON.parse(apiConfigEdit.extraJson || "{}");
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Additional settings must be a JSON object.");
+      extra = parsed as Record<string, unknown>;
+    } catch (e) { setError(e instanceof Error ? e.message : "Invalid JSON settings."); return; }
+    const validUrl = (v: string) => !v.trim() || /^https:\/\//i.test(v.trim());
+    const urls = [apiConfigEdit.baseUrl, apiConfigEdit.docsUrl, apiConfigEdit.tokenUrl, apiConfigEdit.createPaymentUrl, apiConfigEdit.executePaymentUrl, apiConfigEdit.queryPaymentUrl, apiConfigEdit.callbackUrl, apiConfigEdit.webhookUrl];
+    if (urls.some(v => !validUrl(v))) { setError("Use HTTPS URLs for API endpoints and provider documentation."); return; }
+    setApiConfigBusy(true); setError(""); setMsg("");
+    const publicConfig = {
+      ...(g.publicConfig || {}), ...extra,
+      docsUrl: apiConfigEdit.docsUrl.trim(), tokenUrl: apiConfigEdit.tokenUrl.trim(),
+      createPaymentUrl: apiConfigEdit.createPaymentUrl.trim(), executePaymentUrl: apiConfigEdit.executePaymentUrl.trim(),
+      queryPaymentUrl: apiConfigEdit.queryPaymentUrl.trim(), callbackUrl: apiConfigEdit.callbackUrl.trim(),
+      webhookUrl: apiConfigEdit.webhookUrl.trim()
+    };
+    try {
+      const r = await fetch("/api/admin/payment-gateways/" + encodeURIComponent(g.id), {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiBaseUrl: apiConfigEdit.baseUrl.trim() || null, publicConfig })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "Could not save API configuration.");
+      setApiConfigEdit(null);
+      setMsg("API configuration saved. These settings are stored, but they do not activate an unimplemented provider adapter.");
+      await load();
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not save API configuration."); }
+    finally { setApiConfigBusy(false); }
+  }
+
   function openCredentialEdit(g: Gateway) {
     const fields = credentialFields[g.type] || [];
     setCredentialEdit({ id: g.id, values: Object.fromEntries(fields.map(field => [field.key, ""])) });
@@ -223,6 +271,16 @@ export default function PaymentGateways() {
           <h3>{g.name}</h3><p>{moneyLabel(g.type)} · {g.mode === "LIVE" ? "Live production" : "Sandbox / test"}</p><p style={{fontSize:12,color:g.credentialsConfigured?"#15803d":"#b45309"}}>{g.credentialsConfigured ? "Encrypted credentials saved" : "Credentials not configured"}</p>
           {typeof g.publicConfig?.merchantNumber === "string" && g.publicConfig.merchantNumber.length > 0 && <p>Merchant: {g.publicConfig.merchantNumber}</p>}
           {typeof g.publicConfig?.instructions === "string" && g.publicConfig.instructions.length > 0 && <p style={{ whiteSpace: "pre-line", fontSize: 13 }}>Instructions: {g.publicConfig.instructions}</p>}
+          {apiConfigEdit?.id === g.id && <div style={{ display: "grid", gap: 10, margin: "10px 0", padding: 12, border: "1px solid var(--admin-border,#cbd5e1)", borderRadius: 12 }}>
+            <div><strong>Provider API configuration</strong><p style={{ fontSize: 12, margin: "4px 0", color: "var(--admin-muted,#64748b)" }}>Enter the exact values supplied by the provider. Endpoint settings are not secret; keys and private credentials belong in “Set API credentials”. Saving these fields does not make an unsupported API automatically operational.</p></div>
+            {([
+              ["baseUrl", "API base URL"], ["docsUrl", "Official API documentation URL"], ["tokenUrl", "Token / authentication endpoint URL"],
+              ["createPaymentUrl", "Create / initiate payment endpoint URL"], ["executePaymentUrl", "Execute / capture payment endpoint URL"],
+              ["queryPaymentUrl", "Payment status / query endpoint URL"], ["callbackUrl", "Success / return callback URL"], ["webhookUrl", "Webhook / IPN URL"]
+            ] as const).map(([key, label]) => <label key={key} style={{ display: "grid", gap: 4, fontSize: 13 }}>{label}<input type="url" inputMode="url" placeholder="https://…" value={apiConfigEdit[key]} onChange={e => setApiConfigEdit(old => old ? { ...old, [key]: e.target.value } : old)} /></label>)}
+            <label style={{ display: "grid", gap: 4, fontSize: 13 }}>Additional public configuration (JSON)<textarea rows={7} spellCheck={false} value={apiConfigEdit.extraJson} onChange={e => setApiConfigEdit(old => old ? { ...old, extraJson: e.target.value } : old)} placeholder={'{ "apiVersion": "issued-by-provider", "merchantCode": "..." }'} /></label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button type="button" disabled={apiConfigBusy} onClick={() => void saveApiConfig(g)}>{apiConfigBusy ? "Saving…" : "Save API settings"}</button><button type="button" disabled={apiConfigBusy} onClick={() => setApiConfigEdit(null)}>Cancel</button></div>
+          </div>}
           {credentialEdit?.id === g.id && <div style={{ display: "grid", gap: 10, margin: "10px 0", padding: 12, border: "1px solid var(--admin-border,#cbd5e1)", borderRadius: 12 }}>
             <div><strong>Secure API credentials</strong><p style={{ fontSize: 12, margin: "4px 0", color: "var(--admin-muted,#64748b)" }}>Values are sent only to the server and encrypted before storage. Saved secrets are never displayed again. Leave a field blank to omit it from this update.</p></div>
             {(credentialFields[g.type] || []).map(field => <label key={field.key} style={{ display: "grid", gap: 4, fontSize: 13 }}>{field.label}<input type="password" autoComplete="new-password" spellCheck={false} value={credentialEdit.values[field.key] || ""} onChange={e => setCredentialEdit(old => old ? { ...old, values: { ...old.values, [field.key]: e.target.value } } : old)} placeholder="Enter credential value" /></label>)}
@@ -238,6 +296,7 @@ export default function PaymentGateways() {
           {g.type === "BANGLA_QR" && g.qrImageUrl && <img src={g.qrImageUrl} alt="Bangla QR payment code" loading="lazy" style={{ width: 180, maxWidth: "100%", borderRadius: 12, margin: "8px 0" }} />}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: "auto", paddingTop: 12 }}>
             <button type="button" onClick={() => void edit(g)}>Edit</button>
+            <button type="button" onClick={() => openApiConfigEdit(g)}>API endpoints &amp; settings</button>
             <button type="button" onClick={() => openCredentialEdit(g)}>Set API credentials</button>
             {MANUAL_TYPES.includes(g.type) && <button type="button" onClick={() => openPayEdit(g)}>Number &amp; instructions</button>}
             <button type="button" onClick={() => void patch(g, { enabled: !g.enabled })}>{g.enabled ? "Disable" : "Enable"}</button>
@@ -246,6 +305,6 @@ export default function PaymentGateways() {
           {g.enabled && g.mode === "LIVE" && <small style={{ color: "#b45309" }}>Check provider credentials and callback verification before accepting live payments.</small>}
         </article>)}</div>}
     </section>
-    <p className="admin-footnote">Security: gateway credentials entered here are encrypted in server-side storage and are never displayed again. PAYMENT_ENCRYPTION_KEY and platform-wide secrets still belong in Cloudflare encrypted environment settings. Saving credentials does not create an API integration: only SSLCOMMERZ currently has a verified automatic adapter; other providers must remain disabled until their approved API adapters are implemented and tested.</p>
+    <p className="admin-footnote">Security: gateway credentials entered here are encrypted in server-side storage and are never displayed again. PAYMENT_ENCRYPTION_KEY and platform-wide secrets still belong in Cloudflare encrypted environment settings. Saving API endpoints and credentials does not itself implement provider-specific authentication, signing, encryption or callback verification. Only SSLCOMMERZ currently has an automatic adapter; other providers remain disabled until their adapters are implemented and tested.</p>
   </main></div>;
 }
