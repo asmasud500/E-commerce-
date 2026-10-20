@@ -2638,3 +2638,8 @@ table{max-width:100%}
 .admin-content .orders-search{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;height:46px!important;min-height:46px!important;grid-template-columns:none!important}
 .admin-content .orders-search input{display:block!important;position:static!important;flex:1 1 0!important;height:100%!important;outline:0!important;outline-offset:0!important}
 .admin-content .orders-search:focus-within{border-color:#FF6801;box-shadow:0 0 0 3px rgba(255,104,1,.18)}
+/* Hero slider indicators: small round dots on every screen (global button min-size made them tall bars on mobile) */
+.hp-dots{gap:10px;align-items:center}
+.hp-dots button{position:relative;display:block;flex:0 0 auto;width:10px!important;height:10px!important;min-width:0!important;min-height:0!important;padding:0!important;border:0;border-radius:50%!important;background:rgba(255,255,255,.55);line-height:0;font-size:0}
+.hp-dots button::after{content:"";position:absolute;inset:-12px}
+.hp-dots button.on{width:10px!important;background:var(--or);transform:scale(1.25)}
