@@ -13,7 +13,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!order.paymentProofStoragePath) return NextResponse.json({ error: "No saved payment proof exists for this order." }, { status: 404 });
     const bytes = await readPrivatePaymentProof(String(order.paymentProofStoragePath));
     if (!bytes) return NextResponse.json({ error: "Payment proof file was not found in storage." }, { status: 404 });
-    return new Response(bytes, {
+    return new Response(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength) as ArrayBuffer, {
       status: 200,
       headers: {
         "Content-Type": "image/jpeg",
