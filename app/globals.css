@@ -1708,3 +1708,6 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(255,104,1,.6);outlin
 .yt-loading-line:after,
 .mart-loading-progress:after{background-position:initial!important}
 
+
+/* Remove the YouTube-style skeleton placeholder screen entirely. */
+.yt-loading-screen{display:none!important}
