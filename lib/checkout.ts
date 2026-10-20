@@ -66,18 +66,22 @@ export async function buildQuote(input:QuoteInput,opts:{strictCoupon?:boolean}={
     lines.push({productId:p.id,name:p.name+(sel.label?" ("+sel.label+")":""),unitPrice,quantity:item.quantity,lineTotal,delivery:d.mode,deliveryFee:d.fee,options:item.options||{},...(variant?{variantId:variant.id||undefined}:{})});
   }
 
-  let discount=0,couponError:string|null=null;
+  let discount=0,couponError:string|null=null,couponId:string|null=null,couponUsageLimit:number|null=null,perCustomerLimit:number|null=null;
   const code=(input.couponCode||"").trim().toUpperCase();
   if(code){
     const c=await db.coupon.findFirst({where:{code,active:true}});
-    const expired=!!c&&!!c.expiresAt&&c.expiresAt<new Date();
+    const now=new Date();
+    const notStarted=!!c&&!!c.startsAt&&c.startsAt>now;
+    const expired=!!c&&!!c.expiresAt&&c.expiresAt<now;
     const belowMin=!!c&&!!c.minOrder&&subtotal<Number(c.minOrder);
-    if(!c||expired||belowMin){
-      couponError=!c?"This voucher code is not valid.":expired?"This voucher has expired.":"Add more items to use this voucher (minimum order ৳"+Number(c.minOrder).toLocaleString("en-BD")+").";
+    const exhausted=!!c&&c.usageLimit!=null&&c.usedCount>=c.usageLimit;
+    if(!c||notStarted||expired||belowMin||exhausted){
+      couponError=!c?"This voucher code is not valid.":notStarted?"This voucher is not active yet.":expired?"This voucher has expired.":exhausted?"This voucher has reached its usage limit.":"Add more items to use this voucher (minimum order ৳"+Number(c.minOrder).toLocaleString("en-BD") + ").";
       if(opts.strictCoupon)throw new QuoteError("Invalid or unavailable coupon.");
     }else if(c.type!=="PERCENT"&&c.type!=="FIXED"){
       throw new QuoteError("Unsupported coupon type.");
     }else{
+      couponId=c.id;couponUsageLimit=c.usageLimit==null?null:Number(c.usageLimit);perCustomerLimit=c.perCustomerLimit==null?null:Number(c.perCustomerLimit);
       discount=c.type==="PERCENT"?Math.min(subtotal,subtotal*Number(c.value)/100):Math.min(subtotal,Number(c.value));
     }
   }
@@ -90,7 +94,7 @@ export async function buildQuote(input:QuoteInput,opts:{strictCoupon?:boolean}={
   const delivery=computeDelivery({deliveries:lines.map(l=>({mode:l.delivery,fee:l.deliveryFee})),standardFee,freeThreshold,payable});
   const taxAmount=settings.taxEnabled?Math.round(payable*Number(settings.taxRate||0))/100:0;
   return {
-    lines,subtotal,discount,couponCode:code&&!couponError?code:null,couponError,
+    lines,subtotal,discount,couponCode:code&&!couponError?code:null,couponId:code&&!couponError?couponId:null,couponUsageLimit,perCustomerLimit,couponError,
     shipping:delivery.shipping,customFee:delivery.customFee,standardFee:delivery.standardFee,standardWaived:delivery.standardWaived,hasStandard:delivery.hasStandard,freeThreshold,
     taxAmount,total:payable+delivery.shipping+taxAmount,
     zone:zone?{name:String(zone.name||[zone.upazila,zone.district].filter(Boolean).join(", ")),estimatedDays:Number(zone.estimatedDays||3)}:null,
