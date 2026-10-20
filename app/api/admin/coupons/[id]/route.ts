@@ -7,7 +7,7 @@ const schema=z.object({
  name:z.string().max(100).nullable().optional(),
  campaignName:z.string().max(120).nullable().optional(),
  campaignDescription:z.string().max(500).nullable().optional(),
- code:z.string().trim().min(2).max(50).transform(v=>v.toUpperCase().replace(/\\s+/g,"")).optional(),
+ code:z.string().trim().min(2).max(50).transform(v=>v.toUpperCase().replace(/\s+/g,"")).optional(),
  type:z.enum(["PERCENT","FIXED"]).optional(),
  value:z.coerce.number().positive().optional(),
  minOrder:z.coerce.number().nonnegative().nullable().optional(),
