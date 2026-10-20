@@ -271,6 +271,22 @@ function firestorePatchWrite(collection: string, document: any, values: AnyObj, 
   };
 }
 
+/** Refund gift-card credit in the same transaction that cancels an unpaid order. */
+async function appendGiftCardRestore(order: AnyObj, orderId: string, transaction: string, project: string, now: Date, writes: AnyObj[], reason: string) {
+  const amount = Math.round(Number(order.giftCardDiscount || 0) * 100) / 100;
+  const code = String(order.giftCardCode || "").trim().toUpperCase();
+  if (!(amount > 0) || !code) return;
+  const matches = await transactionQuery("giftCards", [{ field: "code", value: code }], transaction);
+  if (matches.length !== 1) throw new Error("Gift card missing while restoring cancelled order credit; manual review required");
+  const card = docToObj(matches[0]) as AnyObj;
+  const balance = Math.round((Number(card.balance || 0) + amount) * 100) / 100;
+  writes.push(firestorePatchWrite("giftCards", matches[0], { balance, updatedAt: now }, project));
+  writes.push(firestoreCreateWrite("giftCardTransactions", {
+    id: id(), giftCardId: card.id, type: "RESTORED", amount, balanceAfter: balance,
+    reference: "RESTORE-" + orderId, orderId, metadata: { reason }, createdAt: now, updatedAt: now
+  }, project));
+}
+
 /**
  * Atomically changes a pending order to paid, records a unique provider
  * transaction, and confirms all held stock reservations.
@@ -600,6 +616,7 @@ export async function rejectPendingOrderAtomically(orderId: string, auditAction 
         stock: Number(snapshot.product.stock || 0) + quantity, ...(variants.length?{variants:nextVariants}:{}), updatedAt: now
       }, project));
     }
+    await appendGiftCardRestore(order, orderId, transaction, project, now, writes, "payment_rejected");
     writes.push(firestoreCreateWrite("auditLogs", {
       id: id(), action: auditAction, entity: "Order", entityId: orderId,
       metadata: { source: "atomic_payment_rejection" }, createdAt: now, updatedAt: now
@@ -680,6 +697,7 @@ export async function releaseOrderStockAtomically(orderId: string, now = new Dat
     const allReservationsExpired = expired.length === reservations.length;
     if (allReservationsExpired) {
       writes.push(firestorePatchWrite("orders", orderDocument, { status: "CANCELLED", updatedAt: now }, project));
+      await appendGiftCardRestore(order, orderId, transaction, project, now, writes, "order_expired");
     }
     await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
     return { released: expired.length, cancelled: allReservationsExpired };
@@ -762,6 +780,7 @@ export async function cancelCodOrderAtomically(orderId: string, actorId?: string
     const increments = new Map<string, number>();
     for (const r of reservations) { const o = docToObj(r) as AnyObj; increments.set(String(o.productId), (increments.get(String(o.productId)) || 0) + Number(o.quantity || 0)); }
     const writes: AnyObj[] = [firestorePatchWrite("orders", orderDocument, { status: "CANCELLED", updatedAt: now }, project)];
+    await appendGiftCardRestore(order, orderId, transaction, project, now, writes, "cod_order_cancelled");
     for (const r of reservations) writes.push(firestorePatchWrite("stockReservations", r, { status: "RELEASED", updatedAt: now }, project));
     const productDocs = new Map<string,{document:any;product:AnyObj}>();
     for (const [productId] of increments) {
