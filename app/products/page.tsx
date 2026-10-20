@@ -9,6 +9,7 @@ import {isFreeDelivery} from "@/lib/shipping";
 export const dynamic="force-dynamic";
 
 const num=(v:any)=>v==null||v===""?null:Number(v);
+const hasAvailableStock=(p:any)=>Array.isArray(p.variants)&&p.variants.length>0?p.variants.some((v:any)=>Number(v.stock)>0):Number(p.stock)>0;
 
 export default async function ProductsPage({searchParams}:{searchParams:Promise<{q?:string;category?:string;featured?:string;sort?:string;delivery?:string}>}) {
   const sp=await searchParams;
@@ -30,7 +31,6 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
 
     const where:any={
       published:true,
-      stock:{gt:0},
       ...(q?{OR:[
         {name:{contains:q,mode:"insensitive"}},
         {description:{contains:q,mode:"insensitive"}},
@@ -40,7 +40,7 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
       ...(featured?{featured:true}:{})
     };
 
-    products=await db.product.findMany({where,orderBy:[{featured:"desc"},{createdAt:"desc"}]});
+    products=(await db.product.findMany({where,orderBy:[{featured:"desc"},{createdAt:"desc"}]})).filter(hasAvailableStock);
   }catch(error){
     console.error("Products page data error:",error instanceof Error?error.message:String(error));
   }
