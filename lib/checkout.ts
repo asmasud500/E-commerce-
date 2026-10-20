@@ -1,4 +1,5 @@
 import {resolveSelection} from "@/lib/options";
+import {resolveProductVariant} from "@/lib/product-variants";
 import {db} from "@/lib/prisma";
 import {getEffectivePrice} from "@/lib/products/pricing";
 import {computeDelivery,productDelivery,type DeliveryMode} from "@/lib/shipping";
@@ -11,7 +12,7 @@ export type QuoteInput={
   shippingDivision?:string;shippingDistrict?:string;shippingUpazila?:string;
 };
 
-export type QuoteLine={productId:string;name:string;unitPrice:number;quantity:number;lineTotal:number;delivery:DeliveryMode;deliveryFee:number};
+export type QuoteLine={productId:string;name:string;unitPrice:number;quantity:number;lineTotal:number;delivery:DeliveryMode;deliveryFee:number;options?:Record<string,string>;variantId?:string};
 
 export type Quote={
   lines:QuoteLine[];
