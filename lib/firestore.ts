@@ -181,9 +181,9 @@ export async function createOrderWithStockReservation(args: {
       ...withDefaults("orderItem", item), id: id(), orderId, createdAt: now, updatedAt: now
     }));
     const reservations = args.items.map(item => ({
-      ...withDefaults("stockReservation", { orderId, productId: item.productId, quantity: item.quantity, variantOptions:item.options||{}, expiresAt: args.expiresAt, status: "HELD" }),
+      ...withDefaults("stockReservation", { orderId, productId: item.productId, quantity: item.quantity, variantOptions:item.options||{}, expiresAt: args.expiresAt, status: order.paymentStatus === "PAID" ? "CONFIRMED" : "HELD" }),
       id: id(), orderId, productId: item.productId, quantity: item.quantity, variantOptions:item.options||{}, expiresAt: args.expiresAt,
-      status: "HELD", createdAt: now, updatedAt: now
+      status: order.paymentStatus === "PAID" ? "CONFIRMED" : "HELD", createdAt: now, updatedAt: now
     }));
 
     const documentName = (collection: string, documentId: string) =>
