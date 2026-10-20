@@ -142,11 +142,14 @@ export default async function Home(){
           <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">↗</span><span><strong>Order updates</strong><small>Keep track of your order status</small></span></div>
         </section>
 
-        {banners.length>0&&<section aria-label="Store promotions" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12,margin:"20px 0"}}>
-          {banners.map((b:any)=><Link key={b.id} href={typeof b.href==="string"&&b.href.startsWith("/")?b.href:"/products"} style={{display:"block",position:"relative",minHeight:120,overflow:"hidden",borderRadius:14,background:"var(--card,#f3f4f6)",border:"1px solid var(--border,#e5e7eb)"}}>
-            <img src={b.imageUrl} alt={b.title||"Store promotion"} loading="lazy" decoding="async" style={{width:"100%",height:160,objectFit:"cover",display:"block"}}/>
-            <span style={{display:"block",padding:"10px 12px",fontWeight:700}}>{b.title}</span>
-          </Link>)}
+        {banners.length>0&&<section className="hp-promo-section" aria-label="Store promotions">
+          <div className="hp-promo-heading"><span>CURATED FOR YOU</span><h2>Offers &amp; Highlights</h2><p>Discover the latest deals from our store.</p></div>
+          <div className="hp-promo-grid">
+          {banners.map((b:any)=>{const href=typeof b.href==="string"&&b.href.startsWith("/")?b.href:(typeof b.href==="string"&&/^https:\\/\\//i.test(b.href)?b.href:"/products");const external=href.startsWith("https://");return <Link key={b.id} href={href} className="hp-promo-card" {...(external?{target:"_blank",rel:"noopener noreferrer"}:{})}>
+            <div className="hp-promo-image"><img src={b.imageUrl} alt={b.title||"Store promotion"} loading="lazy" decoding="async"/><span className="hp-promo-badge">SPECIAL OFFER</span><span className="hp-promo-arrow" aria-hidden="true">↗</span></div>
+            <div className="hp-promo-copy"><h3>{b.title||"Explore this offer"}</h3><span>Discover offer <b aria-hidden="true">→</b></span></div>
+          </Link>})}
+          </div>
         </section>}
         <nav className="hp-quick" aria-label="Shortcuts">
           <div className="hp-quick-in">
