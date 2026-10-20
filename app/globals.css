@@ -2781,3 +2781,40 @@ table{max-width:100%}
 @media(max-width:850px){.pc-layout{grid-template-columns:1fr;gap:14px}.pc-side{position:static}.pc-side-list{display:flex;gap:6px;padding:10px;overflow-x:auto;scrollbar-width:thin}.pc-side-list a{flex:none;margin:0;padding:9px 12px;border:1px solid #e7ebf1;border-radius:999px;white-space:nowrap}.pc-side-list a.on{border-color:#ffd5bc}.pc-side h2{padding:12px 16px}.pc-side-foot{display:flex;flex-wrap:wrap;gap:16px;padding:12px 16px}.pc-catalog-head{padding:20px}.pc-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:620px){.pc-catalog-head{align-items:flex-start;flex-direction:column;gap:14px;padding:18px}.pc-catalog-head h1{font-size:29px}.pc-results-count{padding:8px 11px}.pc-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;padding:10px}.pc-tools .pc-search{grid-column:1/-1;width:100%}.pc-tools select{width:100%;min-width:0}.pc-tools .pg-btn{width:100%;padding:11px 10px;font-size:13px}.pc-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.pc-grid .hp-pb{padding:10px;gap:6px}.pc-grid .hp-pt{font-size:12px;min-height:2.8em}.pc-grid .hp-price strong{font-size:16px}.pc-grid .hp-pm .hp-off{top:8px;left:8px;font-size:10px}.pc-active-filters{gap:6px}.pc-side-foot{gap:12px}.pc-check{font-size:12px}}
 @media(max-width:360px){.pc-grid{gap:7px}.pc-grid .hp-pb{padding:8px}.pc-grid .hp-price strong{font-size:14px}.pc-tools{grid-template-columns:1fr}.pc-tools .pc-search{grid-column:auto}.pc-tools .pg-btn{grid-column:auto}}
+
+
+/* Site-wide finish: consistent spacing, readable controls and overflow-safe layouts */
+:root{--site-border:#e7ebf1;--site-muted:#667085;--site-ink:#172033;--site-soft:#f7f8fb}
+html{scroll-padding-top:90px}
+body{overflow-wrap:anywhere}
+img,video,svg,canvas{max-width:100%}
+:where(main,.admin-content,.pg,.hp,.ac-page,.orders-page,.checkout-page,.track-page,.wishlist-page) :where(h1,h2,h3){overflow-wrap:anywhere}
+:where(.admin-content,.pg,.ac-page,.orders-page,.checkout-page,.track-page,.wishlist-page) :where(input,select,textarea){max-width:100%;min-width:0}
+:where(.admin-content,.pg,.ac-page,.orders-page,.checkout-page,.track-page,.wishlist-page) :where(input,select,textarea):focus-visible{outline:2px solid rgba(255,104,1,.72);outline-offset:2px}
+:where(.admin-content,.pg,.ac-page,.orders-page,.checkout-page,.track-page,.wishlist-page) :where(button,a,.pg-btn):focus-visible{outline:2px solid rgba(255,104,1,.78);outline-offset:3px}
+:where(.admin-content,.pg,.ac-page,.orders-page,.checkout-page,.track-page,.wishlist-page) :where(.pg-card,.admin-card,.admin-module-card,.admin-settings-card,.cart-item,.cart-summary,.checkout-form,.checkout-summary,.orders-table-wrap,.admin-table-wrap,.table-wrap){min-width:0;max-width:100%}
+:where(.admin-content,.orders-page) :where(.admin-table-wrap,.admin-table-container,.table-wrap,.orders-table-wrap){overflow-x:auto;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}
+:where(.admin-content,.orders-page) :where(table,.orders-table){max-width:100%;border-collapse:separate;border-spacing:0}
+:where(.admin-content,.orders-page) :where(th,td){overflow-wrap:anywhere;vertical-align:middle}
+:where(.admin-content,.admin-settings-grid,.admin-module-grid,.admin-stat-grid,.checkout-layout,.cart-layout,.ac-order-filters){min-width:0}
+:where(.admin-content,.pg,.ac-page,.orders-page,.checkout-page,.track-page,.wishlist-page) :where(.notice,.alert,.error,.success,.form-error,.form-message){overflow-wrap:anywhere}
+:where(.pg,.ac-page,.orders-page,.checkout-page,.track-page,.wishlist-page) :where(.pg-head,.pg-card,.pg-empty,.cart-summary,.checkout-summary,.checkout-form){border-radius:16px}
+@media(max-width:760px){
+  :where(.admin-content,.pg,.ac-page,.orders-page,.checkout-page,.track-page,.wishlist-page){min-width:0}
+  :where(.admin-content,.pg,.ac-page,.orders-page,.checkout-page,.track-page,.wishlist-page) :where(.admin-page-head,.admin-heading-row,.pg-head,.orders-heading,.orders-topline){gap:12px}
+  :where(.admin-content,.pg,.ac-page,.orders-page,.checkout-page,.track-page,.wishlist-page) :where(.admin-page-head,.admin-heading-row,.pg-head,.orders-heading,.orders-topline)>*{min-width:0;max-width:100%}
+  :where(.admin-content,.orders-page) :where(.admin-row-actions,.orders-header-actions,.orders-actions){display:flex;flex-wrap:wrap;gap:8px}
+  :where(.admin-content,.orders-page) :where(.admin-row-actions,.orders-header-actions,.orders-actions)>*{min-width:0;max-width:100%}
+  :where(.checkout-layout,.cart-layout){grid-template-columns:minmax(0,1fr)!important}
+  :where(.checkout-form,.checkout-summary,.cart-items,.cart-summary){width:100%;min-width:0}
+  :where(.checkout-address-grid,.fld-row){grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:480px){
+  :where(.checkout-address-grid,.fld-row){grid-template-columns:minmax(0,1fr)}
+  :where(.admin-content,.pg,.ac-page,.orders-page,.checkout-page,.track-page,.wishlist-page) :where(h1){font-size:clamp(23px,7vw,30px);line-height:1.18}
+  :where(.admin-content,.pg,.ac-page,.orders-page,.checkout-page,.track-page,.wishlist-page) :where(.admin-page-head,.admin-heading-row,.pg-head,.orders-heading,.orders-topline){align-items:flex-start}
+  :where(.admin-content,.orders-page) :where(button,.pg-btn){max-width:100%;white-space:normal;overflow-wrap:anywhere}
+}
+@media(prefers-reduced-motion:reduce){
+  :where(*, *::before, *::after){scroll-behavior:auto!important;transition-duration:.01ms!important}
+}
