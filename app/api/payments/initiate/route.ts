@@ -8,7 +8,7 @@ import {verifyOrderAccessToken} from "@/lib/auth/order-access";
 
 export async function POST(req:NextRequest){
  try{
-  const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-forwarded-for")||"unknown";
+  const ip=req.headers.get("cf-connecting-ip")||"unknown";
   const rl=rateLimit("payment:"+ip,15,60_000);if(!rl.ok)return NextResponse.json({error:"Too many payment attempts. Try again later."},{status:429,headers:{"Retry-After":String(rl.retryAfter)}});
   const body=await req.json();const orderId=typeof body?.orderId==="string"?body.orderId:"";const accessToken=typeof body?.accessToken==="string"?body.accessToken:"";if(!orderId)return NextResponse.json({error:"Order ID is required."},{status:400});
   const token=req.cookies.get("customer_session")?.value;const session=token?await verifyCustomerToken(token):null;
