@@ -23,10 +23,10 @@ test("mobile-money webhook confirms only with matching pending-order evidence in
   assert.match(smsWebhook, /confirmPaymentAtomically\(/);
 });
 
-test("payment proof route rejects a transaction reference already attached to another order", () => {
-  assert.match(paymentProof, /paymentReference/);
-  assert.match(paymentProof, /paymentProvider/);
-  assert.match(paymentProof, /status: 409/);
+test("manual payment proof route is permanently disabled in favor of provider verification", () => {
+  assert.match(paymentProof, /Manual payment proof is disabled/);
+  assert.match(paymentProof, /status: 410/);
+  assert.doesNotMatch(paymentProof, /claimPaymentProofAtomically/);
 });
 
 const adminPayment = await readFile(new URL("../app/api/admin/orders/[id]/payment/route.ts", import.meta.url), "utf8");
@@ -111,9 +111,9 @@ test("verified gateway settlement uses the native Firestore payment transaction"
   assert.doesNotMatch(settlementRoute, /db\.\$transaction/);
 });
 
-test("SMS confirmation and proof reference claims use atomic Firestore helpers", () => {
+test("SMS confirmation uses the native atomic Firestore helper while manual proof stays disabled", () => {
   assert.match(smsProofRoute, /confirmPaymentAtomically\(/);
-  assert.match(paymentProof, /claimPaymentProofAtomically\(/);
+  assert.match(paymentProof, /status: 410/);
 });
 
 test("expired stock release restores inventory with a native transaction", () => {
