@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { readAdminSession } from "@/lib/auth/admin";
-import { readPrivatePaymentProof } from "@/lib/firebase-storage";
+import { readPrivatePaymentProof } from "@/lib/telegram/file-storage";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await readAdminSession(req.cookies.get("admin_session")?.value || "");
