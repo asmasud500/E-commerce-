@@ -205,21 +205,40 @@ export default function NewProduct() {
           {variants.length>0 && <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:760}}><thead><tr>{["Variant","SKU","Price (৳)","Sale price (৳)","Stock","Low-stock alert"].map(h=><th key={h} style={{textAlign:"left",padding:9,borderBottom:"1px solid #e5e7eb"}}>{h}</th>)}</tr></thead><tbody>{variants.map((v,i)=><tr key={variantKey(v.options)}><td style={{padding:9,borderBottom:"1px solid #f1f5f9",fontWeight:600}}>{Object.entries(v.options).map(([k,val])=>k+": "+val).join(" · ")}</td><td style={{padding:6}}><input style={{...fieldStyle,minWidth:110}} value={v.sku||""} onChange={e=>updateVariant(i,"sku",e.target.value)} /></td><td style={{padding:6}}><input required type="number" min="0" step=".01" style={{...fieldStyle,minWidth:100}} value={v.price} onChange={e=>updateVariant(i,"price",e.target.value)} /></td><td style={{padding:6}}><input type="number" min="0" step=".01" style={{...fieldStyle,minWidth:100}} value={v.salePrice} onChange={e=>updateVariant(i,"salePrice",e.target.value)} /></td><td style={{padding:6}}><input required type="number" min="0" step="1" style={{...fieldStyle,minWidth:80}} value={v.stock} onChange={e=>updateVariant(i,"stock",e.target.value)} /></td><td style={{padding:6}}><input type="number" min="0" step="1" style={{...fieldStyle,minWidth:90}} value={v.lowStockThreshold} onChange={e=>updateVariant(i,"lowStockThreshold",e.target.value)} /></td></tr>)}</tbody></table><p style={{color:"#64748b",fontSize:13}}>Total variant stock: {variants.reduce((n,v)=>n+Math.max(0,Number(v.stock)||0),0)} units. Each combination has its own SKU, price and stock; the product inventory total is calculated from these variant stocks.</p></div>}
         </section>
 
-        <section style={cardStyle}>
-          <div><h2 style={{ margin: 0, fontSize: 19 }}>Delivery</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Free delivery, or a custom delivery fee for this product. Leave blank to use the area/default fee.</p></div>
-          <label style={{ display: "flex", gap: 10, alignItems: "center" }}><input type="checkbox" checked={form.freeShipping} onChange={e => set("freeShipping", e.target.checked)} /> Free delivery for this product</label>
-          <label style={labelStyle}>Custom delivery fee (৳)<input type="number" min="0" step=".01" disabled={form.freeShipping} value={form.shippingFee} onChange={e => set("shippingFee", e.target.value)} style={fieldStyle} /></label>
+        <section style={{ ...cardStyle, borderColor: "#fed7aa", background: "linear-gradient(135deg, #fff 0%, #fff7ed 100%)" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <div style={{ width: 42, height: 42, flex: "0 0 42px", display: "grid", placeItems: "center", borderRadius: 12, background: "#ffedd5", color: "#c2410c", fontSize: 20 }}>↗</div>
+            <div><h2 style={{ margin: 0, fontSize: 19 }}>4. Delivery options</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14, lineHeight: 1.6 }}>Choose free delivery, set a product-specific fee, or leave the fee empty to use the configured delivery-area rate.</p></div>
+          </div>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 14, border: "1px solid #fed7aa", borderRadius: 11, background: form.freeShipping ? "#fff7ed" : "#fff", cursor: "pointer" }}>
+            <input type="checkbox" checked={form.freeShipping} onChange={e => set("freeShipping", e.target.checked)} style={{ marginTop: 3, accentColor: "#ea580c", width: 17, height: 17 }} />
+            <span><strong style={{ display: "block", color: "#111827" }}>Free delivery for this product</strong><small style={{ display: "block", marginTop: 3, color: "#6b7280", fontWeight: 400 }}>Customers won't be charged the standard delivery fee for this item.</small></span>
+          </label>
+          <label style={labelStyle}>Custom delivery fee (৳)
+            <input type="number" min="0" step=".01" disabled={form.freeShipping} value={form.shippingFee} onChange={e => set("shippingFee", e.target.value)} style={{ ...fieldStyle, opacity: form.freeShipping ? .55 : 1 }} placeholder={form.freeShipping ? "Not needed for free delivery" : "Leave blank to use area/default fee"} />
+            <small style={{ color: "#6b7280", fontWeight: 400 }}>Enter the amount in Bangladeshi Taka. Use 0 to override the fee as free.</small>
+          </label>
         </section>
 
         <section style={cardStyle}>
-          <div><h2 style={{ margin: 0, fontSize: 19 }}>5. Store visibility</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Choose how this product appears in the storefront.</p></div>
-          <label style={{ display: "flex", gap: 10, alignItems: "center" }}><input type="checkbox" checked={form.featured} onChange={e => set("featured", e.target.checked)} /> Featured product</label>
-          <label style={{ display: "flex", gap: 10, alignItems: "center" }}><input type="checkbox" checked={form.published} onChange={e => set("published", e.target.checked)} /> Publish immediately <small style={{ color: "#6b7280" }}>(otherwise save as draft)</small></label>
+          <div><h2 style={{ margin: 0, fontSize: 19 }}>5. Store visibility</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14, lineHeight: 1.6 }}>Choose whether the item is highlighted on the storefront or available for customers to buy.</p></div>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 14, border: "1px solid #e5e7eb", borderRadius: 11, background: form.featured ? "#fff7ed" : "#fff", cursor: "pointer" }}>
+            <input type="checkbox" checked={form.featured} onChange={e => set("featured", e.target.checked)} style={{ marginTop: 3, accentColor: "#ea580c", width: 17, height: 17 }} />
+            <span><strong style={{ display: "block", color: "#111827" }}>Featured product</strong><small style={{ display: "block", marginTop: 3, color: "#6b7280", fontWeight: 400 }}>Highlight this item in featured product sections where supported.</small></span>
+          </label>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 14, border: "1px solid #e5e7eb", borderRadius: 11, background: form.published ? "#fff7ed" : "#fff", cursor: "pointer" }}>
+            <input type="checkbox" checked={form.published} onChange={e => set("published", e.target.checked)} style={{ marginTop: 3, accentColor: "#ea580c", width: 17, height: 17 }} />
+            <span><strong style={{ display: "block", color: "#111827" }}>Publish immediately</strong><small style={{ display: "block", marginTop: 3, color: "#6b7280", fontWeight: 400 }}>{form.published ? "This product will appear on the storefront after saving." : "Keep this product as a draft until you're ready to publish."}</small></span>
+          </label>
+          <div style={{ padding: 12, borderRadius: 10, background: "#f9fafb", color: "#4b5563", fontSize: 13, lineHeight: 1.6 }}><strong style={{ color: "#111827" }}>Current status:</strong> {form.published ? "Ready to publish" : "Draft"} · {form.featured ? "Featured listing enabled" : "Standard listing"}</div>
         </section>
 
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "flex-end", paddingBottom: 32 }}>
-          <Link href="/admin/products" style={{ padding: "12px 18px", border: "1px solid #d1d5db", borderRadius: 9, textDecoration: "none", color: "#374151", background: "#fff" }}>Cancel</Link>
-          <button type="submit" disabled={busy} style={{ padding: "12px 20px", border: 0, borderRadius: 9, background: busy ? "#6b7280" : "#111827", color: "#fff", fontWeight: 700, cursor: busy ? "wait" : "pointer" }}>{busy ? "Creating product…" : form.published ? "Create & Publish Product →" : "Save Product as Draft →"}</button>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", padding: 16, marginBottom: 32, border: "1px solid #e5e7eb", borderRadius: 14, background: "#fff", boxShadow: "0 4px 16px rgba(15,23,42,.04)" }}>
+          <div style={{ minWidth: 180 }}><strong style={{ display: "block", color: "#111827" }}>{form.published ? "Ready to publish" : "Save for later"}</strong><small style={{ color: "#6b7280" }}>{form.published ? "Your product will be published when you save." : "Your product details will be saved as a draft."}</small></div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <Link href="/admin/products" style={{ padding: "11px 17px", border: "1px solid #d1d5db", borderRadius: 9, textDecoration: "none", color: "#374151", background: "#fff", fontWeight: 600, textAlign: "center" }}>Cancel</Link>
+            <button type="submit" disabled={busy} style={{ padding: "12px 20px", border: 0, borderRadius: 9, background: busy ? "#9ca3af" : "#ea580c", color: "#fff", fontWeight: 700, cursor: busy ? "wait" : "pointer", boxShadow: "0 2px 5px rgba(234,88,12,.18)" }}>{busy ? "Saving product…" : form.published ? "Create & Publish Product →" : "Save Product as Draft →"}</button>
+          </div>
         </div>
       </form>
     </main>
