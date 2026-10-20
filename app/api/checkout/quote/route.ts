@@ -14,7 +14,7 @@ const schema=z.object({
 /** Live price preview for the checkout page: prices, voucher, delivery and total exactly as the order will be charged. */
 export async function POST(req:NextRequest){
   try{
-    const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-forwarded-for")||"unknown";
+    const ip=req.headers.get("cf-connecting-ip")||"unknown";
     const rl=rateLimit("quote:"+ip,60,60_000);
     if(!rl.ok)return NextResponse.json({error:"Too many requests. Try again shortly."},{status:429,headers:{"Retry-After":String(rl.retryAfter)}});
     const input=schema.parse(await req.json());
