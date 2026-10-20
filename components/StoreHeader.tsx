@@ -11,6 +11,7 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
   const [cats,setCats]=useState<Cat[]>(categories||[]);
   const [storeName,setStoreName]=useState("MART Store");
   const [announcement,setAnnouncement]=useState("");
+  const [menuOpen,setMenuOpen]=useState(false);
 
   useEffect(()=>{
     const sync=()=>setCount(getCart().reduce((n,i)=>n+i.quantity,0));
@@ -38,6 +39,7 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
     {announcement&&<div className="sh-announcement"><span aria-hidden="true">✦</span>{announcement}</div>}
     <header className="sh">
       <div className="sh-in">
+        <button type="button" className="sh-mobile-menu-toggle" aria-label={menuOpen?"Close shopping menu":"Open shopping menu"} aria-expanded={menuOpen} aria-controls="sh-mobile-menu" onClick={()=>setMenuOpen(v=>!v)}><Icon name="menu" size={21}/><span>Menu</span></button>
         <Link href="/" className="sh-logo" aria-label={`${storeName} home`}><span className="sh-logo-name">{storeName}</span><span className="sh-logo-dot">.</span></Link>
         <form action="/products" method="get" role="search" className="sh-search">
           <select name="category" defaultValue="" aria-label="Search category">
@@ -58,6 +60,27 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
         </nav>
       </div>
     </header>
+    {menuOpen&&<nav id="sh-mobile-menu" className="sh-mobile-menu" aria-label="Mobile shopping menu">
+      <div className="sh-mobile-menu-head"><strong>Shop by category</strong><button type="button" onClick={()=>setMenuOpen(false)} aria-label="Close menu">×</button></div>
+      <Link href="/products" className="sh-mobile-menu-all" onClick={()=>setMenuOpen(false)}>Browse all products <span>→</span></Link>
+      <div className="sh-mobile-menu-section">
+        <p>Categories</p>
+        {cats.length>0?cats.map(c=><Link key={c.slug} href={"/products?category="+encodeURIComponent(c.slug)} onClick={()=>setMenuOpen(false)}><span className="sh-mobile-menu-category-icon">▦</span><span>{c.name}</span><span className="sh-mobile-menu-arrow">›</span></Link>):<Link href="/products" onClick={()=>setMenuOpen(false)}><span>All products</span><span className="sh-mobile-menu-arrow">›</span></Link>}
+      </div>
+      <div className="sh-mobile-menu-section">
+        <p>Discover</p>
+        <Link href="/products?featured=true" onClick={()=>setMenuOpen(false)}>Featured <span className="sh-mobile-menu-arrow">›</span></Link>
+        <Link href="/products" onClick={()=>setMenuOpen(false)}>New Arrivals <span className="sh-mobile-menu-arrow">›</span></Link>
+        <Link href="/products" onClick={()=>setMenuOpen(false)}>Deals &amp; Offers <span className="sh-mobile-menu-arrow">›</span></Link>
+      </div>
+      <div className="sh-mobile-menu-section sh-mobile-menu-account">
+        <p>Your shopping</p>
+        <Link href="/track" onClick={()=>setMenuOpen(false)}>Track an order <span className="sh-mobile-menu-arrow">›</span></Link>
+        <Link href="/account" onClick={()=>setMenuOpen(false)}>My account <span className="sh-mobile-menu-arrow">›</span></Link>
+        <Link href="/wishlist" onClick={()=>setMenuOpen(false)}>Wishlist <span className="sh-mobile-menu-arrow">›</span></Link>
+        <Link href="/cart" onClick={()=>setMenuOpen(false)}>Shopping cart <span className="sh-mobile-menu-arrow">›</span></Link>
+      </div>
+    </nav>}
     <nav className="sh-subnav" aria-label="Main shopping navigation">
       <div className="sh-subnav-in">
         <Link href="/products" className="sh-all-cats"><Icon name="menu" size={17}/> All Categories</Link>
