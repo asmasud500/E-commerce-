@@ -133,3 +133,29 @@ test("native Firestore payment transactions query existing provider IDs within t
   assert.match(firestoreAdapter, /transactionQuery\("paymentTransactions"/);
   assert.match(firestoreAdapter, /currentDocument: \{ exists: false \}/);
 });
+
+
+const customerCancelRoute = await readFile(new URL("../app/api/account/orders/cancel/route.ts", import.meta.url), "utf8");
+const customerOrdersRoute = await readFile(new URL("../app/api/account/orders/route.ts", import.meta.url), "utf8");
+const orderCreateRoute = await readFile(new URL("../app/api/orders/route.ts", import.meta.url), "utf8");
+
+test("customer cancellation requires a valid customer session and scopes the order lookup to that customer", () => {
+  assert.match(customerCancelRoute, /verifyCustomerToken/);
+  assert.match(customerCancelRoute, /where: \{ orderNumber, userId: session\.userId \}/);
+});
+
+test("customer cancellation is restricted to pending unpaid orders and uses an atomic state change", () => {
+  assert.match(customerCancelRoute, /order\.status!=="PENDING"\|\|order\.paymentStatus!=="PENDING"/);
+  assert.match(customerCancelRoute, /rejectPendingOrderAtomically\(/);
+  assert.match(customerCancelRoute, /status:409/);
+});
+
+test("order creation validates checkout totals server-side through the shared quote builder", () => {
+  assert.match(orderCreateRoute, /buildQuote\(/);
+  assert.match(orderCreateRoute, /idempotencyKey/);
+});
+
+test("customer order listing is scoped to the authenticated customer's own orders", () => {
+  assert.match(customerOrdersRoute, /verifyCustomerToken/);
+  assert.match(customerOrdersRoute, /userId: session\.userId/);
+});
