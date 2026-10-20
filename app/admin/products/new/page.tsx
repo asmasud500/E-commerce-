@@ -122,9 +122,9 @@ export default function NewProduct() {
 
   return <div className="admin-layout">
     <AdminSidebar />
-    <main className="admin-content" style={{ maxWidth: 1080, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+    <main className="admin-content">
       <div className="admin-page-head">
-        <div><Link href="/admin/products">← Back to products</Link><h1>Add Product</h1><p>Build a complete product listing before publishing it to your storefront.</p></div>
+        <div><div className="admin-kicker">MART · CATALOG</div><Link href="/admin/products">← Back to products</Link><h1>Add Product</h1><p>Build a complete product listing before publishing it to your storefront.</p></div>
       </div>
 
       {message && <p role="status" aria-live="polite" style={{ padding: 12, borderRadius: 9, background: "#fff7ed", color: "#9a3412", marginBottom: 16 }}>{message}</p>}
