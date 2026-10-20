@@ -2145,3 +2145,54 @@ input:disabled,select:disabled,textarea:disabled{background:#f3f4f6;color:#6b728
 @media(max-width:760px){.admin-report-page,.admin-activity-page{padding:20px 14px 30px}.admin-report-heading{align-items:flex-start;flex-direction:column;margin-bottom:22px}.admin-report-actions{justify-content:flex-start;width:100%}.admin-report-stats{gap:10px}.admin-report-stats .admin-stat{padding:15px}.admin-report-stats .admin-stat>strong{font-size:22px}.admin-report-card{padding:16px}.admin-report-bars{gap:5px}.admin-report-day .admin-report-revenue{font-size:8.5px}.admin-activity-summary{grid-template-columns:1fr;gap:9px}.admin-activity-summary>div{padding:12px 14px}.admin-activity-card>.admin-report-card-head{padding:17px 15px 0}.admin-activity-filters{padding:0 15px 15px}.admin-activity-action-filter{align-items:flex-start;flex-direction:column;width:100%;gap:6px}.admin-activity-action-filter select{width:100%;max-width:none}.admin-activity-search{min-width:100%}.admin-activity-foot{padding:12px 15px}}
 @media(max-width:420px){.admin-report-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-report-stats .admin-stat>strong{font-size:19px}.admin-report-actions button{flex:1}.admin-report-bars{gap:3px}.admin-report-day>small{font-size:9px}.admin-report-day .admin-report-revenue{display:none}.admin-report-card-head{align-items:flex-start}.admin-report-period,.admin-report-count{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.admin-report-spinner{animation:none}.admin-report-bar{transition:none}}
+
+
+/* Site-wide quality pass: consistent focus, resilient overflow and mobile ergonomics. */
+:root{color-scheme:light;scroll-padding-top:84px}
+html{scroll-behavior:smooth;text-size-adjust:100%;-webkit-text-size-adjust:100%}
+body{min-width:320px}
+img,video,canvas,svg{max-width:100%}
+button,a,input,select,textarea{touch-action:manipulation}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid rgba(255,104,1,.55);outline-offset:3px}
+button:disabled{cursor:not-allowed;opacity:.62}
+input,select,textarea{max-width:100%}
+textarea{resize:vertical}
+table{max-width:100%}
+.admin-layout{min-width:0}
+.admin-content{min-width:0;overflow-wrap:anywhere}
+.admin-content .admin-table-wrap,.admin-content .admin-table-container{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.admin-content table{width:100%;border-collapse:separate;border-spacing:0}
+.admin-content th{white-space:nowrap}
+.admin-content td{overflow-wrap:anywhere}
+.admin-content form input,.admin-content form select,.admin-content form textarea{min-width:0}
+.admin-content button,.admin-content a,.pg button,.pg .pg-btn{transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease}
+.admin-content button:focus-visible,.pg button:focus-visible,.pg .pg-btn:focus-visible{box-shadow:0 0 0 4px rgba(255,104,1,.13)}
+.pg{min-width:0}
+.pg img{height:auto}
+.pg-card{min-width:0}
+.pg-crumbs{flex-wrap:wrap;overflow-wrap:anywhere}
+.cart-layout,.pc-layout{min-width:0}
+.cart-item-info{min-width:0;overflow-wrap:anywhere}
+.cart-item-art img{object-fit:contain}
+@media(max-width:760px){
+  .admin-content{padding-left:14px;padding-right:14px}
+  .admin-content .admin-heading-row{align-items:flex-start;flex-wrap:wrap;gap:12px}
+  .admin-content .admin-row-actions{flex-wrap:wrap}
+  .admin-content .admin-row-actions button{min-height:38px}
+  .admin-content .admin-card{max-width:100%}
+  .pg{padding-left:14px;padding-right:14px}
+  .pg-head{align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .cart-layout,.pc-layout{grid-template-columns:minmax(0,1fr)}
+  .cart-item{min-width:0}
+  .cart-item-info small{overflow-wrap:anywhere}
+}
+@media(max-width:420px){
+  .admin-content{padding-left:10px;padding-right:10px}
+  .pg{padding-left:10px;padding-right:10px}
+  .admin-content h1{overflow-wrap:anywhere}
+  .admin-content .admin-row-actions button{flex:1 1 auto}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
