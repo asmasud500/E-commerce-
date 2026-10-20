@@ -40,8 +40,8 @@ export default function Integrations(){
   const [list,setList]=useState<Info[]>([]),[err,setErr]=useState("");
   const load=()=>fetch("/api/admin/integrations",{cache:"no-store"}).then(r=>r.json()).then(d=>Array.isArray(d)?setList(d):setErr("Could not load")).catch(()=>setErr("Could not load"));
   useEffect(()=>{load()},[]);
-  return <div className="admin-layout"><AdminSidebar/><main className="admin-content"><Link href="/admin">← Dashboard</Link><h1>Integrations & API keys</h1>
-    <p>Keys are encrypted on the server and can never be shown again — you can only replace them. Courier booking appears on the Orders page once a courier is enabled.</p>
+  return <div className="admin-layout"><AdminSidebar/><main className="admin-content"><div className="admin-kicker">MART · CONNECTED SERVICES</div><Link href="/admin">← Dashboard</Link><div className="admin-heading-row"><div><h1>Integrations & API keys</h1>
+    <p>Keys are encrypted on the server and can never be shown again — you can only replace them. Courier booking appears on the Orders page once a courier is enabled.</p></div></div>
     {err&&<p role="alert">{err}</p>}
     {PROVIDERS.map(d=><Card key={d.id} def={d} info={list.find(x=>x.id===d.id)} onSaved={load}/>)}
   </main></div>;
