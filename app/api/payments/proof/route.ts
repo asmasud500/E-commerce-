@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const imageBytes = Uint8Array.from(atob(screenshot.split(",")[1]), c => c.charCodeAt(0));
     let storagePath: string;
     try {
-      storagePath = await uploadPrivatePaymentProof(orderId, imageBytes);
+      storagePath = await uploadPrivatePaymentProof(o.orderNumber, imageBytes);
     } catch (storageError) {
       console.error("Payment proof could not be persisted to Telegram storage:", storageError instanceof Error ? storageError.message : String(storageError));
       return NextResponse.json({ error: "Payment proof storage is temporarily unavailable. Please try again later." }, { status: 503 });
@@ -116,30 +116,20 @@ export async function POST(req: NextRequest) {
         "Submitted: " + new Date().toLocaleString("en-BD"),
         "Verify the incoming payment before confirming."
       ];
-      // Telegram photo captions are limited to 1,024 characters.
-      let caption = detailLines.join("\n");
-      if (caption.length > 1000) caption = caption.slice(0, 985) + "\n…Details shortened; open the admin order for full information.";
+      // The screenshot itself was already stored as a Telegram document above.
+      // Send the actionable order summary separately so we do not duplicate the image.
+      const caption = detailLines.join("\n").slice(0, 3900);
       try {
-        const bytes = Uint8Array.from(atob(screenshot.split(",")[1]), c => c.charCodeAt(0));
-        const form = new FormData();
-        form.set("chat_id", chat);
-        form.set("caption", caption);
-        form.set("reply_markup", JSON.stringify({ inline_keyboard: [
-          [{ text: "✅ Confirm Payment", callback_data: "pay_confirm:" + o.id }, { text: "❌ Reject Payment", callback_data: "pay_reject:" + o.id }],
-          [{ text: "👁 View Order", callback_data: "order_view:" + o.id }]
-        ] }));
-        form.set("photo", new Blob([bytes], { type: "image/jpeg" }), "payment-proof.jpg");
-        const tg = await fetch("https://api.telegram.org/bot" + token + "/sendPhoto", { method: "POST", body: form });
-        const payload = await tg.json().catch(() => null) as { ok?: boolean } | null;
-        if (!tg.ok || !payload?.ok) {
-          const fallback = await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ chat_id: chat, text: caption + "\nScreenshot upload failed; ask customer to resend it." })
-          });
-          if (!fallback.ok) console.error("Telegram payment-proof notification failed.");
-        }
+        const tg = await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chat, text: caption, reply_markup: { inline_keyboard: [
+            [{ text: "✅ Confirm Payment", callback_data: "pay_confirm:" + o.id }, { text: "❌ Reject Payment", callback_data: "pay_reject:" + o.id }],
+            [{ text: "👁 View Order", callback_data: "order_view:" + o.id }]
+          ] } })
+        });
+        if (!tg.ok) console.error("Telegram payment-proof order notification failed.");
       } catch {
-        console.error("Telegram payment-proof notification failed.");
+        console.error("Telegram payment-proof order notification failed.");
       }
     }
     try {
