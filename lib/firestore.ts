@@ -130,19 +130,29 @@ export async function createOrderWithStockReservation(args: {
     }
 
     const writes: AnyObj[] = [];
-    const variantUpdates = new Map<string, AnyObj[]>();
+    const variantDecrements = new Map<string, Map<string, number>>();
+    const selectionKey = (o:AnyObj) => Object.entries(o || {}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>String(k)+"="+String(v)).join("|");
     for (const item of args.items) {
       const snapshot = productSnapshots.get(item.productId)!;
       const variants = Array.isArray(snapshot.product.variants) ? snapshot.product.variants as AnyObj[] : [];
-      if (variants.length) {
-        const selected = item.options || {};
-        const key = (o:AnyObj) => Object.entries(o || {}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>String(k)+"="+String(v)).join("|");
-        const chosen = variants.find(v => key(v.options || {}) === key(selected));
-        if (!chosen) throw new Error("Selected size/colour combination is unavailable");
-        if (Number(chosen.stock || 0) < item.quantity) throw new Error("Selected size/colour is out of stock");
-        const updated = variants.map(v => v === chosen || (v.id && chosen.id && v.id === chosen.id) ? {...v,stock:Number(v.stock||0)-item.quantity} : v);
-        variantUpdates.set(item.productId, updated);
-      }
+      if (!variants.length) continue;
+      const chosen = variants.find(v => selectionKey(v.options || {}) === selectionKey(item.options || {}));
+      if (!chosen) throw new Error("Selected size/colour combination is unavailable");
+      const k = selectionKey(chosen.options || {});
+      const byKey = variantDecrements.get(item.productId) || new Map<string, number>();
+      byKey.set(k, (byKey.get(k) || 0) + item.quantity);
+      variantDecrements.set(item.productId, byKey);
+    }
+    const variantUpdates = new Map<string, AnyObj[]>();
+    for (const [productId, decrements] of variantDecrements) {
+      const snapshot = productSnapshots.get(productId)!;
+      const variants = snapshot.product.variants as AnyObj[];
+      const updated = variants.map(v => {
+        const qty = decrements.get(selectionKey(v.options || {})) || 0;
+        if (qty > Number(v.stock || 0)) throw new Error("Selected size/colour is out of stock");
+        return qty ? {...v,stock:Number(v.stock||0)-qty} : v;
+      });
+      variantUpdates.set(productId, updated);
     }
     for (const [productId, snapshot] of productSnapshots) {
       const required = Number(requiredByProduct.get(productId) || 0);
@@ -156,8 +166,8 @@ export async function createOrderWithStockReservation(args: {
       ...withDefaults("orderItem", item), id: id(), orderId, createdAt: now, updatedAt: now
     }));
     const reservations = args.items.map(item => ({
-      ...withDefaults("stockReservation", { orderId, productId: item.productId, quantity: item.quantity, expiresAt: args.expiresAt, status: "HELD" }),
-      id: id(), orderId, productId: item.productId, quantity: item.quantity, expiresAt: args.expiresAt,
+      ...withDefaults("stockReservation", { orderId, productId: item.productId, quantity: item.quantity, variantOptions:item.options||{}, expiresAt: args.expiresAt, status: "HELD" }),
+      id: id(), orderId, productId: item.productId, quantity: item.quantity, variantOptions:item.options||{}, expiresAt: args.expiresAt,
       status: "HELD", createdAt: now, updatedAt: now
     }));
 
@@ -560,8 +570,21 @@ export async function rejectPendingOrderAtomically(orderId: string, auditAction 
     }
     for (const [productId, quantity] of increments) {
       const snapshot = products.get(productId)!;
+      const variants = Array.isArray(snapshot.product.variants) ? snapshot.product.variants as AnyObj[] : [];
+      let nextVariants = variants;
+      if (variants.length) {
+        const selectionKey = (o:AnyObj) => Object.entries(o || {}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>String(k)+"="+String(v)).join("|");
+        const restored = new Map<string,number>();
+        for (const reservationDocument of expired) {
+          const reservation = docToObj(reservationDocument) as AnyObj;
+          if (String(reservation.productId)!==productId) continue;
+          const k=selectionKey(reservation.variantOptions||{});
+          restored.set(k,(restored.get(k)||0)+Number(reservation.quantity||0));
+        }
+        nextVariants=variants.map(v=>({...v,stock:Number(v.stock||0)+(restored.get(selectionKey(v.options||{}))||0)}));
+      }
       writes.push(firestorePatchWrite("products", snapshot.document, {
-        stock: Number(snapshot.product.stock || 0) + quantity, updatedAt: now
+        stock: Number(snapshot.product.stock || 0) + quantity, ...(variants.length?{variants:nextVariants}:{}), updatedAt: now
       }, project));
     }
     writes.push(firestoreCreateWrite("auditLogs", {
