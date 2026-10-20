@@ -11,16 +11,10 @@ test("database schema has a unique provider transaction key per gateway", () => 
   assert.match(schema, /@@unique\(\[gatewayId, providerTransactionId\]\)/);
 });
 
-test("mobile-money webhook handles Prisma unique conflicts as duplicate transactions", () => {
-  assert.match(smsWebhook, /code === "P2002"/);
-  assert.match(smsWebhook, /Transaction ID was already processed\./);
-});
-
-test("mobile-money webhook confirms only with matching pending-order evidence inside the atomic helper", () => {
-  assert.match(smsWebhook, /expectedPaymentReference: transactionId/);
-  assert.match(smsWebhook, /expectedSenderLast4: senderLast4/);
-  assert.match(smsWebhook, /expectedProvider: provider/);
-  assert.match(smsWebhook, /confirmPaymentAtomically\(/);
+test("personal-number SMS webhook is disabled and cannot auto-confirm Send Money receipts", () => {
+  assert.match(smsWebhook, /Personal-number SMS payment confirmation is disabled/);
+  assert.match(smsWebhook, /status: 410/);
+  assert.doesNotMatch(smsWebhook, /confirmPaymentAtomically\(/);
 });
 
 test("manual payment proof route is permanently disabled in favor of provider verification", () => {
@@ -111,8 +105,9 @@ test("verified gateway settlement uses the native Firestore payment transaction"
   assert.doesNotMatch(settlementRoute, /db\.\$transaction/);
 });
 
-test("SMS confirmation uses the native atomic Firestore helper while manual proof stays disabled", () => {
-  assert.match(smsProofRoute, /confirmPaymentAtomically\(/);
+test("merchant settlement remains atomic while personal SMS and manual proof endpoints stay disabled", () => {
+  assert.match(settlementRoute, /confirmPaymentAtomically\(/);
+  assert.match(smsProofRoute, /status: 410/);
   assert.match(paymentProof, /status: 410/);
 });
 
