@@ -2544,3 +2544,57 @@ table{max-width:100%}
  .ac-order-top{display:grid;grid-template-columns:minmax(0,1fr)}
  .ac-tags{gap:6px}
 }
+
+
+/* Phase 1 continued — product detail, wishlist and authentication responsive polish.
+   Intentionally layout-only: preserve the existing Navy–Orange theme and all color tokens. */
+.pd{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);align-items:start;gap:clamp(18px,3vw,40px);min-width:0;max-width:100%}
+.pd>*,.pd-info,.pd-gallery,.pd-buy,.pd-desc,.pd-perks{min-width:0;max-width:100%}
+.pd-info{overflow-wrap:anywhere}
+.pd-info h1{overflow-wrap:anywhere;word-break:normal;font-size:clamp(26px,3vw,40px);line-height:1.15}
+.pd-meta,.pd-stock,.pd-desc{overflow-wrap:anywhere}
+.pd-buy>*{min-width:0;max-width:100%}
+.pd-perks{padding-left:0;list-style:none;display:grid;gap:10px}
+.pd-perks li{display:flex;align-items:flex-start;gap:10px;min-width:0;overflow-wrap:anywhere}
+.pd-perks li svg{flex:0 0 auto}
+.pg-crumbs{display:flex;align-items:center;flex-wrap:wrap;gap:7px;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.pg-crumbs>*{min-width:0;max-width:100%}
+.wishlist-heading{display:flex;justify-content:space-between;gap:14px;min-width:0}
+.wishlist-heading>div{min-width:0;max-width:100%}
+.wishlist-heading p{overflow-wrap:anywhere}
+.wishlist-grid{grid-template-columns:repeat(4,minmax(0,1fr));min-width:0;max-width:100%}
+.wishlist-card-body,.wishlist-actions{min-width:0;max-width:100%}
+.wishlist-actions{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;margin-top:auto}
+.wishlist-actions>*{min-width:0;max-width:100%;flex:1 1 120px;justify-content:center;white-space:normal;overflow-wrap:anywhere}
+.wishlist-error{display:flex;align-items:flex-start;gap:14px;min-width:0}
+.wishlist-error>div{min-width:0;overflow-wrap:anywhere}
+.auth{width:min(100%,460px);min-width:0;max-width:100%}
+.auth form,.auth .fld,.auth-alt{min-width:0;max-width:100%}
+.auth .fld input{width:100%;min-width:0;max-width:100%}
+.auth-alt>*{min-width:0;max-width:100%;overflow-wrap:anywhere}
+@media(max-width:1000px){
+ .pd{grid-template-columns:minmax(0,1fr) minmax(0,.95fr);gap:20px}
+ .wishlist-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+ .pd{grid-template-columns:minmax(0,1fr);gap:16px}
+ .pd-info{position:static;padding:clamp(14px,4vw,22px)}
+ .pd-info h1{font-size:clamp(25px,7vw,34px)}
+ .pd-perks{gap:9px}
+ .wishlist-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .wishlist-card-body{padding:12px}
+ .wishlist-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+ .wishlist-actions>*{width:100%;flex:auto}
+ .wishlist-heading{align-items:flex-start;flex-direction:column}
+ .auth{margin-top:16px;padding:clamp(16px,4vw,24px)}
+}
+@media(max-width:390px){
+ .wishlist-grid{grid-template-columns:minmax(0,1fr)}
+ .wishlist-card{display:grid;grid-template-columns:minmax(88px,34%) minmax(0,1fr);align-items:stretch}
+ .wishlist-image{height:100%;min-height:130px;aspect-ratio:auto}
+ .wishlist-card-body{padding:10px}
+ .wishlist-product-title{min-height:0}
+ .wishlist-actions{gap:6px}
+ .wishlist-actions>*{padding:9px 10px;font-size:12px}
+ .pd-price{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+}
