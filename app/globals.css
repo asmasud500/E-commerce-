@@ -1806,3 +1806,12 @@ main,.pg,.container,.page-container{min-width:0}
 .hp-promo-copy>span b{margin-left:3px}
 @media(max-width:640px){.hp-promo-grid{grid-template-columns:minmax(0,1fr);gap:12px}.hp-promo-section{margin:22px 0 28px}.hp-promo-image{aspect-ratio:16/6;min-height:110px}.hp-promo-copy{padding:12px 13px}.hp-promo-copy h3{font-size:14px}.hp-promo-copy>span{font-size:11px}.admin-banner-active{align-items:flex-start}}
 @media(prefers-reduced-motion:reduce){.hp-promo-card,.hp-promo-image img{transition:none}.hp-promo-card:hover{transform:none}}
+
+
+.admin-banner-upload{display:flex;flex-direction:column;gap:9px;padding:16px;border:1.5px dashed #cbd5e1;border-radius:14px;background:rgba(255,104,1,.045);font-weight:700}
+.admin-banner-upload input[type=file]{width:100%;padding:10px;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:var(--surface,#fff);font-weight:500}
+.admin-banner-upload span{font-size:12px;font-weight:500;color:var(--muted,#6b7280)}
+.admin-banner-preview{display:flex;flex-direction:column;gap:8px;padding:10px;border:1px solid var(--line,#e5e7eb);border-radius:14px;background:var(--surface,#fff)}
+.admin-banner-preview img{display:block;width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#f1f5f9}
+.admin-banner-preview button{align-self:flex-start}
+.admin-banner-url-label{display:flex;flex-direction:column;gap:6px}
