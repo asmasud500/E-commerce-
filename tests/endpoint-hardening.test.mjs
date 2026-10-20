@@ -102,6 +102,7 @@ test("checkout disables manual payment instructions and uses gateway mode for au
   assert.match(adapter, /BKASH:unavailable\("bKash"\)/);
   assert.match(adapter, /NAGAD:unavailable\("Nagad"\)/);
   assert.match(adapter, /ROCKET:unavailable\("Rocket"\)/);
+  assert.match(adapter, /UPAY:unavailable\("Upay"\)/);
   assert.match(adapter, /BANGLA_QR:unavailable\("Bangla QR"\)/);
   assert.match(adapter, /securepay\.sslcommerz\.com/);
   assert.match(adapter, /sandbox\.sslcommerz\.com/);
