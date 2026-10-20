@@ -6,7 +6,9 @@ export default async function ProductDetails({params}:{params:Promise<{slug:stri
   const p=await db.product.findUnique({where:{slug},include:{category:true,images:{orderBy:{sortOrder:"asc"}}}});
   if(!p||!p.published)return notFound();
   const regular=Number(p.price);
-  const effective=p.salePrice!=null&&Number(p.salePrice)<regular?Number(p.salePrice):regular;
+  const baseEffective=p.salePrice!=null&&Number(p.salePrice)<regular?Number(p.salePrice):regular;
+  const variantPrices=Array.isArray((p as any).variants)?(p as any).variants.map((v:any)=>Number(v.salePrice!=null&&Number(v.salePrice)<Number(v.price)?v.salePrice:v.price)).filter((n:number)=>Number.isFinite(n)&&n>=0):[];
+  const effective=variantPrices.length?Math.min(...variantPrices):baseEffective;
   const compare=p.compareAtPrice!=null&&Number(p.compareAtPrice)>effective?Number(p.compareAtPrice):null;
   const original=effective<regular?regular:compare;
   const discount=original?Math.round((1-effective/original)*100):0;
@@ -40,7 +42,8 @@ export default async function ProductDetails({params}:{params:Promise<{slug:stri
   const defaultFee=Number(storeSettings?.defaultDeliveryFee??120);
   const threshold=storeSettings&&storeSettings.freeShippingThreshold===null?null:Number(storeSettings?.freeShippingThreshold??3000);
   const delivery=deliveryLabel(p,defaultFee,threshold);
-  const inStock=p.stock>0;
+  const totalStock=Array.isArray((p as any).variants)&&p.variants.length?p.variants.reduce((n:number,v:any)=>n+Math.max(0,Number(v.stock)||0),0):Number(p.stock||0);
+  const inStock=totalStock>0;
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify({ "@context":"https://schema.org","@type":"Product",name:p.name,description:p.description||undefined,sku:p.sku,image:p.images.map(i=>i.url),category:p.category?.name,offers:{"@type":"Offer",price:effective,currency:"BDT",availability:inStock?"https://schema.org/InStock":"https://schema.org/OutOfStock"}}).replace(/</g,"\\u003c")}}/>
     <StoreHeader/>
@@ -53,9 +56,9 @@ export default async function ProductDetails({params}:{params:Promise<{slug:stri
           <h1>{p.name}</h1>
           <div className="pd-rate"><Stars value={rating.n?rating.sum/rating.n:0} count={rating.n}/></div>
           <div className="pd-price"><strong>{money(effective)}</strong>{original&&<s>{money(original)}</s>}{discount>0&&<span className="pd-off">-{discount}%</span>}</div>
-          <p className={"pd-stock "+(inStock?"ok":"out")}>{inStock?<><Icon name="check" size={16}/> In stock · {p.stock} available</>:"Out of stock"}</p>
+          <p className={"pd-stock "+(inStock?"ok":"out")}>{inStock?<><Icon name="check" size={16}/> In stock · {totalStock} available</>:"Out of stock"}</p>
           <p className="pd-desc">{p.description||"Premium quality product."}</p>
-          <div className="pd-buy"><ProductActions options={(Array.isArray((p as any).options)?(p as any).options:[])} p={{id:p.id,name:p.name,slug:p.slug,sku:p.sku,price:effective,salePrice:p.salePrice,stock:p.stock,description:p.description,compareAtPrice:p.compareAtPrice,imageUrl:p.images[0]?.url||null}}/></div>
+          <div className="pd-buy"><ProductActions options={(Array.isArray((p as any).options)?(p as any).options:[])} p={{id:p.id,name:p.name,slug:p.slug,sku:p.sku,price:effective,salePrice:p.salePrice,stock:p.stock,description:p.description,compareAtPrice:p.compareAtPrice,imageUrl:p.images[0]?.url||null,variants:(p as any).variants||[]}}/></div>
           <ul className="pd-perks">
             <li><Icon name="truck" size={18}/>{delivery}</li>
             <li><Icon name="ticket" size={18}/>Order is confirmed once your payment is verified</li>
