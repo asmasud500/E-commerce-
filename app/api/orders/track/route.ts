@@ -20,20 +20,30 @@ export async function POST(req:NextRequest){
     const orderNumber=normalizeOrderNumber(parsed.data.orderNumber);
     // Resolve by the canonical order number first. Older orders may have been
     // created by the previous checkout schema, which used phone/email aliases.
-    const o:any=await db.order.findFirst({where:{orderNumber},include:{items:true,paymentGateway:true}});
+    let o:any=await db.order.findFirst({where:{orderNumber},include:{items:true,paymentGateway:true}});
+    // Legacy records may contain different contact aliases or a formatted order number.
+    // Fall back to a bounded read and compare normalized order numbers; still require
+    // the exact checkout phone/email so this does not expose orders to other customers.
+    if(!o){
+      const recent:any[]=await db.order.findMany({take:500,orderBy:{createdAt:"desc"}});
+      o=recent.find(row=>normalizeOrderNumber(row.orderNumber)===orderNumber)||null;
+    }
     const contactMatchesOrder=!!o&&contactMatches({
-      customerPhone:o.customerPhone??o.phone??o.mobile??o.contactPhone,
-      customerEmail:o.customerEmail??o.email??o.contactEmail
+      customerPhone:o.customerPhone??o.phone??o.mobile??o.contactPhone??o.shippingPhone,
+      customerEmail:o.customerEmail??o.email??o.contactEmail??o.billingEmail
     },parsed.data.contact);
     if(!o||!contactMatchesOrder)return NextResponse.json(NOT_FOUND,{status:404});
+    // Fetch related records separately for Firestore compatibility.
+    const items:any[]=await db.orderItem.findMany({where:{orderId:o.id}});
+    const gateway:any=o.paymentGatewayId?await db.paymentGateway.findUnique({where:{id:o.paymentGatewayId}}):null;
     const ret:any=await db.returnRequest.findFirst({where:{orderId:o.id}}).catch(()=>null);
     return NextResponse.json({
       returnStatus:ret?.status||null,orderNumber:o.orderNumber,status:o.status,paymentStatus:o.paymentStatus,createdAt:iso(o.createdAt),
-      paymentMethod:o.paymentGateway?.name||null,
+      paymentMethod:gateway?.name||o.paymentMethod||null,
       courierName:o.courierName||null,trackingNumber:o.trackingNumber||null,
       deliveryArea:[o.shippingUpazila,o.shippingDistrict].filter(Boolean).join(", ")||null,
       subtotal:Number(o.subtotal),discount:Number(o.discount||0),shippingFee:Number(o.shippingFee||0),taxAmount:Number(o.taxAmount||0),total:Number(o.total),
-      items:(o.items||[]).map((i:any)=>({name:i.name,quantity:i.quantity,lineTotal:Number(i.lineTotal)})),
+      items:(items.length?items:(o.items||[])).map((i:any)=>({name:i.name,quantity:Number(i.quantity||0),lineTotal:Number(i.lineTotal??(Number(i.unitPrice||0)*Number(i.quantity||0)))})),
       timeline:buildTimeline(o)
     },{headers:{"Cache-Control":"no-store"}});
   }catch(error){
