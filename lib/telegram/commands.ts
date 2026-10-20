@@ -3,6 +3,9 @@ import {esc,telegramApi,orderDetailsText} from "@/lib/notifications/telegram-adm
 import {saveProductImage,MAX_IMAGE_BYTES} from "@/lib/store/images";
 import {collectCodPaymentAtomically} from "@/lib/firestore";
 import {parseOptionsText} from "@/lib/options";
+import {bookCourier} from "@/lib/integrations/courier";
+import {loadIntegration} from "@/lib/integrations/store";
+import {updateOrderAdminFieldsAtomically} from "@/lib/firestore";
 import {deliveryLabel} from "@/lib/shipping";
 
 const tk=(n:unknown)=>"৳"+Number(n||0).toLocaleString("en-BD",{maximumFractionDigits:2});
@@ -42,6 +45,7 @@ Photo পাঠিয়ে caption এ <code>/photo SKU</code> দিলে ছ
 <b>Voucher</b>: /vouchers · /voucher CODE percent|fixed VALUE [min] [days] · /voucheroff CODE · /voucheron CODE
 <b>Flash sale</b>: /flash PERCENT HOURS SKU1,SKU2 · /flashlist · /flashoff
 <b>Abandoned cart</b>: /abandoned (ফোন দিয়েছে কিন্তু অর্ডার করেনি)
+<b>Courier/SMS</b>: /book ORDER-NO steadfast|pathao (Processing অর্ডার) · /integrations (চালু আছে কিনা; key বসাতে admin panel → Integrations)
 <b>COD</b>: /addcod (Cash on Delivery চালু) · /cash ORDER-NO (টাকা হাতে পেয়েছি)
 <b>Payment</b>: /gateways · /paynumber ID NUMBER · /payinfo ID text · /gatewayon ID · /gatewayoff ID`;
 
@@ -228,6 +232,20 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
     const now=Date.now();
     const list=cs.filter(c=>{const t=new Date(c.updatedAt).getTime();return now-t>3600000&&now-t<7*86400000}).slice(0,15);
     await reply("<b>🛒 Abandoned carts</b>\n"+(list.length?list.map(c=>"📞 <code>0"+esc(c.phone)+"</code> "+esc(c.name||"")+" · "+tk(c.total)+"\n"+(c.items||[]).map((i:any)=>esc(i.name)+" ×"+i.quantity).join(", ")).join("\n\n"):"এখন কোনো abandoned cart নেই"));return true;
+  }
+  if(cmd==="/integrations"){
+    const rows:string[]=[];for(const [id,n] of [["steadfast","Steadfast"],["pathao","Pathao"],["sms","SMS"]]){const i=await loadIntegration(id);rows.push(n+": "+(i?.enabled?"✅ ON":"⛔ OFF")+(i&&Object.keys(i.secrets).length?" · key সেট আছে":" · key নেই"))}
+    await reply("<b>🔌 Integrations</b>\n"+rows.join("\n")+"\n\nKey বসাতে/বদলাতে Admin panel → Integrations & API Keys।");return true;
+  }
+  if(cmd==="/book"){
+    const o:any=args[0]?await db.order.findFirst({where:{orderNumber:args[0].toUpperCase()},include:{items:true}}):null;const prov=(args[1]||"").toLowerCase();
+    if(!o||!["steadfast","pathao"].includes(prov)){await reply("ব্যবহার: <code>/book ORDER-NO steadfast|pathao</code>");return true}
+    if(o.status!=="PROCESSING"||o.trackingNumber){await reply("❌ অর্ডার Processing হতে হবে এবং আগে বুক করা থাকলে হবে না");return true}
+    const r=await bookCourier(o,prov);
+    if(!r.ok){await reply("❌ "+esc(r.error));return true}
+    const u=await updateOrderAdminFieldsAtomically({orderId:o.id,actorId:"telegram",courierName:r.courier,trackingNumber:r.trackingNumber});
+    await audit("COURIER_BOOKED_TELEGRAM","Order",o.id,{courier:r.courier,trackingNumber:r.trackingNumber});
+    await reply(u.updated?"✅ "+esc(o.orderNumber)+" → "+esc(r.courier)+" <code>"+esc(r.trackingNumber)+"</code>":"⚠️ বুক হয়েছে ("+esc(r.trackingNumber)+") কিন্তু সেভ হয়নি — /track দিয়ে বসান");return true;
   }
   if(cmd==="/addcod"){
     const all=await db.paymentGateway.findMany({});const ex=all.find((g:any)=>g.publicConfig?.cod===true);

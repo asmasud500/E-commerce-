@@ -10,7 +10,9 @@ export function canAccessAdminPath(role: string, path: string, method: string): 
     "/admin/settings", "/api/admin/store-settings",
     "/admin/activity", "/api/admin/activity",
     // Payment gateway credentials/configuration and refund execution are high-impact.
-    "/admin/payment-gateways", "/api/admin/payment-gateways"
+    "/admin/payment-gateways", "/api/admin/payment-gateways",
+    // API keys for couriers/SMS are stored encrypted and managed by super admins only.
+    "/admin/integrations", "/api/admin/integrations"
   ];
   if (
     superAdminOnly.some(prefix => path === prefix || path.startsWith(prefix + "/")) ||

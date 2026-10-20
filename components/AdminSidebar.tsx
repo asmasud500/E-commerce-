@@ -17,6 +17,7 @@ const items = [
   ["/admin/coupons","Coupons & Marketing"],
   ["/admin/reviews","Reviews & Moderation"],
   ["/admin/settings","Store Settings"],
+  ["/admin/integrations","Integrations & API Keys"],
   ["/admin/delivery-zones","Delivery Zones"],
   ["/admin/banners","Banners"],
   ["/admin/flash-sales","Flash Sales"],

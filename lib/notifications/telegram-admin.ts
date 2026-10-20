@@ -1,3 +1,4 @@
+import {smsOrderStatus} from "@/lib/integrations/sms";
 import {db} from "@/lib/prisma";
 
 export const esc=(v:unknown)=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -55,6 +56,7 @@ export async function sendNewOrderTelegram(orderId:string){
 
 /** Sent whenever a payment becomes PAID, however it was confirmed (dashboard, Telegram, SMS or gateway). */
 export async function sendPaidOrderTelegram(orderId:string,via:string){
+  await smsOrderStatus(orderId);
   const chatId=process.env.TELEGRAM_CHAT_ID;if(!chatId)return;
   const o=await db.order.findUnique({where:{id:orderId},include:{items:true,paymentGateway:true}});if(!o)return;
   const res=await telegramApi("sendMessage",{chat_id:chatId,text:"<b>✅ Payment confirmed</b> · via "+esc(via)+"\n"+orderDetailsText(o),parse_mode:"HTML",disable_web_page_preview:true,reply_markup:{inline_keyboard:[...statusRow(o.id),[{text:"👁 View Order",callback_data:"order_view:"+o.id}]]}});

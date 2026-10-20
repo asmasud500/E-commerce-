@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {db} from "@/lib/prisma";
 import {rejectPendingOrderAtomically,updateOrderAdminFieldsAtomically,confirmCodOrderAtomically,cancelCodOrderAtomically} from "@/lib/firestore";
+import {smsOrderStatus} from "@/lib/integrations/sms";
 import {readAdminSession} from "@/lib/auth/admin";
 const next:Record<string,string[]>={PENDING:["CONFIRMED","CANCELLED"],CONFIRMED:["PROCESSING","CANCELLED"],PROCESSING:["SHIPPED"],SHIPPED:["DELIVERED"],DELIVERED:[],CANCELLED:[],REFUNDED:[]};
 const inputSchema=z.object({
@@ -23,6 +24,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
   if((before as any).paymentProvider==="COD"&&(input.status==="CONFIRMED"||input.status==="CANCELLED")){
    const r=input.status==="CONFIRMED"?await confirmCodOrderAtomically(id,actorId):await cancelCodOrderAtomically(id,actorId);
    if(!r.ok)return NextResponse.json({error:"Order was already updated. Refresh and try again."},{status:409});
+   await smsOrderStatus(id);
    return NextResponse.json(await db.order.findUnique({where:{id}}));
   }
   if(input.status==="CONFIRMED"&&before.paymentStatus!=="PAID")return NextResponse.json({error:"Payment must be paid before confirmation."},{status:409});
@@ -30,6 +32,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
   if(input.status==="CANCELLED"&&before.paymentStatus==="PENDING"){
    const result=await rejectPendingOrderAtomically(id,"ADMIN_ORDER_CANCELLED");
    if(!result.rejected)return NextResponse.json({error:"Order was already updated. Refresh and try again."},{status:409});
+   await smsOrderStatus(id);
    return NextResponse.json(await db.order.findUnique({where:{id}}));
   }
   const result=await updateOrderAdminFieldsAtomically({
@@ -42,6 +45,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
    const status=result.reason==="not_found"?404:409;
    return NextResponse.json({error:result.reason==="payment_not_paid"?"Payment must be paid before confirmation.":"Order state changed or the requested transition is not allowed."},{status});
   }
+  if(input.status)await smsOrderStatus(id);
   return NextResponse.json(await db.order.findUnique({where:{id}}));
  }catch(error){console.error("Admin order update failed:",error instanceof Error?error.message:String(error));return NextResponse.json({error:"Order update failed."},{status:400})}
 }
