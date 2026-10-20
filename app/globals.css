@@ -2738,3 +2738,46 @@ table{max-width:100%}
 @media(max-width:760px){.app-skeleton-header{height:62px;gap:10px}.app-skeleton-logo{width:100px;height:22px}.app-skeleton-search{height:36px;min-width:35px}.app-skeleton-actions{gap:6px}.app-skeleton-actions i{width:30px;height:30px}.app-skeleton-content{padding-top:22px}.app-skeleton-heading{margin-bottom:20px}.app-skeleton-title{height:29px}.app-skeleton-feature{grid-template-columns:1fr;gap:14px;padding:12px;margin-bottom:20px}.app-skeleton-feature-image{aspect-ratio:16/9}.app-skeleton-feature-copy{gap:11px;padding:5px}.app-skeleton-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.app-skeleton-card{border-radius:12px}.app-skeleton-card-copy{padding:10px;gap:9px}}
 @media(max-width:360px){.app-skeleton-logo{width:78px}.app-skeleton-actions i{width:26px;height:26px}.app-skeleton-grid{gap:8px}.app-skeleton-card-copy{padding:8px}}
 @media(prefers-reduced-motion:reduce){.loading-skeleton{animation:none;background:#eef2f7}}
+
+
+/* Professional product catalogue preview */
+.pc-catalog-head{align-items:center;padding:24px 26px;margin-bottom:18px;border:1px solid #e9edf3;border-radius:20px;background:linear-gradient(120deg,#fff 0%,#fffaf6 100%);box-shadow:0 8px 28px rgba(19,25,33,.045)}
+.pc-eyebrow{display:inline-flex;align-items:center;gap:8px;margin-bottom:9px;color:var(--or-d);font-size:10px;font-weight:800;letter-spacing:.15em}
+.pc-eyebrow:before{content:"";display:inline-block;width:22px;height:2px;background:var(--or);border-radius:2px}
+.pc-catalog-head h1{font-size:clamp(28px,3vw,38px);line-height:1.12}
+.pc-catalog-head p{max-width:560px;margin:9px 0 0;color:#687386;font-size:14px;line-height:1.65}
+.pc-results-count{display:inline-flex;align-items:center;gap:5px;flex:none;padding:11px 15px;border:1px solid #ffdec9;border-radius:12px;background:#fff3eb;color:#8c3a0a;font-size:12px;font-weight:700;white-space:nowrap}
+.pc-results-count strong{font-size:18px;color:var(--or-d)}
+.pc-tools{align-items:center;gap:10px;padding:12px;border:1px solid #e8ebf1;border-radius:16px;background:#fff;box-shadow:0 4px 16px rgba(19,25,33,.025)}
+.pc-search{min-height:46px;border:1px solid #dce1e9;border-radius:11px;transition:border-color .18s,box-shadow .18s}
+.pc-search:focus-within{border-color:var(--or);box-shadow:0 0 0 3px rgba(255,104,1,.09)}
+.pc-search input{font-size:14px}
+.pc-tools select{height:46px;border:1px solid #dce1e9;background:#fff}
+.pc-tools .pg-btn{min-height:46px;white-space:nowrap}
+.pc-active-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 18px;color:#778195;font-size:12px}
+.pc-active-filters>span{font-weight:700;color:#4b5563;margin-right:2px}
+.pc-filter-chip{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:7px 10px;border:1px solid #ffdfcc;border-radius:999px;background:#fff8f3;color:#9a4210;font-size:12px;font-weight:600;overflow-wrap:anywhere}
+.pc-filter-chip b{font-size:16px;line-height:1;color:#c2410c}
+.pc-clear-filters{padding:6px 8px;color:#667085;font-size:12px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.pc-grid{align-items:stretch;gap:16px}
+.pc-grid .hp-pc{min-width:0;border-radius:16px}
+.pc-grid .hp-pm{position:relative;overflow:hidden}
+.pc-grid .hp-pm-link{display:grid;place-items:center;aspect-ratio:1;background:linear-gradient(145deg,#f8fafc,#f1f4f8);overflow:hidden}
+.pc-grid .hp-pm-link img{display:block;width:100%;height:100%;object-fit:cover}
+.pc-grid .hp-pb{display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:15px}
+.pc-grid .hp-pb>small{max-width:100%;padding:4px 8px;border-radius:6px;background:#f3f5f8;color:#667085;font-size:10px;font-weight:800;letter-spacing:.045em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-grid .hp-pt{display:-webkit-box;min-height:2.8em;max-width:100%;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;color:#172033;font-size:14px;font-weight:700}
+.pc-grid .hp-rate{display:flex;align-items:center;gap:5px}
+.pc-grid .hp-price{display:flex;align-items:baseline;flex-wrap:wrap;gap:7px;margin-top:2px}
+.pc-grid .hp-price strong{color:#111b2e;font-size:19px;font-weight:800;letter-spacing:-.035em}
+.pc-grid .hp-price s{font-size:12px}
+.pc-grid .hp-free{display:inline-flex;padding:4px 7px;border-radius:6px;background:#eaf8ef;color:#147542;font-size:10px;font-weight:800}
+.pc-side{border-color:#e7ebf1;box-shadow:0 5px 20px rgba(19,25,33,.035)}
+.pc-side-list a{margin:2px 8px;padding:10px 12px;border-radius:9px;transition:background .18s,color .18s}
+.pc-side-list a.on{background:#fff1e8;color:#c94e00}
+.pc-side-foot{display:grid;gap:12px}
+.pg-empty{padding:56px 24px;border-radius:18px}
+@media(max-width:1100px){.pc-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:850px){.pc-layout{grid-template-columns:1fr;gap:14px}.pc-side{position:static}.pc-side-list{display:flex;gap:6px;padding:10px;overflow-x:auto;scrollbar-width:thin}.pc-side-list a{flex:none;margin:0;padding:9px 12px;border:1px solid #e7ebf1;border-radius:999px;white-space:nowrap}.pc-side-list a.on{border-color:#ffd5bc}.pc-side h2{padding:12px 16px}.pc-side-foot{display:flex;flex-wrap:wrap;gap:16px;padding:12px 16px}.pc-catalog-head{padding:20px}.pc-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:620px){.pc-catalog-head{align-items:flex-start;flex-direction:column;gap:14px;padding:18px}.pc-catalog-head h1{font-size:29px}.pc-results-count{padding:8px 11px}.pc-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;padding:10px}.pc-tools .pc-search{grid-column:1/-1;width:100%}.pc-tools select{width:100%;min-width:0}.pc-tools .pg-btn{width:100%;padding:11px 10px;font-size:13px}.pc-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.pc-grid .hp-pb{padding:10px;gap:6px}.pc-grid .hp-pt{font-size:12px;min-height:2.8em}.pc-grid .hp-price strong{font-size:16px}.pc-grid .hp-pm .hp-off{top:8px;left:8px;font-size:10px}.pc-active-filters{gap:6px}.pc-side-foot{gap:12px}.pc-check{font-size:12px}}
+@media(max-width:360px){.pc-grid{gap:7px}.pc-grid .hp-pb{padding:8px}.pc-grid .hp-price strong{font-size:14px}.pc-tools{grid-template-columns:1fr}.pc-tools .pc-search{grid-column:auto}.pc-tools .pg-btn{grid-column:auto}}
