@@ -28,11 +28,11 @@ export async function POST(req:NextRequest){
     return NextResponse.json({orderId:existing.id,orderNumber:existing.orderNumber,total:Number(existing.total),discount:Number(existing.discount),reservationExpiresAt:expiry.toISOString(),paymentToken:await createOrderAccessToken(existing.id),replayed:true},{status:200});
    }
   }
-  const unique=[...new Set(input.items.map(i=>i.productId))];if(unique.length!==input.items.length)return NextResponse.json({error:"Duplicate products are not allowed."},{status:400});
+  const uniqueSelections=input.items.map(i=>i.productId+"|"+Object.entries(i.options||{}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+"="+v).join("|"));if(new Set(uniqueSelections).size!==uniqueSelections.length)return NextResponse.json({error:"Duplicate product variants are not allowed."},{status:400});
   const gateway=await db.paymentGateway.findFirst({where:{id:input.paymentGatewayId,enabled:true}});if(!gateway)return NextResponse.json({error:"Selected payment gateway is unavailable."},{status:400});
   const quote=await buildQuote({items:input.items,couponCode:input.couponCode,shippingDivision:input.shippingDivision,shippingDistrict:input.shippingDistrict,shippingUpazila:input.shippingUpazila},{strictCoupon:true});
   const {subtotal,discount,shipping:shippingFee,taxAmount,total}=quote;
-  const orderItems=quote.lines.map(l=>({productId:l.productId,name:l.name,unitPrice:l.unitPrice,quantity:l.quantity,lineTotal:l.lineTotal}));
+  const orderItems=quote.lines.map(l=>({productId:l.productId,name:l.name,unitPrice:l.unitPrice,quantity:l.quantity,lineTotal:l.lineTotal,options:l.options||{},variantId:l.variantId||null}));
   const orderNumber="ORD-"+Date.now().toString(36).toUpperCase()+"-"+crypto.randomUUID().slice(0,5).toUpperCase(),expiresAt=new Date(Date.now()+30*60*1000);
   const isCod=(gateway as any).publicConfig?.cod===true;
   const order=await createOrderWithStockReservation({
