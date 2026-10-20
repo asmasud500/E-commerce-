@@ -4,15 +4,15 @@ Private Android app starter for the same phone receiving bKash, Nagad and Rocket
 
 ## Status
 
-This is source code, not a tested APK. The Android module is incomplete until its manifest and worker files are present and the project builds successfully. Do not use it for live payments yet.
+The manifest and WorkManager webhook worker are now included, and a GitHub Actions workflow builds the debug APK when this module changes. The APK and real-device SMS behavior are **not yet verified** until that workflow passes and provider-specific redacted SMS samples are tested. Do not enable live auto-confirmation until these checks pass.
 
 ## Required setup
 
 1. Set a strong random Cloudflare Worker secret named MOBILE_MONEY_SMS_WEBHOOK_SECRET. Use Cloudflare Dashboard → Workers & Pages → your Worker → Settings → Variables and Secrets, or run `npx wrangler secret put MOBILE_MONEY_SMS_WEBHOOK_SECRET` from the website project.
 2. Configure the app with the HTTPS URL `https://YOUR-DOMAIN/api/webhooks/mobile-money-sms` and the same secret. Do not commit the secret to GitHub.
-3. Build and test with Android Studio on the phone that receives all three providers' SMS.
+3. Watch the **Android SMS Bridge** GitHub Actions workflow for a compile result; then install a debug build and test with Android Studio on the phone that receives all three providers' SMS.
 4. First test each provider using redacted SMS samples. SMS formats vary by provider and account type. The parser must find a credit message, transaction ID, exact amount and sender phone number before it can send a match.
-5. Test mismatched amount, sender digits, debit SMS and duplicate transaction IDs before enabling real auto-confirmation.
+5. Test mismatched amount, sender digits, debit SMS, duplicate transaction IDs, webhook timeout/retry and missing configuration before enabling real auto-confirmation.
 
 ## Important safety notes
 
