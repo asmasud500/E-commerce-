@@ -67,6 +67,9 @@ export async function POST(req: NextRequest) {
       }, { status: 409 });
     }
 
+    // The proof has already been atomically claimed. Telegram is a notification
+    // channel, so an outage must not turn a saved proof into a misleading 400
+    // response (which would encourage a duplicate resubmission).
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chat = process.env.TELEGRAM_CHAT_ID;
     if (token && chat) {
@@ -76,21 +79,27 @@ export async function POST(req: NextRequest) {
         Number(o.total).toLocaleString("en-BD") + "\nTransaction ID: " + transactionId +
         "\nSender last 4 digits: " + senderLast4 +
         "\n\nAutomatic confirmation only occurs after matching the incoming credit SMS. Verify any uncertain payment manually.";
-      const bytes = Uint8Array.from(atob(screenshot.split(",")[1]), c => c.charCodeAt(0));
-      const form = new FormData();
-      form.set("chat_id", chat);
-      form.set("caption", caption);
-      form.set("reply_markup", JSON.stringify({ inline_keyboard: [
-        [{ text: "✅ Confirm Payment", callback_data: "pay_confirm:" + o.id }, { text: "❌ Reject Payment", callback_data: "pay_reject:" + o.id }],
-        [{ text: "👁 View Order", callback_data: "order_view:" + o.id }]
-      ] }));
-      form.set("photo", new Blob([bytes], { type: "image/jpeg" }), "payment-proof.jpg");
-      const tg = await fetch("https://api.telegram.org/bot" + token + "/sendPhoto", { method: "POST", body: form });
-      if (!tg.ok) {
-        await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: chat, text: caption + "\nScreenshot upload failed; ask customer to resend it." })
-        });
+      try {
+        const bytes = Uint8Array.from(atob(screenshot.split(",")[1]), c => c.charCodeAt(0));
+        const form = new FormData();
+        form.set("chat_id", chat);
+        form.set("caption", caption);
+        form.set("reply_markup", JSON.stringify({ inline_keyboard: [
+          [{ text: "✅ Confirm Payment", callback_data: "pay_confirm:" + o.id }, { text: "❌ Reject Payment", callback_data: "pay_reject:" + o.id }],
+          [{ text: "👁 View Order", callback_data: "order_view:" + o.id }]
+        ] }));
+        form.set("photo", new Blob([bytes], { type: "image/jpeg" }), "payment-proof.jpg");
+        const tg = await fetch("https://api.telegram.org/bot" + token + "/sendPhoto", { method: "POST", body: form });
+        const payload = await tg.json().catch(() => null) as { ok?: boolean } | null;
+        if (!tg.ok || !payload?.ok) {
+          const fallback = await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: chat, text: caption + "\nScreenshot upload failed; ask customer to resend it." })
+          });
+          if (!fallback.ok) console.error("Telegram payment-proof notification failed.");
+        }
+      } catch {
+        console.error("Telegram payment-proof notification failed.");
       }
     }
     try {
