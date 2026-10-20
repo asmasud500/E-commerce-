@@ -1,18 +1,31 @@
 export default function Loading(){
   return (
-    <main className="yt-loading-screen" role="status" aria-label="Loading MART Store">
-      <header className="yt-loading-header">
-        <span className="yt-loading-menu" aria-hidden="true"/>
-        <div className="yt-loading-logo"><span className="yt-loading-play">▶</span><span>MART Store</span></div>
-        <div className="yt-loading-search" aria-hidden="true"/>
-        <span className="yt-loading-user" aria-hidden="true"/>
+    <main className="app-skeleton-page" role="status" aria-label="Loading page">
+      <span className="sr-only">Loading content…</span>
+      <header className="app-skeleton-header" aria-hidden="true">
+        <div className="app-skeleton-logo loading-skeleton"/>
+        <div className="app-skeleton-search loading-skeleton"/>
+        <div className="app-skeleton-actions"><i className="loading-skeleton"/><i className="loading-skeleton"/></div>
       </header>
-      <section className="yt-loading-body" aria-hidden="true">
-        <div className="yt-loading-chips">{[1,2,3,4,5,6].map(n=><span key={n} className="yt-loading-chip"/>)}</div>
-        <div className="yt-loading-grid">
-          {[1,2,3,4,5,6].map(n=><article className="yt-loading-video" key={n}>
-            <div className="yt-loading-thumb"/>
-            <div className="yt-loading-meta"><div className="yt-loading-avatar"/><div className="yt-loading-copy"><div className="yt-loading-line long"/><div className="yt-loading-line short"/></div></div>
+      <section className="app-skeleton-content" aria-hidden="true">
+        <div className="app-skeleton-heading">
+          <div className="loading-skeleton app-skeleton-eyebrow"/>
+          <div className="loading-skeleton app-skeleton-title"/>
+          <div className="loading-skeleton app-skeleton-subtitle"/>
+        </div>
+        <div className="app-skeleton-feature">
+          <div className="loading-skeleton app-skeleton-feature-image"/>
+          <div className="app-skeleton-feature-copy">
+            <div className="loading-skeleton app-skeleton-line wide"/>
+            <div className="loading-skeleton app-skeleton-line"/>
+            <div className="loading-skeleton app-skeleton-line medium"/>
+            <div className="loading-skeleton app-skeleton-button"/>
+          </div>
+        </div>
+        <div className="app-skeleton-grid">
+          {[1,2,3,4,5,6,7,8].map(n=><article className="app-skeleton-card" key={n}>
+            <div className="loading-skeleton app-skeleton-card-image"/>
+            <div className="app-skeleton-card-copy"><div className="loading-skeleton app-skeleton-line wide"/><div className="loading-skeleton app-skeleton-line medium"/><div className="loading-skeleton app-skeleton-line price"/></div>
           </article>)}
         </div>
       </section>
