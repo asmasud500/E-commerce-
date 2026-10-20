@@ -141,7 +141,7 @@ const orderCreateRoute = await readFile(new URL("../app/api/orders/route.ts", im
 
 test("customer cancellation requires a valid customer session and scopes the order lookup to that customer", () => {
   assert.match(customerCancelRoute, /verifyCustomerToken/);
-  assert.match(customerCancelRoute, /where: \{ orderNumber, userId: session\.userId \}/);
+  assert.match(customerCancelRoute, /where:\{orderNumber,userId:session\.userId\}/);
 });
 
 test("customer cancellation is restricted to pending unpaid orders and uses an atomic state change", () => {
@@ -157,5 +157,5 @@ test("order creation validates checkout totals server-side through the shared qu
 
 test("customer order listing is scoped to the authenticated customer's own orders", () => {
   assert.match(customerOrdersRoute, /verifyCustomerToken/);
-  assert.match(customerOrdersRoute, /userId: session\.userId/);
+  assert.match(customerOrdersRoute, /userId:s\.userId/);
 });
