@@ -26,8 +26,9 @@ export async function POST(req:NextRequest){
       customerEmail:o.customerEmail??o.email??o.contactEmail
     },parsed.data.contact);
     if(!o||!contactMatchesOrder)return NextResponse.json(NOT_FOUND,{status:404});
+    const ret:any=await db.returnRequest.findFirst({where:{orderId:o.id}}).catch(()=>null);
     return NextResponse.json({
-      orderNumber:o.orderNumber,status:o.status,paymentStatus:o.paymentStatus,createdAt:iso(o.createdAt),
+      returnStatus:ret?.status||null,orderNumber:o.orderNumber,status:o.status,paymentStatus:o.paymentStatus,createdAt:iso(o.createdAt),
       paymentMethod:o.paymentGateway?.name||null,
       courierName:o.courierName||null,trackingNumber:o.trackingNumber||null,
       deliveryArea:[o.shippingUpazila,o.shippingDistrict].filter(Boolean).join(", ")||null,

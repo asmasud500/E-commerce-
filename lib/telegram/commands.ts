@@ -28,6 +28,7 @@ const num=(s:string|undefined)=>{if(s==null||s.trim()==="")return NaN;return Num
 const productLine=(p:any)=>"<code>"+esc(p.sku)+"</code> · "+esc(p.name)+" · "+tk(p.salePrice??p.price)+" · stock "+p.stock+(p.published?"":" · <i>draft</i>");
 
 export const HELP=`<b>🤖 Store Admin Bot</b>
+<b>Reports</b>: /report [days] (বিক্রি, অর্ডার, top product) · /returns · /return ID approve|reject|refunded
 <b>Orders</b>: /orders /pending /today /sales /order NO /search NO|PHONE
 /track NO COURIER TRACKING-ID
 <b>Stock</b>: /stock · /lowstock · /addstock SKU QTY · /removestock SKU QTY · /setstock SKU QTY
@@ -169,6 +170,31 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
   if(cmd==="/flashoff"){
     const fs=(await db.flashSale.findMany({where:{active:true}}));for(const f of fs)await db.flashSale.update({where:{id:f.id},data:{active:false}});
     await audit("FLASH_SALE_OFF_TELEGRAM","flashSale",null,{count:fs.length});await respond("✅ "+fs.length+"টি flash sale বন্ধ");return true;
+  }
+  if(cmd==="/report"){
+    const days=Math.min(90,Math.max(1,Number.isFinite(num(args[0]))?Math.floor(num(args[0])):7));
+    const since=new Date(Date.now()-days*86400000);
+    const os=await db.order.findMany({where:{createdAt:{gte:since}},include:{items:true},take:2000});
+    const paid=os.filter((o:any)=>o.paymentStatus==="PAID");
+    const rev=paid.reduce((a:number,o:any)=>a+Number(o.total||0),0);
+    const by:Record<string,{n:string;q:number}>={};
+    for(const o of paid)for(const i of (o.items||[])){const e=by[i.productId||i.name]||(by[i.productId||i.name]={n:i.name,q:0});e.q+=Number(i.quantity||0)}
+    const top=Object.values(by).sort((a,b)=>b.q-a.q).slice(0,5);
+    const cancelled=os.filter((o:any)=>o.status==="CANCELLED").length;
+    await reply("<b>📊 Report — last "+days+" days</b>\nOrders: "+os.length+" · Paid: "+paid.length+" · Cancelled: "+cancelled+"\nPaid revenue: <b>"+tk(rev)+"</b>\nAvg order: "+tk(paid.length?rev/paid.length:0)+"\n\n<b>Top products</b>\n"+(top.length?top.map(t=>esc(t.n)+" × "+t.q).join("\n"):"—"));return true;
+  }
+  if(cmd==="/returns"){
+    const rs=(await db.returnRequest.findMany({orderBy:{createdAt:"desc"},take:15}));
+    await reply("<b>↩️ Returns</b>\n"+(rs.length?rs.map((r:any)=>"<code>"+esc(r.id)+"</code>\n"+esc(r.orderNumber)+" · "+esc(r.customerName)+" · "+r.status+"\n"+esc(r.reason)).join("\n\n"):"কোনো request নেই"));return true;
+  }
+  if(cmd==="/return"){
+    const r:any=await db.returnRequest.findUnique({where:{id:args[0]||""}}).catch(()=>null);const act=(args[1]||"").toLowerCase();
+    const to=act==="approve"?"APPROVED":act==="reject"?"REJECTED":act==="refunded"?"REFUNDED":"";
+    const flow:Record<string,string[]>={REQUESTED:["APPROVED","REJECTED"],APPROVED:["REFUNDED","REJECTED"]};
+    if(!r||!to){await reply("ব্যবহার: <code>/return ID approve|reject|refunded</code> (ID পেতে /returns)");return true}
+    if(!flow[r.status]?.includes(to)){await reply("❌ "+r.status+" → "+to+" সম্ভব না");return true}
+    await db.returnRequest.update({where:{id:r.id},data:{status:to,updatedAt:new Date()}});await audit("RETURN_"+to+"_TELEGRAM","returnRequest",r.id,{orderNumber:r.orderNumber});
+    await reply("✅ "+esc(r.orderNumber)+" return → <b>"+to+"</b>"+(to==="APPROVED"?"\nটাকা ফেরত দিলে /return "+esc(r.id)+" refunded":""));return true;
   }
   if(cmd==="/order"){
     if(!arg){await respond("ব্যবহার: <code>/order ORDER-NO</code>");return true}

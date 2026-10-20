@@ -8,7 +8,7 @@ type Result={
   orderNumber:string;status:string;paymentStatus:string;createdAt:string|null;paymentMethod:string|null;
   courierName:string|null;trackingNumber:string|null;deliveryArea:string|null;
   subtotal:number;discount:number;shippingFee:number;taxAmount:number;total:number;
-  items:{name:string;quantity:number;lineTotal:number}[];timeline:Step[];
+  items:{name:string;quantity:number;lineTotal:number}[];timeline:Step[];returnStatus?:string|null;
 };
 
 const tk=(n:number)=>"৳"+Number(n).toLocaleString("en-BD");
@@ -21,6 +21,15 @@ export default function TrackClient({initialOrder}:{initialOrder:string}){
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [result,setResult]=useState<Result|null>(null);
+  const [reason,setReason]=useState("Wrong or damaged item"),[details,setDetails]=useState(""),[retMsg,setRetMsg]=useState("");
+  async function requestReturn(e:React.FormEvent){
+    e.preventDefault();setRetMsg("");
+    try{
+      const r=await fetch("/api/orders/return",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderNumber,contact,reason,details})});
+      const d=await r.json().catch(()=>({}));
+      if(r.ok){setRetMsg("Return request submitted. We will contact you soon.");setResult(x=>x?{...x,returnStatus:"REQUESTED"}:x)}else setRetMsg(d.error||"Could not submit.");
+    }catch{setRetMsg("Unable to connect. Please try again.")}
+  }
 
   async function submit(e:React.FormEvent){
     e.preventDefault();
@@ -73,6 +82,13 @@ export default function TrackClient({initialOrder}:{initialOrder:string}){
           <div className="checkout-total"><span>Total</span><strong>{tk(result.total)}</strong></div>
           <small>{result.paymentMethod?"Paid with "+result.paymentMethod+". ":""}{result.deliveryArea?"Delivering to "+result.deliveryArea+".":""}</small>
         </div>
+        {result.status==="DELIVERED"&&(result.returnStatus?<p className="trk-return"><b>Return request:</b> {result.returnStatus.toLowerCase()}</p>:<form onSubmit={requestReturn} className="trk-return">
+          <h3>Need to return something?</h3>
+          <select value={reason} onChange={e=>setReason(e.target.value)}><option>Wrong or damaged item</option><option>Not as described</option><option>Changed my mind</option><option>Other</option></select>
+          <textarea value={details} onChange={e=>setDetails(e.target.value)} placeholder="Tell us more (optional)" rows={3} maxLength={1000}/>
+          <button className="pg-btn" type="submit">Request return</button>
+          {retMsg&&<small>{retMsg}</small>}
+        </form>)}
       </section>}
     </div>
   );

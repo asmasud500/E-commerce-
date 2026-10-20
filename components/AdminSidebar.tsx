@@ -10,6 +10,7 @@ const items = [
   ["/admin/products","Products & Inventory"],
   ["/admin/categories","Categories"],
   ["/admin/orders","Orders & Invoices"],
+  ["/admin/returns","Returns"],
   ["/admin/customers","Customers"],
   ["/admin/payment-gateways","Payments & Shipping"],
   ["/admin/payment-transactions","Transactions"],

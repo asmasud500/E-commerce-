@@ -37,7 +37,7 @@ export function canAccessAdminPath(role: string, path: string, method: string): 
     if (orderReadOnly.some(prefix => path === prefix || path.startsWith(prefix + "/"))) {
       return ADMIN_SAFE_METHODS.has(method);
     }
-    const orderPaths = ["/admin/orders", "/api/admin/orders"];
+    const orderPaths = ["/admin/orders", "/api/admin/orders", "/admin/returns", "/api/admin/returns"];
     return (method === "GET" || method === "HEAD" || method === "PATCH") &&
       orderPaths.some(prefix => path === prefix || path.startsWith(prefix + "/"));
   }
@@ -58,11 +58,11 @@ export function canAccessAdminPath(role: string, path: string, method: string): 
     const managerPaths = [
       "/admin/products", "/admin/categories", "/admin/banners",
       "/admin/flash-sales", "/admin/delivery-zones", "/admin/coupons",
-      "/admin/customers", "/admin/reviews", "/admin/orders",
+      "/admin/customers", "/admin/reviews", "/admin/orders", "/admin/returns",
       "/admin/payment-transactions", "/admin/reports", "/admin/marketing",
       "/api/admin/products", "/api/admin/categories", "/api/admin/banners",
       "/api/admin/flash-sales", "/api/admin/delivery-zones", "/api/admin/coupons",
-      "/api/admin/customers", "/api/admin/reviews", "/api/admin/orders",
+      "/api/admin/customers", "/api/admin/reviews", "/api/admin/orders", "/api/admin/returns",
       "/api/admin/payment-transactions", "/api/admin/reports"
     ];
     return managerPaths.some(prefix => path === prefix || path.startsWith(prefix + "/"));
