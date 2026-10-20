@@ -17,6 +17,7 @@ export type QuoteLine={productId:string;name:string;unitPrice:number;quantity:nu
 export type Quote={
   lines:QuoteLine[];
   subtotal:number;discount:number;couponCode:string|null;couponError:string|null;
+  couponId:string|null;couponUsageLimit:number|null;perCustomerLimit:number|null;
   shipping:number;customFee:number;standardFee:number;standardWaived:boolean;hasStandard:boolean;freeThreshold:number|null;
   taxAmount:number;total:number;
   zone:{name:string;estimatedDays:number}|null;
