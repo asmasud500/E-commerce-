@@ -53,6 +53,7 @@ export const paymentAdapters:Record<string,PaymentAdapter>={
  BKASH:unavailable("bKash"),
  NAGAD:unavailable("Nagad"),
  ROCKET:unavailable("Rocket"),
+ UPAY:unavailable("Upay"),
  CUSTOM:unavailable("Custom"),
  BANGLA_QR:unavailable("Bangla QR")
 };
