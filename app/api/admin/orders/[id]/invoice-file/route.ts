@@ -36,7 +36,7 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{id:string}>}
     const file=await readTelegramFile(order.invoiceTelegramFileId);
     if(!file)return NextResponse.json({error:"Stored invoice file was not found."},{status:404});
     const name=String(order.orderNumber).replace(/[^a-zA-Z0-9_-]/g,"");
-    return new Response(file.bytes,{headers:{"Content-Type":"text/html; charset=utf-8","Content-Length":String(file.bytes.byteLength),"Content-Disposition":'attachment; filename="invoice-'+name+'.html"',"Cache-Control":"private, no-store, max-age=0","X-Content-Type-Options":"nosniff"}});
+    return new Response(file.bytes.buffer.slice(file.bytes.byteOffset,file.bytes.byteOffset+file.bytes.byteLength) as ArrayBuffer,{headers:{"Content-Type":"text/html; charset=utf-8","Content-Length":String(file.bytes.byteLength),"Content-Disposition":'attachment; filename="invoice-'+name+'.html"',"Cache-Control":"private, no-store, max-age=0","X-Content-Type-Options":"nosniff"}});
   }catch(error){
     console.error("Telegram invoice retrieval failed:",error instanceof Error?error.message:String(error));
     return NextResponse.json({error:"Unable to retrieve stored invoice."},{status:503});
