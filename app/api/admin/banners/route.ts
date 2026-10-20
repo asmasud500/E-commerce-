@@ -5,7 +5,7 @@ import {recordAdminAudit} from "@/lib/auth/audit";
 
 const schema=z.object({
   title:z.string().trim().min(1).max(120),
-  imageUrl:z.string().trim().url().max(2000),
+  imageUrl:z.string().trim().max(480000).refine(v=>/^https?:\\/\\//i.test(v)||/^data:image\\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(v),{message:"Provide a valid image URL or an uploaded image."}),
   href:z.string().trim().max(500).optional().default(""),
   startsAt:z.string().datetime().nullable().optional(),
   endsAt:z.string().datetime().nullable().optional(),
