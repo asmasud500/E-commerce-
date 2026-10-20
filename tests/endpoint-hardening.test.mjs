@@ -132,3 +132,19 @@ test("payment gateway admin cannot enable unimplemented adapters or SSLCOMMERZ w
   assert.match(update, /finalType!==\"SSLCOMMERZ\"/);
   assert.match(update, /!hasCredentials/);
 });
+
+
+test("MART Pay admin can submit provider credentials securely without exposing saved secrets", async () => {
+  const page = await read("../app/admin/payment-gateways/page.tsx");
+  const listApi = await read("../app/api/admin/payment-gateways/route.ts");
+  const itemApi = await read("../app/api/admin/payment-gateways/[id]/route.ts");
+  assert.match(page, /Set API credentials/);
+  assert.match(page, /type="password"/);
+  assert.match(page, /Save encrypted credentials/);
+  assert.match(page, /body: JSON\.stringify\(\{ secrets: values, enabled: false \}\)/);
+  assert.match(itemApi, /encryptSecrets\(secrets\)/);
+  assert.match(itemApi, /decryptSecrets\(existing\.encryptedSecrets\)/);
+  assert.doesNotMatch(listApi, /encryptedSecrets:true/);
+  assert.match(listApi, /select:safe/);
+  assert.match(itemApi, /finalType!==\"SSLCOMMERZ\"/);
+});
