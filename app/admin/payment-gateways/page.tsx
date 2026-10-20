@@ -28,6 +28,7 @@ const gatewayLogoDomain: Record<string, string> = {
   NAGAD: "nagad.com.bd",
   ROCKET: "dutchbanglabank.com",
   BANGLA_QR: "bb.org.bd",
+  UPAY: "upaybd.com",
 };
 const gatewayLogoUrl = (type: string) => gatewayLogoDomain[type]
   ? `https://www.google.com/s2/favicons?domain=${gatewayLogoDomain[type]}&sz=128`
