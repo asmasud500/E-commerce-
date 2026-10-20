@@ -39,7 +39,7 @@ const sslcommerz:PaymentAdapter={
   const data=await res.json().catch(()=>null) as {status?:string;tran_id?:string;amount?:string|number;currency?:string;currency_type?:string}|null;
   const amount=Number(data?.amount),transaction=String(data?.tran_id||"");
   const validStatus=data?.status==="VALID"||data?.status==="VALIDATED";
-  return {ok:res.ok&&validStatus&&transaction.length>0&&Number.isFinite(amount)&&amount>0&&String(data?.currency||"BDT")==="BDT",reference:transaction||undefined,providerTransactionId:valId,amount:Number.isFinite(amount)&&amount>0?amount:undefined,raw:data};
+  return {ok:res.ok&&validStatus&&transaction.length>0&&Number.isFinite(amount)&&amount>0&&String(data?.currency_type||data?.currency||"")==="BDT",reference:transaction||undefined,providerTransactionId:valId,amount:Number.isFinite(amount)&&amount>0?amount:undefined,raw:data};
  }
 };
 
