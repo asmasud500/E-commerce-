@@ -65,6 +65,19 @@ export default function NewProduct() {
     if (sale !== null && (!Number.isFinite(sale) || sale < 0 || sale > price)) return setMessage("Sale price must be between ৳0 and the regular price.");
     if (compare !== null && (!Number.isFinite(compare) || compare < price)) return setMessage("Compare-at price should be equal to or higher than the regular price.");
     if (!Number.isInteger(stock) || stock < 0 || !Number.isInteger(threshold) || threshold < 0) return setMessage("Stock and low-stock threshold must be whole numbers (0 or higher).");
+    const variantSkus = variants.map(v => String(v.sku || "").trim().toLowerCase()).filter(Boolean);
+    if (new Set(variantSkus).size !== variantSkus.length) return setMessage("Each variant must have a unique SKU.");
+    for (const [index, variant] of variants.entries()) {
+      const variantPrice = Number(variant.price);
+      const variantSale = variant.salePrice === "" || variant.salePrice == null ? null : Number(variant.salePrice);
+      const variantCompare = variant.compareAtPrice === "" || variant.compareAtPrice == null ? null : Number(variant.compareAtPrice);
+      const variantStock = Number(variant.stock);
+      const variantThreshold = Number(variant.lowStockThreshold);
+      if (!Number.isFinite(variantPrice) || variantPrice < 0) return setMessage(`Variant ${index + 1}: enter a valid price.`);
+      if (variantSale !== null && (!Number.isFinite(variantSale) || variantSale < 0 || variantSale > variantPrice)) return setMessage(`Variant ${index + 1}: sale price must not exceed its regular price.`);
+      if (variantCompare !== null && (!Number.isFinite(variantCompare) || variantCompare < variantPrice)) return setMessage(`Variant ${index + 1}: compare-at price must be equal to or higher than regular price.`);
+      if (!Number.isInteger(variantStock) || variantStock < 0 || !Number.isInteger(variantThreshold) || variantThreshold < 0) return setMessage(`Variant ${index + 1}: stock and low-stock alert must be whole numbers (0 or higher).`);
+    }
     for (const image of validImages) {
       try { const u = new URL(image.url); if (u.protocol !== "https:" && u.protocol !== "http:") throw new Error(); }
       catch { return setMessage("Each product image must have a valid http:// or https:// URL."); }
@@ -134,8 +147,18 @@ export default function NewProduct() {
   return <div className="admin-layout">
     <AdminSidebar />
     <main className="admin-content product-editor-page">
-      <div className="admin-page-head">
-        <div><div className="admin-kicker">MART · CATALOG</div><Link href="/admin/products">← Back to products</Link><h1>Add Product</h1><p>Build a complete product listing before publishing it to your storefront.</p></div>
+      <div className="admin-page-head" style={{ marginBottom: 22 }}>
+        <div style={{ width: "100%" }}>
+          <div className="admin-kicker">MART · CATALOG MANAGEMENT</div>
+          <Link href="/admin/products" style={{ display: "inline-flex", margin: "5px 0 10px", color: "#c2410c", fontWeight: 700, textDecoration: "none" }}>← Back to products</Link>
+          <h1 style={{ margin: "0 0 7px", letterSpacing: "-.035em" }}>Create a product</h1>
+          <p style={{ margin: 0, maxWidth: 720, lineHeight: 1.7 }}>Create a complete, customer-ready listing. Configure product variants early to manage every option, price and stock level in one place.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(155px, 1fr))", gap: 10, marginTop: 20 }}>
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 13, background: "#fff" }}><small style={{ color: "#64748b", display: "block" }}>Product name</small><strong style={{ display: "block", marginTop: 4, overflowWrap: "anywhere" }}>{form.name.trim() || "Not added yet"}</strong></div>
+            <div style={{ border: "1px solid #fed7aa", borderRadius: 12, padding: 13, background: "#fff7ed" }}><small style={{ color: "#9a3412", display: "block" }}>Variant combinations</small><strong style={{ display: "block", marginTop: 4, fontSize: 18, color: "#9a3412" }}>{variants.length} configured</strong></div>
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 13, background: "#fff" }}><small style={{ color: "#64748b", display: "block" }}>Store status</small><strong style={{ display: "block", marginTop: 4, color: form.published ? "#15803d" : "#475569" }}>{form.published ? "Publish on save" : "Draft"}</strong></div>
+          </div>
+        </div>
       </div>
 
       {message && <p role="status" aria-live="polite" style={{ padding: 12, borderRadius: 9, background: "#fff7ed", color: "#9a3412", marginBottom: 16 }}>{message}</p>}
@@ -144,7 +167,7 @@ export default function NewProduct() {
         <section style={cardStyle}>
           <div><h2 style={{ margin: 0, fontSize: 19 }}>1. Product information</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Name, SKU and description customers will see.</p></div>
           {textField("name", "Product name", { required: true, placeholder: "e.g. Premium Cotton T-Shirt" })}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: 14 }}>
             <label style={labelStyle}>SKU (Stock Keeping Unit)
               <input style={fieldStyle} value={form.sku} placeholder="Auto-generated if left blank" onChange={e => { setSkuTouched(true); set("sku", e.target.value); }} />
               <small style={{ fontWeight: 400, color: "#6b7280" }}>Must be unique. You can edit the generated value.</small>
@@ -160,8 +183,29 @@ export default function NewProduct() {
           </label>
         </section>
 
+        <section style={{ ...cardStyle, border: "2px solid #fb923c", background: "linear-gradient(145deg, #fff7ed 0%, #ffffff 55%, #fffaf5 100%)", boxShadow: "0 10px 28px rgba(234,88,12,.08)", padding: 24 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+            <div style={{ flex: "0 0 46px", width: 46, height: 46, display: "grid", placeItems: "center", borderRadius: 14, background: "#ea580c", color: "#fff", fontSize: 23, fontWeight: 800 }}>⌘</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><h2 style={{ margin: 0, fontSize: 21, color: "#111827" }}>3. Product options & variants</h2><span style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", background: "#ffedd5", color: "#9a3412", padding: "5px 8px", borderRadius: 999 }}>Important</span></div>
+              <p style={{ margin: "6px 0 0", color: "#57534e", fontSize: 14, lineHeight: 1.65 }}>Build selectable product combinations for any category—electronics, food, furniture, cosmetics, bundles, digital goods and more. Each variant can have its own SKU, price and stock.</p>
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(135px, 1fr))", gap: 10 }}>
+            <div style={{ padding: 12, border: "1px solid #fed7aa", borderRadius: 11, background: "#fff" }}><small style={{ color: "#78716c", display: "block" }}>Attributes</small><strong style={{ fontSize: 20, color: "#9a3412" }}>{parseOptionsText(form.options).length}/5</strong></div>
+            <div style={{ padding: 12, border: "1px solid #fed7aa", borderRadius: 11, background: "#fff" }}><small style={{ color: "#78716c", display: "block" }}>Combinations</small><strong style={{ fontSize: 20, color: "#9a3412" }}>{generateVariantCombinations(parseOptionsText(form.options)).length}/200</strong></div>
+            <div style={{ padding: 12, border: "1px solid #fed7aa", borderRadius: 11, background: "#fff" }}><small style={{ color: "#78716c", display: "block" }}>Configured rows</small><strong style={{ fontSize: 20, color: "#9a3412" }}>{variants.length}</strong></div>
+          </div>
+          <label style={labelStyle}>Options (one attribute per line)
+            <textarea rows={5} value={form.options} onChange={e => set("options", e.target.value)} style={{...fieldStyle,minHeight:112,resize:"vertical"}} placeholder={"Color: Black, White\nStorage: 128 GB, 256 GB\nMaterial: Steel, Aluminium\nPack size: Single, Pack of 3"} />
+            <small style={{fontWeight:400,color:"#57534e",lineHeight:1.7}}>One attribute per line: <strong>Attribute: value 1, value 2</strong>. Examples: Model, Storage, Capacity, Material, Finish, Flavour, Weight, Pack size, Compatibility, Warranty or Bundle. Up to 5 attributes, 30 values per attribute and 200 generated combinations.</small>
+          </label>
+          <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}><button type="button" onClick={generateVariants} style={{padding:"11px 16px",borderRadius:9,border:0,background:"#ea580c",color:"#fff",fontWeight:800,cursor:"pointer",boxShadow:"0 3px 8px rgba(234,88,12,.2)"}}>✦ Generate / refresh variants</button><small style={{color:"#57534e"}}>Generate after editing options. Existing matching rows keep their SKU, price and stock.</small></div>
+          {variants.length>0 && <div style={{overflowX:"auto",border:"1px solid #fed7aa",borderRadius:12,background:"#fff"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:820}}><thead><tr>{["Variant combination","Variant SKU","Price (৳)","Sale price (৳)","Stock","Low-stock alert"].map(h=><th key={h} style={{textAlign:"left",padding:11,borderBottom:"1px solid #fed7aa",background:"#fff7ed",color:"#7c2d12",fontSize:12,whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead><tbody>{variants.map((v,i)=><tr key={variantKey(v.options)}><td style={{padding:9,borderBottom:"1px solid #f1f5f9",fontWeight:600}}>{Object.entries(v.options).map(([k,val])=>k+": "+val).join(" · ")}</td><td style={{padding:6}}><input style={{...fieldStyle,minWidth:110}} value={v.sku||""} onChange={e=>updateVariant(i,"sku",e.target.value)} /></td><td style={{padding:6}}><input required type="number" min="0" step=".01" style={{...fieldStyle,minWidth:100}} value={v.price} onChange={e=>updateVariant(i,"price",e.target.value)} /></td><td style={{padding:6}}><input type="number" min="0" step=".01" style={{...fieldStyle,minWidth:100}} value={v.salePrice} onChange={e=>updateVariant(i,"salePrice",e.target.value)} /></td><td style={{padding:6}}><input required type="number" min="0" step="1" style={{...fieldStyle,minWidth:80}} value={v.stock} onChange={e=>updateVariant(i,"stock",e.target.value)} /></td><td style={{padding:6}}><input type="number" min="0" step="1" style={{...fieldStyle,minWidth:90}} value={v.lowStockThreshold} onChange={e=>updateVariant(i,"lowStockThreshold",e.target.value)} /></td></tr>)}</tbody></table><div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",padding:12,marginTop:12,background:"#fff7ed",borderRadius:10,color:"#7c2d12"}}><strong>Total variant stock: {variants.reduce((n,v)=>n+Math.max(0,Number(v.stock)||0),0)} units</strong><small>Each combination has its own SKU, price and stock. Keep this table updated to avoid overselling.</small></div></div>}
+        </section>
+
         <section style={cardStyle}>
-          <div><h2 style={{ margin: 0, fontSize: 19 }}>2. Pricing (BDT)</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Set regular price and optional sale/compare price.</p></div>
+          <div><h2 style={{ margin: 0, fontSize: 19 }}>4. Pricing (BDT)</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Set regular price and optional sale/compare price.</p></div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
             {textField("price", "Regular price (৳)", { required: true, type: "number", min: "0", step: "0.01", placeholder: "e.g. 1200.00" })}
             {textField("compareAtPrice", "Compare-at price (৳)", { type: "number", min: "0", step: "0.01", placeholder: "Optional" })}
@@ -171,7 +215,7 @@ export default function NewProduct() {
         </section>
 
         <section style={cardStyle}>
-          <div><h2 style={{ margin: 0, fontSize: 19 }}>3. Inventory</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Control available stock and low-stock alerts.</p></div>
+          <div><h2 style={{ margin: 0, fontSize: 19 }}>5. Inventory</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Control available stock and low-stock alerts.</p></div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
             {textField("stock", "Available quantity", { required: true, type: "number", min: "0", step: "1" })}
             {textField("lowStockThreshold", "Low-stock threshold", { required: true, type: "number", min: "0", step: "1", help: "Used to identify products that need restocking." })}
@@ -179,7 +223,7 @@ export default function NewProduct() {
         </section>
 
         <section style={cardStyle}>
-          <div><h2 style={{ margin: 0, fontSize: 19 }}>4. Product images</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Add one or more direct image URLs (HTTPS recommended). Images are saved after the product is created.</p></div>
+          <div><h2 style={{ margin: 0, fontSize: 19 }}>6. Product images</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Add one or more direct image URLs (HTTPS recommended). Images are saved after the product is created.</p></div>
           {images.map((image, index) => <div key={index} style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) auto", gap: 10, alignItems: "end" }}>
             <label style={labelStyle}>Image URL {index + 1}
               <input style={fieldStyle} type="url" placeholder="https://example.com/product-image.webp" value={image.url} onChange={e => updateImage(index, "url", e.target.value)} />
@@ -195,20 +239,10 @@ export default function NewProduct() {
           {validImages[0]?.url && <div style={{ display: "flex", gap: 12, alignItems: "center" }}><img src={validImages[0].url} alt="First product image preview" style={{ width: 86, height: 86, objectFit: "cover", borderRadius: 10, border: "1px solid #e5e7eb" }} onError={e => { e.currentTarget.style.display = "none"; }} /><small style={{ color: "#6b7280" }}>Preview of the first image URL</small></div>}
         </section>
 
-        <section style={cardStyle}>
-          <div><h2 style={{ margin: 0, fontSize: 19 }}>5. Product options & variants</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14 }}>Works for every product category—not just clothing. Add any selectable attribute customers need to choose.</p></div>
-          <label style={labelStyle}>Options (one attribute per line)
-            <textarea rows={5} value={form.options} onChange={e => set("options", e.target.value)} style={{...fieldStyle,minHeight:112,resize:"vertical"}} placeholder={"Color: Black, White\nStorage: 128 GB, 256 GB\nMaterial: Steel, Aluminium\nPack size: Single, Pack of 3"} />
-            <small style={{fontWeight:400,color:"#6b7280"}}>Format: Attribute name: value 1, value 2. Use attributes such as Model, Storage, Capacity, Material, Finish, Flavour, Weight, Pack size, Compatibility, or Bundle.</small>
-          </label>
-          <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}><button type="button" onClick={generateVariants} style={{padding:"10px 14px",borderRadius:9,border:0,background:"#f97316",color:"#fff",fontWeight:700}}>Generate variants</button><small style={{color:"#6b7280"}}>Up to 5 attributes and 200 combinations. Customers must select every configured attribute.</small></div>
-          {variants.length>0 && <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:760}}><thead><tr>{["Variant","SKU","Price (৳)","Sale price (৳)","Stock","Low-stock alert"].map(h=><th key={h} style={{textAlign:"left",padding:9,borderBottom:"1px solid #e5e7eb"}}>{h}</th>)}</tr></thead><tbody>{variants.map((v,i)=><tr key={variantKey(v.options)}><td style={{padding:9,borderBottom:"1px solid #f1f5f9",fontWeight:600}}>{Object.entries(v.options).map(([k,val])=>k+": "+val).join(" · ")}</td><td style={{padding:6}}><input style={{...fieldStyle,minWidth:110}} value={v.sku||""} onChange={e=>updateVariant(i,"sku",e.target.value)} /></td><td style={{padding:6}}><input required type="number" min="0" step=".01" style={{...fieldStyle,minWidth:100}} value={v.price} onChange={e=>updateVariant(i,"price",e.target.value)} /></td><td style={{padding:6}}><input type="number" min="0" step=".01" style={{...fieldStyle,minWidth:100}} value={v.salePrice} onChange={e=>updateVariant(i,"salePrice",e.target.value)} /></td><td style={{padding:6}}><input required type="number" min="0" step="1" style={{...fieldStyle,minWidth:80}} value={v.stock} onChange={e=>updateVariant(i,"stock",e.target.value)} /></td><td style={{padding:6}}><input type="number" min="0" step="1" style={{...fieldStyle,minWidth:90}} value={v.lowStockThreshold} onChange={e=>updateVariant(i,"lowStockThreshold",e.target.value)} /></td></tr>)}</tbody></table><p style={{color:"#64748b",fontSize:13}}>Total variant stock: {variants.reduce((n,v)=>n+Math.max(0,Number(v.stock)||0),0)} units. Each combination has its own SKU, price and stock; the product inventory total is calculated from these variant stocks.</p></div>}
-        </section>
-
         <section style={{ ...cardStyle, borderColor: "#fed7aa", background: "linear-gradient(135deg, #fff 0%, #fff7ed 100%)" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
             <div style={{ width: 42, height: 42, flex: "0 0 42px", display: "grid", placeItems: "center", borderRadius: 12, background: "#ffedd5", color: "#c2410c", fontSize: 20 }}>↗</div>
-            <div><h2 style={{ margin: 0, fontSize: 19 }}>4. Delivery options</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14, lineHeight: 1.6 }}>Choose free delivery, set a product-specific fee, or leave the fee empty to use the configured delivery-area rate.</p></div>
+            <div><h2 style={{ margin: 0, fontSize: 19 }}>7. Delivery options</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14, lineHeight: 1.6 }}>Choose free delivery, set a product-specific fee, or leave the fee empty to use the configured delivery-area rate.</p></div>
           </div>
           <label style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 14, border: "1px solid #fed7aa", borderRadius: 11, background: form.freeShipping ? "#fff7ed" : "#fff", cursor: "pointer" }}>
             <input type="checkbox" checked={form.freeShipping} onChange={e => set("freeShipping", e.target.checked)} style={{ marginTop: 3, accentColor: "#ea580c", width: 17, height: 17 }} />
@@ -221,7 +255,7 @@ export default function NewProduct() {
         </section>
 
         <section style={cardStyle}>
-          <div><h2 style={{ margin: 0, fontSize: 19 }}>5. Store visibility</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14, lineHeight: 1.6 }}>Choose whether the item is highlighted on the storefront or available for customers to buy.</p></div>
+          <div><h2 style={{ margin: 0, fontSize: 19 }}>8. Store visibility</h2><p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: 14, lineHeight: 1.6 }}>Choose whether the item is highlighted on the storefront or available for customers to buy.</p></div>
           <label style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 14, border: "1px solid #e5e7eb", borderRadius: 11, background: form.featured ? "#fff7ed" : "#fff", cursor: "pointer" }}>
             <input type="checkbox" checked={form.featured} onChange={e => set("featured", e.target.checked)} style={{ marginTop: 3, accentColor: "#ea580c", width: 17, height: 17 }} />
             <span><strong style={{ display: "block", color: "#111827" }}>Featured product</strong><small style={{ display: "block", marginTop: 3, color: "#6b7280", fontWeight: 400 }}>Highlight this item in featured product sections where supported.</small></span>
