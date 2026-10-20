@@ -44,7 +44,7 @@ export default function NewProduct() {
   function addImage() { setImages(old => [...old, { url: "", alt: "" }]); }
   function generateVariants() {
     const combos = generateVariantCombinations(parseOptionsText(form.options));
-    const previous = new Map(variants.map(v => [variantKey(v.options), v]));
+    const previous = new Map<string, any>(); variants.forEach(v => previous.set(variantKey(v.options), v));
     setVariants(combos.map(options => previous.get(variantKey(options)) || { id: variantKey(options), options, sku: [form.sku, ...Object.values(options)].filter(Boolean).join("-").replace(/[^a-zA-Z0-9-]/g,"-").toUpperCase().slice(0,100), price: Number(form.price)||0, salePrice: "", compareAtPrice: "", stock: 0, lowStockThreshold: 5 }));
     if (!combos.length) setMessage("Add options such as Size: S, M, L and Color: Black, White first.");
     else setMessage(combos.length + " variant combinations generated. Set a price and stock for each.");
