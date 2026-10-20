@@ -16,7 +16,7 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
   const category=sp.category||"";
   const featured=sp.featured==="true";
   const freeOnly=sp.delivery==="free";
-  const sort=["price_asc","price_desc"].includes(sp.sort||"")?String(sp.sort):"";
+  const sort=["price_asc","price_desc","name_asc","name_desc","newest"].includes(sp.sort||"")?String(sp.sort):"";
 
   // Firestore compatibility layer performs relations in application code.
   // Fetch the collections once to avoid an N+1 request explosion.
@@ -72,6 +72,9 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
   if(freeOnly)list=list.filter(p=>p.freeDelivery);
   if(sort==="price_asc")list=[...list].sort((a,b)=>a.price-b.price);
   if(sort==="price_desc")list=[...list].sort((a,b)=>b.price-a.price);
+  if(sort==="name_asc")list=[...list].sort((a,b)=>a.name.localeCompare(b.name));
+  if(sort==="name_desc")list=[...list].sort((a,b)=>b.name.localeCompare(a.name));
+  if(sort==="newest")list=[...list].sort((a,b)=>{const pa=products.find((p:any)=>p.id===a.id),pb=products.find((p:any)=>p.id===b.id);return new Date(pb?.createdAt||0).getTime()-new Date(pa?.createdAt||0).getTime()});
 
   const href=(over:Record<string,string>)=>{
     const p=new URLSearchParams();
@@ -111,7 +114,7 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
             {featured&&<input type="hidden" name="featured" value="true"/>}
             {freeOnly&&<input type="hidden" name="delivery" value="free"/>}
             <label className="pc-search"><Icon name="search" size={18}/><input name="q" defaultValue={q} placeholder="Search products, brands and more" aria-label="Search products"/></label>
-            <select name="sort" defaultValue={sort} aria-label="Sort products"><option value="">Featured first</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option></select>
+            <select name="sort" defaultValue={sort} aria-label="Sort products"><option value="">Featured first</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option><option value="name_asc">Name: A to Z</option><option value="name_desc">Name: Z to A</option><option value="newest">Newest arrivals</option></select>
             <button className="pg-btn" type="submit"><Icon name="search" size={16}/> Find products</button>
           </form>
           {(q||category||featured||freeOnly||sort)&&<div className="pc-active-filters" aria-label="Active filters">
@@ -120,7 +123,7 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
             {category&&<Link href={href({category:""})} className="pc-filter-chip">{selectedCategory?.name||"Category"} <b aria-hidden="true">×</b></Link>}
             {featured&&<Link href={href({featured:""})} className="pc-filter-chip">Featured <b aria-hidden="true">×</b></Link>}
             {freeOnly&&<Link href={href({delivery:""})} className="pc-filter-chip">Free delivery <b aria-hidden="true">×</b></Link>}
-            {sort&&<Link href={href({sort:""})} className="pc-filter-chip">{sort==="price_asc"?"Price: low to high":"Price: high to low"} <b aria-hidden="true">×</b></Link>}
+            {sort&&<Link href={href({sort:""})} className="pc-filter-chip">{sort==="price_asc"?"Price: low to high":sort==="price_desc"?"Price: high to low":sort==="name_asc"?"Name: A to Z":sort==="name_desc"?"Name: Z to A":"Newest arrivals"} <b aria-hidden="true">×</b></Link>}
             <Link href="/products" className="pc-clear-filters">Clear all</Link>
           </div>}
           {list.length===0
