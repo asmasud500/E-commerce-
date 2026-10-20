@@ -111,10 +111,10 @@ jobs:
           MOBILE_MONEY_SMS_WEBHOOK_SECRET: ${{ secrets.MOBILE_MONEY_SMS_WEBHOOK_SECRET }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
       - name: Register store Telegram webhook and commands
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
         run: |
           set -euo pipefail
-          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_WEBHOOK_SECRET:-}" ]; then
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" || [ -z "${TELEGRAM_WEBHOOK_SECRET:-}" ]; then
             echo "Telegram webhook registration skipped: TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET must both be configured."
             exit 0
           fi
