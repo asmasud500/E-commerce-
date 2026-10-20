@@ -1,14 +1,21 @@
 "use client";
 import AdminSidebar from "@/components/AdminSidebar";
-import {useEffect,useState} from "react";
+import {useCallback,useEffect,useMemo,useState} from "react";
+import Link from "next/link";
 type T={id:string;orderNumber:string;gateway:string;amount:number;status:string;reference:string|null;providerTransactionId:string|null;verifiedAt:string|null;createdAt:string};
+const money=(n:number)=>"৳"+Number(n||0).toLocaleString("en-BD",{maximumFractionDigits:2});
 export default function PaymentTransactions(){
- const [rows,setRows]=useState<T[]>([]);
- useEffect(()=>{fetch("/api/admin/payment-transactions").then(r=>r.json()).then(setRows)},[]);
- return <div className="admin-layout"><AdminSidebar/><main className="admin-content" style={{maxWidth:1200,margin:"auto",padding:32}}>
-  <a href="/admin">← Admin</a><h1>Payment Transactions</h1>
-  <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th>Order</th><th>Gateway</th><th>Amount</th><th>Status</th><th>Reference</th><th>Verified</th></tr></thead>
-  <tbody>{rows.map(x=><tr key={x.id}><td>{x.orderNumber}</td><td>{x.gateway}</td><td>৳{x.amount.toLocaleString("en-BD")}</td><td>{x.status}</td><td>{x.reference||"—"}</td><td>{x.verifiedAt?new Date(x.verifiedAt).toLocaleString():"—"}</td></tr>)}</tbody></table></div>
-  {!rows.length&&<p>No payment transactions yet.</p>}
- </main></div>
+ const [rows,setRows]=useState<T[]>([]),[query,setQuery]=useState(""),[status,setStatus]=useState("ALL"),[error,setError]=useState(""),[loading,setLoading]=useState(true);
+ const load=useCallback(async()=>{setLoading(true);setError("");try{const r=await fetch("/api/admin/payment-transactions",{cache:"no-store"});const d=await r.json();if(!r.ok)throw new Error(d.error||"Could not load payment transactions");setRows(Array.isArray(d)?d:[])}catch(e){setError(e instanceof Error?e.message:"Request failed")}finally{setLoading(false)}},[]);
+ useEffect(()=>{void load()},[load]);
+ const filtered=useMemo(()=>rows.filter(x=>(status==="ALL"||String(x.status).toUpperCase()===status)&&[x.orderNumber,x.gateway,x.status,x.reference,x.providerTransactionId].some(v=>String(v||"").toLowerCase().includes(query.trim().toLowerCase()))),[rows,query,status]);
+ const total=filtered.reduce((n,x)=>n+Number(x.amount||0),0);
+ return <div className="admin-layout"><AdminSidebar/><main className="admin-content">
+  <div className="admin-kicker">MART · SALES & PAYMENTS</div><div className="admin-heading-row"><div><h1>Payment transactions</h1><p>Review gateway records, transaction references and verification timestamps.</p></div><div className="admin-row-actions"><button type="button" onClick={()=>void load()} disabled={loading}>↻ Refresh</button><Link className="admin-primary-action" href="/admin/payment-gateways">Manage gateways →</Link></div></div>
+  <div className="admin-stat-grid"><article className="admin-stat"><span>Loaded transactions</span><strong>{rows.length.toLocaleString("en-BD")}</strong><small>Records from payment API</small></article><article className="admin-stat"><span>Filtered transactions</span><strong>{filtered.length.toLocaleString("en-BD")}</strong><small>Current search and status</small></article><article className="admin-stat"><span>Filtered amount</span><strong>{money(total)}</strong><small>Sum of visible transaction amounts</small></article><article className="admin-stat"><span>Verified</span><strong>{filtered.filter(x=>!!x.verifiedAt).length.toLocaleString("en-BD")}</strong><small>Visible records with verification time</small></article></div>
+  <section className="admin-recent"><div className="admin-section-heading"><div><h2>Transaction ledger</h2><p>Use search to find an order, gateway or reference.</p></div></div>
+  <div className="admin-toolbar"><input aria-label="Search transactions" placeholder="Search order, gateway, reference or transaction ID…" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="Filter by status" value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">All statuses</option>{Array.from(new Set(rows.map(x=>String(x.status||"UNKNOWN").toUpperCase()))).sort().map(s=><option key={s} value={s}>{s.replaceAll("_"," ")}</option>)}</select></div>
+  {error&&<div className="admin-inline-error" role="alert">{error}<button type="button" onClick={()=>void load()}>Try again</button></div>}
+  <div className="admin-table-wrap"><table><thead><tr><th>Order</th><th>Gateway</th><th>Amount</th><th>Status</th><th>Reference</th><th>Provider transaction ID</th><th>Created</th><th>Verified</th></tr></thead><tbody>{filtered.map(x=><tr key={x.id}><td><strong>{x.orderNumber||"—"}</strong></td><td>{x.gateway||"—"}</td><td>{money(x.amount)}</td><td><span className="admin-status">{String(x.status||"UNKNOWN").replaceAll("_"," ")}</span></td><td>{x.reference||"—"}</td><td>{x.providerTransactionId||"—"}</td><td>{x.createdAt?new Date(x.createdAt).toLocaleString("en-BD"):"—"}</td><td>{x.verifiedAt?new Date(x.verifiedAt).toLocaleString("en-BD"):"—"}</td></tr>)}</tbody></table>{!loading&&!error&&!filtered.length&&<p className="admin-empty">No transactions match these filters.</p>}{loading&&<p className="admin-empty">Loading transactions…</p>}</div></section>
+ </main></div>;
 }
