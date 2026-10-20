@@ -8,7 +8,7 @@ const esc=(v:unknown)=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").
 const money=(v:unknown)=>"৳"+Number(v||0).toLocaleString("en-BD",{maximumFractionDigits:2});
 
 export async function GET(req:NextRequest,{params}:{params:Promise<{id:string}>}){
- const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-forwarded-for")||"unknown";
+ const ip=req.headers.get("cf-connecting-ip")||"unknown";
  const rl=rateLimit("invoice:"+ip,20,60_000);
  if(!rl.ok)return NextResponse.json({error:"Too many invoice downloads. Please try again shortly."},{status:429,headers:{"Retry-After":String(rl.retryAfter)}});
  const {id}=await params;
