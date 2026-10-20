@@ -12,4 +12,4 @@ export const metadata: Metadata = {
   twitter:{card:"summary_large_image",title:"MART Store",description:"Quality products, simple shopping."},
 };
 
-export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body>{children}</body></html>}
+export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en-BD"><body>{children}</body></html>}
