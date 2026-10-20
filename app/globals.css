@@ -2598,3 +2598,34 @@ table{max-width:100%}
  .wishlist-actions>*{padding:9px 10px;font-size:12px}
  .pd-price{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 }
+
+
+/* Orders & Fulfilment — align the Order queue heading and search/filter controls consistently. */
+.orders-page .orders-workspace{min-width:0}
+.orders-page .orders-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:22px 22px 17px}
+.orders-page .orders-section-head>div{flex:1 1 260px;min-width:0}
+.orders-page .orders-count{flex:0 0 auto;align-self:flex-start;margin-top:2px;line-height:1.25}
+.orders-page .orders-filters{display:grid;grid-template-columns:minmax(240px,1fr) minmax(140px,175px) minmax(130px,155px) auto;align-items:end;gap:10px;padding:0 22px 18px}
+.orders-page .orders-search{box-sizing:border-box;display:flex;align-items:center;align-self:end;gap:9px;width:100%;min-width:0;height:44px;min-height:44px;margin:0;padding:0 12px;overflow:hidden}
+.orders-page .orders-search>span{display:flex;flex:0 0 20px;align-items:center;justify-content:center;width:20px;height:100%;line-height:1}
+.orders-page .orders-search input{display:block;flex:1 1 auto;width:0;min-width:0!important;height:100%;min-height:0;margin:0;padding:0!important;line-height:normal;vertical-align:middle;box-sizing:border-box}
+.orders-page .orders-search input::placeholder{opacity:1;text-overflow:ellipsis}
+.orders-page .orders-search button{display:flex;flex:0 0 auto;align-items:center;justify-content:center;min-width:24px;height:28px;margin:0;line-height:1}
+.orders-page .orders-filter-select{display:grid;grid-template-rows:14px 44px;align-content:end;gap:4px;align-self:end;width:100%;min-width:0;margin:0}
+.orders-page .orders-filter-select>span{display:block;line-height:14px;min-width:0}
+.orders-page .orders-filter-select select{display:block;box-sizing:border-box;width:100%;min-width:0;height:44px;min-height:44px;margin:0;line-height:normal}
+.orders-page .orders-reset{align-self:end;box-sizing:border-box;height:44px;min-height:44px;margin:0;white-space:nowrap}
+.orders-page .orders-status-tabs{align-items:center;min-width:0}
+@media(max-width:900px){
+ .orders-page .orders-filters{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end}
+ .orders-page .orders-search{grid-column:1/-1}
+ .orders-page .orders-reset{grid-column:1/-1;justify-self:start}
+}
+@media(max-width:680px){
+ .orders-page .orders-section-head{padding:18px 14px 14px}
+ .orders-page .orders-count{white-space:normal;text-align:right}
+ .orders-page .orders-filters{grid-template-columns:minmax(0,1fr);gap:10px;padding:0 14px 16px}
+ .orders-page .orders-search{grid-column:auto;width:100%}
+ .orders-page .orders-filter-select{grid-template-rows:14px 44px}
+ .orders-page .orders-reset{grid-column:auto;justify-self:start}
+}
