@@ -65,6 +65,22 @@ export default function TrackClient({initialOrder}:{initialOrder:string}){
           <div><small>Order</small><h2>{result.orderNumber}</h2><span className="trk-date">Placed {when(result.createdAt)}</span></div>
           <span className={"tag "+(result.status==="DELIVERED"?"ok":result.status==="CANCELLED"||result.status==="REFUNDED"?"bad":"wait")}>{status}</span>
         </div>
+        <section className="trk-live-map" aria-label="Animated order delivery route">
+          <div className="trk-map-top"><div><span className="trk-map-kicker">DELIVERY JOURNEY</span><h3>{result.status==="DELIVERED"?"Your parcel has arrived":result.status==="SHIPPED"?"Your parcel is on the way":"Your order journey"}</h3><p>{result.deliveryArea||"Route updates will appear as your order progresses."}</p></div><span className={"trk-map-live "+(result.status==="SHIPPED"?"moving":"")}>{result.status==="SHIPPED"?"IN TRANSIT":result.status==="DELIVERED"?"DELIVERED":"TRACKING"}</span></div>
+          <div className={"trk-map-canvas "+(result.status==="CANCELLED"||result.status==="REFUNDED"?"is-ended":"")}>
+            <div className="trk-map-grid"></div>
+            <svg className="trk-map-art" viewBox="0 0 600 190" role="img" aria-label="Animated route from store to delivery destination">
+              <path className="trk-map-road" d="M25 150 C85 140 70 65 155 80 S245 165 305 105 S405 25 465 72 S530 115 575 35"/>
+              <path className="trk-map-route" d="M25 150 C85 140 70 65 155 80 S245 165 305 105 S405 25 465 72 S530 115 575 35"/>
+              <circle cx="25" cy="150" r="7" className="trk-map-origin"/>
+              <g className={"trk-map-pin "+(result.status==="SHIPPED"?"pin-moving":"")}><circle cx="305" cy="105" r="17"/><path d="M298 103h14v10h-14zM301 99h8v4h-8z"/><circle cx="302" cy="114" r="1.5"/><circle cx="309" cy="114" r="1.5"/></g>
+              <g className="trk-map-destination" transform="translate(575 35)"><circle r="14"/><path d="M-6 -2 0 -8 6 -2 V6 H-3 V0 H2 V6"/></g>
+            </svg>
+            <div className="trk-map-label store"><span>01</span><b>Order placed</b></div><div className="trk-map-label destination"><span>02</span><b>{result.status==="DELIVERED"?"Delivered":"Your destination"}</b></div>
+            <div className="trk-map-van" aria-hidden="true">▰</div>
+          </div>
+          <div className="trk-map-legend"><span><i className="origin-dot"></i>Store</span><span><i className="route-dot"></i>Delivery route</span><span><i className="destination-dot"></i>Destination</span></div>
+        </section>
         {(result.courierName||result.trackingNumber)&&<div className="trk-courier"><Icon name="truck" size={20}/><div><b>{result.courierName||"Courier"}</b>{result.trackingNumber&&<span>Tracking no. <code>{result.trackingNumber}</code></span>}</div></div>}
         <ol className="trk-steps">
           {result.timeline.map(s=><li key={s.key} className={"trk-step "+s.state}>
