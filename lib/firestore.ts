@@ -575,7 +575,7 @@ export async function rejectPendingOrderAtomically(orderId: string, auditAction 
       if (variants.length) {
         const selectionKey = (o:AnyObj) => Object.entries(o || {}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>String(k)+"="+String(v)).join("|");
         const restored = new Map<string,number>();
-        for (const reservationDocument of expired) {
+        for (const reservationDocument of reservationDocs) {
           const reservation = docToObj(reservationDocument) as AnyObj;
           if (String(reservation.productId)!==productId) continue;
           const k=selectionKey(reservation.variantOptions||{});
@@ -647,8 +647,21 @@ export async function releaseOrderStockAtomically(orderId: string, now = new Dat
     }
     for (const [productId, quantity] of increments) {
       const snapshot = products.get(productId)!;
+      const variants = Array.isArray(snapshot.product.variants) ? snapshot.product.variants as AnyObj[] : [];
+      let nextVariants = variants;
+      if (variants.length) {
+        const selectionKey = (o:AnyObj) => Object.entries(o || {}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>String(k)+"="+String(v)).join("|");
+        const restored = new Map<string,number>();
+        for (const reservationDocument of expired) {
+          const reservation = docToObj(reservationDocument) as AnyObj;
+          if (String(reservation.productId)!==productId) continue;
+          const k=selectionKey(reservation.variantOptions||{});
+          restored.set(k,(restored.get(k)||0)+Number(reservation.quantity||0));
+        }
+        nextVariants=variants.map(v=>({...v,stock:Number(v.stock||0)+(restored.get(selectionKey(v.options||{}))||0)}));
+      }
       writes.push(firestorePatchWrite("products", snapshot.document, {
-        stock: Number(snapshot.product.stock || 0) + quantity, updatedAt: now
+        stock: Number(snapshot.product.stock || 0) + quantity, ...(variants.length?{variants:nextVariants}:{}), updatedAt: now
       }, project));
     }
     const allReservationsExpired = expired.length === reservations.length;
@@ -737,11 +750,29 @@ export async function cancelCodOrderAtomically(orderId: string, actorId?: string
     for (const r of reservations) { const o = docToObj(r) as AnyObj; increments.set(String(o.productId), (increments.get(String(o.productId)) || 0) + Number(o.quantity || 0)); }
     const writes: AnyObj[] = [firestorePatchWrite("orders", orderDocument, { status: "CANCELLED", updatedAt: now }, project)];
     for (const r of reservations) writes.push(firestorePatchWrite("stockReservations", r, { status: "RELEASED", updatedAt: now }, project));
+    const productDocs = new Map<string,{document:any;product:AnyObj}>();
+    for (const [productId] of increments) {
+      const pd:any=await transactionGet("products",productId,transaction);
+      const p=docToObj(pd) as AnyObj|null;
+      if(!p)throw new Error("Reserved product is missing; COD cancellation needs manual review");
+      productDocs.set(productId,{document:pd,product:p});
+    }
     for (const [productId, qty] of increments) {
-      const pd: any = await transactionGet("products", productId, transaction);
-      const p = docToObj(pd) as AnyObj | null;
-      if (!p) throw new Error("Reserved product is missing; COD cancellation needs manual review");
-      writes.push(firestorePatchWrite("products", pd, { stock: Number(p.stock || 0) + qty, updatedAt: now }, project));
+      const snap=productDocs.get(productId)!;
+      const variants=Array.isArray(snap.product.variants)?snap.product.variants as AnyObj[]:[];
+      let nextVariants=variants;
+      if(variants.length){
+        const selectionKey=(o:AnyObj)=>Object.entries(o||{}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>String(k)+"="+String(v)).join("|");
+        const restored=new Map<string,number>();
+        for(const reservationDocument of reservations){
+          const reservation=docToObj(reservationDocument) as AnyObj;
+          if(String(reservation.productId)!==productId)continue;
+          const k=selectionKey(reservation.variantOptions||{});
+          restored.set(k,(restored.get(k)||0)+Number(reservation.quantity||0));
+        }
+        nextVariants=variants.map(v=>({...v,stock:Number(v.stock||0)+(restored.get(selectionKey(v.options||{}))||0)}));
+      }
+      writes.push(firestorePatchWrite("products",snap.document,{stock:Number(snap.product.stock||0)+qty,...(variants.length?{variants:nextVariants}:{}),updatedAt:now},project));
     }
     writes.push(firestoreCreateWrite("auditLogs", { id: id(), actorId: actorId || null, action: "COD_ORDER_CANCELLED", entity: "Order", entityId: orderId, metadata: {}, createdAt: now, updatedAt: now }, project));
     await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
