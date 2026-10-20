@@ -27,7 +27,7 @@ export default function PaymentClient(){
    {result?.amount!=null&&<div style={{textAlign:"right"}}><div style={{fontSize:12,color:"var(--muted,#64748b)",marginBottom:5}}>TOTAL TO PAY</div><strong style={{fontSize:25,color:"#ff6801"}}>{tk(result.amount)}</strong></div>}
   </div>
   <div style={{marginTop:22}}>
-   <h2 style={{fontSize:18,margin:"0 0 12px"}}>Available payment channels</h2>
+   <h2 style={{fontSize:18,margin:"0 0 12px"}}>Payment methods you may see</h2>
    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
     {[["bKash","Mobile banking"],["Nagad","Mobile banking"],["Rocket","Mobile banking"],["Upay","Mobile banking"],["Cards","Visa / Mastercard"],["Internet banking","Participating banks"],["Bangla QR","If enabled by provider"]].map(([name,kind])=><div key={name} style={{border:"1px solid var(--border,#e5e7eb)",borderRadius:12,padding:12,minHeight:72,display:"flex",flexDirection:"column",justifyContent:"center",gap:5}}><b style={{fontSize:14}}>{name}</b><span style={{fontSize:11,color:"var(--muted,#64748b)"}}>{kind}</span></div>)}
    </div>
