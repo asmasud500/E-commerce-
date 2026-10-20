@@ -22,7 +22,7 @@ export async function POST(req:NextRequest){
   const gateway=order.paymentGateway;if(!gateway.enabled)return NextResponse.json({error:"Payment gateway is no longer available."},{status:409});
   const adapter=paymentAdapters[gateway.type];if(!adapter)return NextResponse.json({error:"Payment adapter unavailable."},{status:400});
   const secrets=gateway.encryptedSecrets?decryptSecrets(gateway.encryptedSecrets):{};
-  const config={...((gateway.publicConfig||{}) as Record<string,unknown>),apiBaseUrl:gateway.apiBaseUrl||undefined,qrImageUrl:gateway.qrImageUrl||undefined,qrMerchantName:gateway.qrMerchantName||undefined};
+  const config={...((gateway.publicConfig||{}) as Record<string,unknown>),mode:gateway.mode,apiBaseUrl:gateway.apiBaseUrl||undefined,qrImageUrl:gateway.qrImageUrl||undefined,qrMerchantName:gateway.qrMerchantName||undefined};
   const result=await adapter.init({orderId:order.id,orderNumber:order.orderNumber,amount:Number(order.total),customerName:order.customerName,customerPhone:order.customerPhone,customerEmail:order.customerEmail||undefined,callbackBaseUrl:new URL("/",req.url).origin},config,secrets);
   return NextResponse.json({...result,amount:Number(order.total),gatewayName:gateway.name},result.ok?{status:200}:{status:400});
  }catch{return NextResponse.json({error:"Payment initiation failed."},{status:400});}
