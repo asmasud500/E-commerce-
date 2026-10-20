@@ -145,7 +145,7 @@ export default async function Home(){
         {banners.length>0&&<section className="hp-promo-section" aria-label="Store promotions">
           <div className="hp-promo-heading"><span>CURATED FOR YOU</span><h2>Offers &amp; Highlights</h2><p>Discover the latest deals from our store.</p></div>
           <div className="hp-promo-grid">
-          {banners.map((b:any)=>{const href=typeof b.href==="string"&&b.href.startsWith("/")?b.href:(typeof b.href==="string"&&/^https:\\/\\//i.test(b.href)?b.href:"/products");const external=href.startsWith("https://");return <Link key={b.id} href={href} className="hp-promo-card" {...(external?{target:"_blank",rel:"noopener noreferrer"}:{})}>
+          {banners.map((b:any)=>{const href=typeof b.href==="string"&&b.href.startsWith("/")?b.href:(typeof b.href==="string"&&b.href.startsWith("https://")?b.href:"/products");const external=href.startsWith("https://");return <Link key={b.id} href={href} className="hp-promo-card" {...(external?{target:"_blank",rel:"noopener noreferrer"}:{})}>
             <div className="hp-promo-image"><img src={b.imageUrl} alt={b.title||"Store promotion"} loading="lazy" decoding="async"/><span className="hp-promo-badge">SPECIAL OFFER</span><span className="hp-promo-arrow" aria-hidden="true">↗</span></div>
             <div className="hp-promo-copy"><h3>{b.title||"Explore this offer"}</h3><span>Discover offer <b aria-hidden="true">→</b></span></div>
           </Link>})}
