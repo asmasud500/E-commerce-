@@ -22,12 +22,12 @@ export default async function ProductDetails({params}:{params:Promise<{slug:stri
   try{
     if(p.categoryId){
       const [others,imgs]=await Promise.all([
-        db.product.findMany({where:{published:true,stock:{gt:0},categoryId:p.categoryId},orderBy:{createdAt:"desc"}}),
+        db.product.findMany({where:{published:true,categoryId:p.categoryId},orderBy:{createdAt:"desc"}}),
         db.productImage.findMany({orderBy:{sortOrder:"asc"}})
       ]);
       const first=new Map<string,string>();
       for(const im of imgs as any[])if(im?.url&&!first.has(im.productId))first.set(im.productId,im.url);
-      related=(others as any[]).filter(o=>o.id!==p.id).slice(0,5).map(o=>{
+      related=(others as any[]).filter(o=>o.id!==p.id&&((Array.isArray(o.variants)&&o.variants.length>0)?o.variants.some((v:any)=>Number(v.stock)>0):Number(o.stock)>0)).slice(0,5).map(o=>{
         const reg=Number(o.price),sale=o.salePrice!=null?Number(o.salePrice):null;
         const price=sale!=null&&sale>0&&sale<reg?sale:reg;
         const orig=price<reg?reg:(o.compareAtPrice!=null&&Number(o.compareAtPrice)>price?Number(o.compareAtPrice):null);
