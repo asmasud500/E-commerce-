@@ -1609,3 +1609,48 @@ img{max-width:100%}
 @keyframes trk-van-float{0%,100%{translate:0 0}50%{translate:0 -4px}}
 @media(max-width:560px){.trk-live-map{border-radius:14px;margin:14px 0 17px}.trk-map-top{padding:15px 14px 12px}.trk-map-top h3{font-size:15px}.trk-map-top p{font-size:11px}.trk-map-canvas{height:175px}.trk-map-label{padding:5px 6px}.trk-map-label.destination{right:6px}.trk-map-van{left:49%;top:48%}.trk-map-legend{gap:11px;padding:10px 13px;font-size:9px}}
 @media(prefers-reduced-motion:reduce){.trk-map-grid,.trk-map-route,.trk-map-pin,.trk-map-van{animation:none!important}}
+
+
+/* Site-wide motion system: subtle, performant, accessible */
+:root{--motion-fast:160ms;--motion-normal:260ms;--motion-slow:520ms}
+@keyframes mart-fade-up{from{opacity:0;transform:translate3d(0,14px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+@keyframes mart-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes mart-scale-in{from{opacity:0;transform:scale(.975)}to{opacity:1;transform:scale(1)}}
+@keyframes mart-shimmer{to{background-position:-200% 0}}
+@keyframes mart-spin{to{transform:rotate(360deg)}}
+@keyframes mart-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,104,1,.18)}50%{box-shadow:0 0 0 7px rgba(255,104,1,0)}}
+@keyframes mart-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes mart-progress{0%{transform:translateX(-120%)}100%{transform:translateX(360%)}}
+@keyframes mart-skeleton{to{background-position:-200% 0}}
+/* Soft entrance for main content and sections without hiding content until JS runs */
+main{animation:mart-fade-in .38s ease-out both}
+main section{animation:mart-fade-up .48s cubic-bezier(.2,.75,.25,1) both}
+main section:nth-of-type(2){animation-delay:35ms}
+main section:nth-of-type(3){animation-delay:65ms}
+main section:nth-of-type(4){animation-delay:95ms}
+main section:nth-of-type(5){animation-delay:125ms}
+.site-header,.sh,.admin-sidebar{animation:mart-fade-in .32s ease-out both}
+.site-header a,.sh a,.site-nav a,.footer-links a{transition:color var(--motion-fast) ease,opacity var(--motion-fast) ease}
+button,.pg-btn,.hp-btn,.nav-cart,.sh-act{transition:transform var(--motion-fast) ease,box-shadow var(--motion-fast) ease,background-color var(--motion-fast) ease,border-color var(--motion-fast) ease}
+button:active,.pg-btn:active,.hp-btn:active{transform:scale(.975)}
+.hp-pc,.hp-fc,.product-buy-card,.stat-card,.admin-quick a{transition:transform var(--motion-normal) cubic-bezier(.2,.75,.25,1),box-shadow var(--motion-normal) ease,border-color var(--motion-normal) ease}
+.hp-pc:hover,.hp-fc:hover{transform:translateY(-4px)}
+.hp-pm img,.hp-fm img,.product-gallery img{transition:transform .45s cubic-bezier(.2,.75,.25,1),filter .35s ease}
+.hp-pc:hover .hp-pm img,.hp-fc:hover img{transform:scale(1.035)}
+.sh-badge{animation:mart-scale-in .24s cubic-bezier(.2,.75,.25,1) both}
+.hp-off{animation:mart-fade-in .3s ease both}
+input,select,textarea{transition:border-color var(--motion-fast) ease,box-shadow var(--motion-fast) ease,background-color var(--motion-fast) ease}
+a:focus-visible,button:focus-visible{outline:3px solid rgba(255,104,1,.6);outline-offset:3px}
+.mart-loading{min-height:55vh;display:grid;place-items:center;padding:32px 18px;background:var(--bg)}
+.mart-loading-card{width:min(100%,560px);padding:28px;border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:var(--shadow);animation:mart-scale-in .3s ease-out both}
+.mart-loading-brand{display:flex;align-items:center;gap:10px;margin-bottom:22px;font-weight:850;letter-spacing:-.04em;color:var(--brand)}
+.mart-loading-mark{width:34px;height:34px;border-radius:11px;background:var(--accent);display:grid;place-items:center;color:#fff;font-weight:900;animation:mart-pulse 1.8s ease-in-out infinite}
+.mart-loading-title{height:17px;width:48%;border-radius:8px;margin:0 0 12px;background:linear-gradient(90deg,#edf0f4 20%,#fff 38%,#edf0f4 56%);background-size:200% 100%;animation:mart-skeleton 1.25s linear infinite}
+.mart-loading-line{height:11px;width:78%;border-radius:8px;margin:9px 0;background:linear-gradient(90deg,#edf0f4 20%,#fff 38%,#edf0f4 56%);background-size:200% 100%;animation:mart-skeleton 1.25s linear infinite}
+.mart-loading-line.short{width:55%}
+.mart-loading-progress{height:4px;margin-top:24px;overflow:hidden;border-radius:999px;background:#fff0e5}
+.mart-loading-progress:after{content:"";display:block;width:30%;height:100%;border-radius:inherit;background:var(--accent);animation:mart-progress 1.15s ease-in-out infinite}
+.mart-page-loading{min-height:100vh;display:grid;place-items:center;background:var(--bg);padding:24px}
+.mart-page-loading .mart-loading-card{width:min(100%,440px)}
+.mart-spinner{width:22px;height:22px;border:2px solid #fed7aa;border-top-color:var(--accent);border-radius:50%;animation:mart-spin .75s linear infinite}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
