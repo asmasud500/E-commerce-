@@ -6,6 +6,11 @@ const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("product listing supports search, category, featured, delivery and allow-listed sorting", async () => {
   const source = await read("../app/products/page.tsx");
+  const api = await read("../app/api/products/route.ts");
+  assert.match(source, /hasAvailableStock/);
+  assert.match(api, /hasAvailableStock/);
+  assert.match(source, /\.filter\(hasAvailableStock\)/);
+  assert.match(api, /availableProducts=hydrated\.filter\(hasAvailableStock\)/);
   for (const token of ["sp.q", "sp.category", "sp.featured", "sp.delivery", "price_asc", "price_desc", "name_asc", "name_desc", "newest"]) {
     assert.ok(source.includes(token), "missing listing control: " + token);
   }
