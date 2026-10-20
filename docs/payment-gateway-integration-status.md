@@ -75,6 +75,12 @@ Required: written confirmation from the Bangladesh Upay merchant team, applicabl
 6. Test success, decline, cancel, timeout, amount mismatch, duplicate callback, forged callback and provider outage in sandbox.
 7. Keep each provider unavailable in checkout until all acceptance checks pass. Never fall back to personal-number transfers/manual transaction IDs.
 
+## Admin-managed API configuration
+
+The Admin → Payment methods screen now provides an **API endpoints & settings** editor for each saved gateway. Admins can enter the provider-issued API base URL, official documentation URL, token/auth endpoint, create-payment endpoint, execute/capture endpoint, status/query endpoint, return callback URL, webhook/IPN URL and additional non-secret configuration as JSON. The **Set API credentials** editor stores private keys, secrets, usernames and passwords encrypted server-side.
+
+This feature makes configuration editable from the admin panel without changing application source code for every URL or credential rotation. It does **not** mean that arbitrary provider APIs can be activated just by entering endpoint URLs: provider-specific request formats, cryptographic signing/encryption, token handling and callback verification still need a matching adapter. Non-SSLCOMMERZ providers are intentionally blocked from being enabled for checkout until that adapter is implemented and tested. Do not put secrets, private keys, access tokens or passwords into the public JSON settings; use the encrypted credential editor.
+
 ## Admin setup checklist
 
 For each provider, enter credentials only after the adapter exists and the merchant has issued those credentials. Use sandbox mode first. Configure the exact public HTTPS callback/webhook URL in the provider portal and complete provider-side whitelisting where required. Keep the deployment's shared PAYMENT_ENCRYPTION_KEY in the hosting secret manager and stable across deployments.
