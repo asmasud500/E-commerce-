@@ -65,6 +65,8 @@ Call `POST /api/jobs/release-stock` with `Authorization: Bearer CRON_SECRET`. Sc
 ## Payments and safety
 
 - Never store gateway credentials in source code. Configure gateway secrets through the admin payment-gateway section.
+- Set `PAYMENT_CALLBACK_BASE_URL` to the canonical HTTPS origin of your deployed store (for example `https://shop.example.com`). Production payment initiation fails closed when this is missing or not HTTPS, preventing provider callbacks from being generated from an untrusted request host.
+- SSLCOMMERZ validation must explicitly report BDT currency; a missing currency field is not accepted as proof of payment.
 - SSLCOMMERZ callbacks are validated against the provider validation API. Settlement rejects a missing/mismatched amount, an unexpected order reference, or a missing provider transaction ID.
 - MART Pay is the branded checkout layer; payment methods are processed and verified by the configured provider. Available bKash/Nagad/Rocket/Upay, card, internet banking, or Bangla QR options depend on the merchant contract and provider account. Do not display a method as live unless it is enabled and tested with the provider. Never treat a transaction ID, screenshot, or ordinary QR image as automatic payment confirmation.
 - Keep payment webhooks and admin endpoints protected by their configured secrets and role checks.
