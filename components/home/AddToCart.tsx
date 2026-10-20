@@ -2,8 +2,9 @@
 import {useEffect,useRef,useState} from "react";
 import {addToCart} from "@/lib/cart";
 import {Icon} from "@/components/Icons";
+import Link from "next/link";
 
-type Props={p:{id:string;name:string;price:number;sku:string;image:string|null;stock:number}};
+type Props={p:{id:string;name:string;price:number;sku:string;image:string|null;stock:number;hasVariants?:boolean;slug?:string}};
 
 export default function AddToCart({p}:Props){
   const [done,setDone]=useState(false);
