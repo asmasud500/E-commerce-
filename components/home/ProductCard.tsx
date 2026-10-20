@@ -61,7 +61,7 @@ export function ProductCard({p}:{p:HomeProduct}){
       <div className="hp-pm">
         <Link href={"/products/"+p.slug} className="hp-pm-link" aria-label={p.name}><Media p={p}/></Link>
         {p.discount>0&&<span className="hp-off">-{p.discount}%</span>}
-        <AddToCart p={{id:p.id,name:p.name,price:p.price,sku:p.sku,image:p.image,stock:p.stock,hasVariants:p.hasVariants}}/>
+        <AddToCart p={{id:p.id,name:p.name,price:p.price,sku:p.sku,image:p.image,stock:p.stock,hasVariants:p.hasVariants,slug:p.slug}}/>
       </div>
       <div className="hp-pb">
         {p.category&&<small>{p.category}</small>}
