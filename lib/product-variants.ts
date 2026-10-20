@@ -20,7 +20,7 @@ export function generateVariantCombinations(options: {name:string;values:string[
     const values=[...new Set((option.values||[]).map(v=>String(v).trim()).filter(Boolean))];
     if(!name||!values.length)return rows;
     const base=rows.length?rows:[{}];
-    return base.flatMap(row=>values.map(value=>({...row,[name]:value})));
+    return base.flatMap(row=>values.map(value=>({...row,[name]:value}))).slice(0,200);
   },[]).slice(0,200);
 }
 
