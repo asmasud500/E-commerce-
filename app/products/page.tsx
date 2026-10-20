@@ -70,11 +70,12 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
     };
   });
   if(freeOnly)list=list.filter(p=>p.freeDelivery);
+  const createdAtById=new Map<string,number>(products.map((p:any)=>[p.id,new Date(p.createdAt||0).getTime()]));
   if(sort==="price_asc")list=[...list].sort((a,b)=>a.price-b.price);
   if(sort==="price_desc")list=[...list].sort((a,b)=>b.price-a.price);
   if(sort==="name_asc")list=[...list].sort((a,b)=>a.name.localeCompare(b.name));
   if(sort==="name_desc")list=[...list].sort((a,b)=>b.name.localeCompare(a.name));
-  if(sort==="newest")list=[...list].sort((a,b)=>{const pa=products.find((p:any)=>p.id===a.id),pb=products.find((p:any)=>p.id===b.id);return new Date(pb?.createdAt||0).getTime()-new Date(pa?.createdAt||0).getTime()});
+  if(sort==="newest")list=[...list].sort((a,b)=>(createdAtById.get(b.id)||0)-(createdAtById.get(a.id)||0));
 
   const href=(over:Record<string,string>)=>{
     const p=new URLSearchParams();
