@@ -17,7 +17,8 @@ const credentialFields: Record<string, { key: string; label: string; hint?: stri
   SSLCOMMERZ: [{ key: "storeId", label: "Store ID" }, { key: "storePassword", label: "Store Password" }],
   BKASH: [{ key: "appKey", label: "App Key" }, { key: "appSecret", label: "App Secret" }, { key: "username", label: "API Username" }, { key: "password", label: "API Password" }, { key: "idToken", label: "Optional ID Token" }],
   NAGAD: [{ key: "merchantId", label: "Merchant ID" }, { key: "merchantNumber", label: "Merchant Number" }, { key: "publicKey", label: "Public Key" }, { key: "privateKey", label: "Private Key" }],
-  ROCKET: [{ key: "merchantId", label: "Merchant ID" }, { key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }],\n  UPAY: [{ key: "merchantId", label: "Merchant ID" }, { key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }, { key: "username", label: "API Username" }, { key: "password", label: "API Password" }],
+  ROCKET: [{ key: "merchantId", label: "Merchant ID" }, { key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }],
+  UPAY: [{ key: "merchantId", label: "Merchant ID" }, { key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }, { key: "username", label: "API Username" }, { key: "password", label: "API Password" }],
   BANGLA_QR: [{ key: "merchantId", label: "Merchant ID" }, { key: "terminalId", label: "Terminal ID" }, { key: "apiKey", label: "API Key" }, { key: "apiSecret", label: "API Secret" }],
   CUSTOM: [{ key: "clientId", label: "Client ID" }, { key: "clientSecret", label: "Client Secret" }, { key: "apiKey", label: "API Key" }, { key: "username", label: "Username" }, { key: "password", label: "Password" }],
 };
@@ -42,7 +43,9 @@ export default function PaymentGateways() {
   const [filter, setFilter] = useState("ALL");
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [qrUploadBusy, setQrUploadBusy] = useState(false);\n  const [credentialEdit, setCredentialEdit] = useState<{ id: string; values: Record<string, string> } | null>(null);\n  const [credentialBusy, setCredentialBusy] = useState(false);
+  const [qrUploadBusy, setQrUploadBusy] = useState(false);
+  const [credentialEdit, setCredentialEdit] = useState<{ id: string; values: Record<string, string> } | null>(null);
+  const [credentialBusy, setCredentialBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -233,7 +236,8 @@ export default function PaymentGateways() {
           {g.apiBaseUrl && <p style={{ overflowWrap: "anywhere" }}>API: {g.apiBaseUrl}</p>}
           {g.type === "BANGLA_QR" && g.qrImageUrl && <img src={g.qrImageUrl} alt="Bangla QR payment code" loading="lazy" style={{ width: 180, maxWidth: "100%", borderRadius: 12, margin: "8px 0" }} />}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: "auto", paddingTop: 12 }}>
-            <button type="button" onClick={() => void edit(g)}>Edit</button>\n            <button type="button" onClick={() => openCredentialEdit(g)}>Set API credentials</button>
+            <button type="button" onClick={() => void edit(g)}>Edit</button>
+            <button type="button" onClick={() => openCredentialEdit(g)}>Set API credentials</button>
             {MANUAL_TYPES.includes(g.type) && <button type="button" onClick={() => openPayEdit(g)}>Number &amp; instructions</button>}
             <button type="button" onClick={() => void patch(g, { enabled: !g.enabled })}>{g.enabled ? "Disable" : "Enable"}</button>
             <button type="button" onClick={() => void remove(g)}>Delete</button>
