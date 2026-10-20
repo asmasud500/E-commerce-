@@ -130,6 +130,8 @@ export async function createOrderWithStockReservation(args: {
     }
 
     const writes: AnyObj[] = [];
+    const project = await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id");
+    if (!project) throw new Error("FIREBASE_PROJECT_ID is required");
     const giftCardCode = String(order.giftCardCode || "").trim().toUpperCase();
     const giftCardAmount = Math.round(Number(order.giftCardDiscount || 0) * 100) / 100;
     if (giftCardAmount > 0) {
@@ -140,8 +142,8 @@ export async function createOrderWithStockReservation(args: {
       const balance = Number(card.balance || 0);
       if (card.status !== "ACTIVE" || (card.expiresAt && new Date(card.expiresAt).getTime() < now.getTime())) throw new Error("This gift card is inactive or expired.");
       if (!Number.isFinite(balance) || balance < giftCardAmount) throw new Error("Gift card balance changed. Refresh checkout and try again.");
-      writes.push(firestorePatchWrite("giftCards", cards[0], { balance: Math.round((balance - giftCardAmount) * 100) / 100, updatedAt: now }, await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id")));
-      writes.push(firestoreCreateWrite("giftCardTransactions", { id: id(), giftCardId: card.id, type: "REDEEMED", amount: -giftCardAmount, balanceAfter: Math.round((balance - giftCardAmount) * 100) / 100, reference: "ORDER-" + orderId, orderId, metadata: { source: "checkout" }, createdAt: now, updatedAt: now }, await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id")));
+      writes.push(firestorePatchWrite("giftCards", cards[0], { balance: Math.round((balance - giftCardAmount) * 100) / 100, updatedAt: now }, project));
+      writes.push(firestoreCreateWrite("giftCardTransactions", { id: id(), giftCardId: card.id, type: "REDEEMED", amount: -giftCardAmount, balanceAfter: Math.round((balance - giftCardAmount) * 100) / 100, reference: "ORDER-" + orderId, orderId, metadata: { source: "checkout" }, createdAt: now, updatedAt: now }, project));
     }
     const variantDecrements = new Map<string, Map<string, number>>();
     const selectionKey = (o:AnyObj) => Object.entries(o || {}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>String(k)+"="+String(v)).join("|");
@@ -184,8 +186,6 @@ export async function createOrderWithStockReservation(args: {
       status: "HELD", createdAt: now, updatedAt: now
     }));
 
-    const project = await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id");
-    if (!project) throw new Error("FIREBASE_PROJECT_ID is required");
     const documentName = (collection: string, documentId: string) =>
       `projects/${project}/databases/(default)/documents/${collection}/${documentId}`;
     const createDoc = (collection: string, value: AnyObj) => ({
