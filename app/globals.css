@@ -1685,3 +1685,13 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(255,104,1,.6);outlin
 @media(max-width:900px){.yt-loading-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 14px}.yt-loading-admin .yt-loading-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.yt-loading-header{height:56px;padding:0 14px;gap:12px}.yt-loading-logo{font-size:16px}.yt-loading-search{max-width:none;height:34px}.yt-loading-body{padding:18px 12px}.yt-loading-chips{margin-bottom:18px}.yt-loading-grid{grid-template-columns:1fr;gap:22px}.yt-loading-thumb{border-radius:10px}.yt-loading-admin{padding:18px 12px}.yt-loading-admin .yt-loading-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.yt-loading-admin .yt-loading-video .yt-loading-meta{gap:8px}.yt-loading-admin .yt-loading-avatar{width:28px;height:28px}}
 @media(prefers-reduced-motion:reduce){.yt-loading-thumb:after,.yt-loading-avatar:after,.yt-loading-line:after{animation:none!important}}
+
+/* Motion preference: disable site-wide UI animations while preserving the order-tracking map motion. */
+*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+.trk-map-grid{animation:trk-map-pan 22s linear infinite!important}
+.trk-map-route{animation:trk-route-dash 2.4s linear infinite!important}
+.trk-map-pin{animation:trk-pin-pulse 2.4s ease-out infinite!important}
+.trk-map-pin.pin-moving{animation:trk-pin-bob 1.8s ease-in-out infinite!important}
+.trk-map-van{animation:trk-van-float 2.2s ease-in-out infinite!important}
+.trk-map-canvas.is-ended .trk-map-route{animation:none!important}
+
