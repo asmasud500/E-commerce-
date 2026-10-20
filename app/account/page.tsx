@@ -2,8 +2,8 @@
 const tone=(s:string)=>s==="PAID"||s==="DELIVERED"||s==="CONFIRMED"?"ok":s==="FAILED"||s==="CANCELLED"||s==="REFUNDED"?"bad":"wait";
 export default function Account(){
  const [user,setUser]=useState<any>(null),[isAdmin,setIsAdmin]=useState(false),[orders,setOrders]=useState<any[]>([]),[loading,setLoading]=useState(true);
- useEffect(()=>{Promise.all([fetch("/api/customer/auth/me").then(r=>r.json()),fetch("/api/account/orders").then(r=>r.json())]).then(([u,o])=>{setUser(u.user);setIsAdmin(!!u.isAdmin);setOrders(Array.isArray(o)?o:[])}).finally(()=>setLoading(false))},[]);
- async function logout(){await fetch("/api/customer/auth/logout",{method:"POST"});location.href="/account/login"}
+ useEffect(()=>{let active=true;Promise.allSettled([fetch("/api/customer/auth/me",{cache:"no-store"}).then(r=>r.ok?r.json():null),fetch("/api/account/orders",{cache:"no-store"}).then(r=>r.ok?r.json():[])]).then(([u,o])=>{if(!active)return;const userResult=u.status==="fulfilled"?u.value:null;const orderResult=o.status==="fulfilled"?o.value:[];setUser(userResult?.user||null);setIsAdmin(!!userResult?.isAdmin);setOrders(Array.isArray(orderResult)?orderResult:[])}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[]);
+ async function logout(){try{await fetch("/api/customer/auth/logout",{method:"POST"})}finally{location.href="/account/login"}}
  if(loading)return <><StoreHeader/><main className="pg"><p>Loading account...</p></main><StoreFooter/></>;
  if(!user)return <><StoreHeader/><main className="pg"><div className="pg-card pg-empty"><span className="pg-empty-ic"><Icon name="user" size={26}/></span><h2>My account</h2><p>Please log in to view your orders.</p><Link href="/account/login" className="pg-btn">Log in</Link></div></main><StoreFooter/></>;
  return <><StoreHeader/><main className="pg">
