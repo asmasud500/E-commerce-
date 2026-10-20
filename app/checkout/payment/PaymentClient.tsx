@@ -1,31 +1,48 @@
 "use client";
 import{useEffect,useState}from"react";import{useSearchParams}from"next/navigation";
+type PaymentResult={ok:boolean;status?:string;paymentUrl?:string;amount?:number;gatewayName?:string;reference?:string;message?:string;error?:string};
 export default function PaymentClient(){
- const search=useSearchParams();const[orderId,setOrderId]=useState(""),[loading,setLoading]=useState(false),[submitting,setSubmitting]=useState(false),[result,setResult]=useState<any>(null),[txn,setTxn]=useState(""),[last4,setLast4]=useState(""),[screenshot,setScreenshot]=useState(""),[message,setMessage]=useState("");
+ const search=useSearchParams();const[orderId,setOrderId]=useState(""),[loading,setLoading]=useState(false),[result,setResult]=useState<PaymentResult|null>(null),[message,setMessage]=useState("");
  useEffect(()=>{const id=search.get("order")||sessionStorage.getItem("lastOrderId")||"";setOrderId(id)},[search]);
- useEffect(()=>{if(orderId)void pay()},[orderId]);
- async function pay(){if(!orderId)return;setLoading(true);setMessage("");try{const r=await fetch("/api/payments/initiate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId,accessToken:sessionStorage.getItem("orderPaymentToken")||""})});const d=await r.json();setResult(d);if(!r.ok)setMessage(d.error||"Could not load payment instructions.")}catch{setMessage("Unable to connect.")}finally{setLoading(false)}}
- async function chooseFile(file?:File){if(!file){setScreenshot("");return}if(!file.type.startsWith("image/")){setMessage("Please choose an image file.");return}try{const data=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=reject;reader.readAsDataURL(file)});const img=new Image();img.onload=()=>{const canvas=document.createElement("canvas");const scale=Math.min(1,1000/img.width,1000/img.height);canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);const ctx=canvas.getContext("2d");if(!ctx){setMessage("Could not process screenshot.");return}ctx.drawImage(img,0,0,canvas.width,canvas.height);const compressed=canvas.toDataURL("image/jpeg",0.72);if(compressed.length>900000){setMessage("Screenshot is too large. Please upload a smaller image.");return}setScreenshot(compressed);setMessage("")};img.onerror=()=>setMessage("Could not read screenshot.");img.src=data}catch{setMessage("Could not read screenshot.")}}
- async function submitProof(e:React.FormEvent){e.preventDefault();if(!orderId||!txn.trim()||!/^[0-9]{4}$/.test(last4)||!screenshot||submitting)return;setSubmitting(true);setMessage("");try{const r=await fetch("/api/payments/proof",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId,accessToken:sessionStorage.getItem("orderPaymentToken")||"",transactionId:txn.trim(),senderLast4:last4,screenshot})});const d=await r.json();if(!r.ok){setMessage(d.error||"Could not submit payment proof.");return}setMessage("Payment details sent. Redirecting...");window.location.href="/order-success?submitted=true&order="+encodeURIComponent(d.orderNumber||orderId);return}catch{setMessage("Unable to submit payment details. Try again.")}finally{setSubmitting(false)}}
- return <div className="pay">
+ useEffect(()=>{if(orderId)void pay(orderId)},[orderId]);
+ async function pay(id=orderId){if(!id)return;setLoading(true);setMessage("");setResult(null);try{const r=await fetch("/api/payments/initiate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId:id,accessToken:sessionStorage.getItem("orderPaymentToken")||""})});const d=await r.json() as PaymentResult;setResult(d);if(!r.ok||!d.ok)setMessage(d.message||d.error||"Automatic payment could not be started. Please try again.");}catch{setMessage("Unable to connect. Check your internet connection and try again.")}finally{setLoading(false)}}
+ function continuePayment(){if(result?.paymentUrl){window.location.assign(result.paymentUrl)}else setMessage("Secure payment link is unavailable. Please retry.")}
+ const tk=(n:number)=>"৳"+Number(n).toLocaleString("en-BD");
+ return <div className="pay" style={{maxWidth:720,margin:"0 auto",paddingBottom:32}}>
  <ol className="steps" aria-label="Checkout progress"><li className="done"><i>✓</i>Information</li><li className="on"><i>2</i>Payment</li><li><i>3</i>Confirmation</li></ol>
- <section className="pg-card pay-card"><h1>Complete payment</h1>
- {!orderId?<p>Order information not found.</p>:<>
- <div className="pay-order"><span>Order ID</span><b>{orderId}</b></div>
- {loading&&!result&&<p>Loading payment instructions...</p>}
- {result?.ok&&<div className="pay-howto"><h2>How to pay</h2>
- {result.amount!=null&&<div className="pay-amount"><span>Amount to send</span><b>৳{Number(result.amount).toLocaleString("en-BD")}</b></div>}
- {result.merchantNumber&&<div className="pay-number"><span>{result.gatewayName||"Send to"} number</span><b>{result.merchantNumber}</b><button type="button" className="pg-btn pg-btn-line" onClick={()=>{navigator.clipboard?.writeText(result.merchantNumber).then(()=>setMessage("Number copied."),()=>{})}}>Copy</button></div>}
- {result.qrImageUrl&&<div className="pay-qr"><h2>Scan to pay</h2><img src={result.qrImageUrl} alt="Payment QR"/></div>}
- {(result.instructions||result.message)&&<p className="pay-text">{result.instructions||result.message}</p>}
- {result.reference&&<p className="pay-ref">Reference: <b>{result.reference}</b></p>}
- {result.paymentUrl&&<p><a href={result.paymentUrl} target="_blank" rel="noreferrer">Open payment page →</a></p>}</div>}
- {result&&!result.ok&&<div className="pay-howto"><p className="form-error">{result.message||result.error||"Payment instructions are unavailable."}</p><button type="button" className="pg-btn pg-btn-line" disabled={loading} onClick={()=>void pay()}>Try again</button></div>}
- <form onSubmit={submitProof} className="pay-form"><h2>Submit mobile banking payment</h2><p>Send the exact order amount, then enter the details from your payment receipt.</p>
- <label className="fld"><span>Transaction ID</span><input required maxLength={100} value={txn} onChange={e=>setTxn(e.target.value)} placeholder="e.g. TXN123ABC"/></label>
- <label className="fld"><span>Last 4 digits of sender's mobile number</span><input required inputMode="numeric" pattern="[0-9]{4}" minLength={4} maxLength={4} value={last4} onChange={e=>setLast4(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="1234"/></label>
- <label className="fld"><span>Payment screenshot</span><input required type="file" accept="image/*" onChange={e=>chooseFile(e.target.files?.[0])}/></label>
- {screenshot&&<img className="pay-shot" src={screenshot} alt="Payment screenshot preview"/>}
- <button disabled={submitting||!screenshot} type="submit" className="pg-btn pg-btn-block">{submitting?"Submitting...":"Submit payment details"}</button></form></>}
- {message&&<p role="status" className="pay-msg">{message}</p>}</section></div>
+ <section className="pg-card pay-card" style={{overflow:"hidden",padding:0}}>
+ <header style={{background:"linear-gradient(135deg,#101d35,#172b4d)",color:"#fff",padding:"clamp(22px,5vw,36px)",position:"relative"}}>
+  <div style={{display:"flex",alignItems:"center",gap:12}}>
+   <div aria-hidden="true" style={{width:46,height:46,borderRadius:14,display:"grid",placeItems:"center",background:"#ff6801",fontWeight:900,fontSize:20}}>M</div>
+   <div><div style={{fontWeight:800,fontSize:21,letterSpacing:"-.03em"}}>MART Pay</div><div style={{fontSize:12,opacity:.78}}>Secure payment hub</div></div>
+   <span style={{marginLeft:"auto",border:"1px solid #ffffff35",borderRadius:999,padding:"7px 10px",fontSize:12,display:"flex",alignItems:"center",gap:5}}><span aria-hidden="true">🔒</span> Secure checkout</span>
+  </div>
+  <h1 style={{fontSize:"clamp(24px,4vw,32px)",lineHeight:1.15,margin:"26px 0 8px",color:"#fff"}}>Complete your payment</h1>
+  <p style={{margin:0,color:"#d7dfec",fontSize:14,lineHeight:1.6}}>Pay safely through the enabled payment partners. Your payment details are handled by the payment provider.</p>
+ </header>
+ <div style={{padding:"clamp(20px,5vw,32px)"}}>
+ {!orderId?<div role="alert"><h2>Order not found</h2><p>Return to checkout and open your order payment link again.</p><a className="pg-btn pg-btn-line" href="/checkout">Back to checkout</a></div>:<>
+  <div style={{border:"1px solid var(--border, #e5e7eb)",borderRadius:14,padding:16,display:"flex",gap:12,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}}>
+   <div><div style={{fontSize:12,color:"var(--muted,#64748b)",marginBottom:5}}>ORDER REFERENCE</div><b style={{overflowWrap:"anywhere"}}>{orderId}</b></div>
+   {result?.amount!=null&&<div style={{textAlign:"right"}}><div style={{fontSize:12,color:"var(--muted,#64748b)",marginBottom:5}}>TOTAL TO PAY</div><strong style={{fontSize:25,color:"#ff6801"}}>{tk(result.amount)}</strong></div>}
+  </div>
+  <div style={{marginTop:22}}>
+   <h2 style={{fontSize:18,margin:"0 0 12px"}}>Available payment channels</h2>
+   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
+    {[["bKash","Mobile banking"],["Nagad","Mobile banking"],["Rocket","Mobile banking"],["Upay","Mobile banking"],["Cards","Visa / Mastercard"],["Internet banking","Participating banks"],["Bangla QR","If enabled by provider"]].map(([name,kind])=><div key={name} style={{border:"1px solid var(--border,#e5e7eb)",borderRadius:12,padding:12,minHeight:72,display:"flex",flexDirection:"column",justifyContent:"center",gap:5}}><b style={{fontSize:14}}>{name}</b><span style={{fontSize:11,color:"var(--muted,#64748b)"}}>{kind}</span></div>)}
+   </div>
+   <p style={{fontSize:12,lineHeight:1.6,color:"var(--muted,#64748b)",marginTop:10}}>The exact options shown on the secure provider page depend on your merchant account and the channels enabled by your payment partner.</p>
+  </div>
+  {loading&&<div role="status" style={{marginTop:20,padding:14,borderRadius:12,background:"var(--surface-secondary,#f8fafc)"}}>Preparing your secure payment session…</div>}
+  {result?.ok&&result.paymentUrl&&<div style={{marginTop:22,border:"1px solid #bbf7d0",background:"#f0fdf4",borderRadius:14,padding:16}}>
+   <b style={{color:"#166534"}}>Your secure payment session is ready</b>
+   <p style={{fontSize:13,lineHeight:1.6,color:"#166534",margin:"6px 0 14px"}}>Continue to the payment partner to choose your preferred enabled method and complete payment.</p>
+   <button type="button" className="pg-btn pg-btn-block" onClick={continuePayment} style={{background:"#ff6801",borderColor:"#ff6801",color:"#fff",minHeight:48}}>Continue securely to payment <span aria-hidden="true">→</span></button>
+   <div style={{textAlign:"center",fontSize:11,color:"#166534",marginTop:10}}>Payment partner: {result.gatewayName||"Configured gateway"}</div>
+  </div>}
+  {result&&!result.ok&&<div role="alert" style={{marginTop:20,padding:16,borderRadius:12,border:"1px solid #fecaca",background:"#fef2f2"}}><b style={{color:"#991b1b"}}>Payment session unavailable</b><p style={{color:"#991b1b",fontSize:13,lineHeight:1.6}}>{message||result.message||"Please check the gateway configuration and try again."}</p><button type="button" className="pg-btn pg-btn-line" disabled={loading} onClick={()=>void pay()}>{loading?"Trying…":"Try again"}</button></div>}
+  {!result&&message&&<p role="alert" className="form-error">{message}</p>}
+  <div style={{display:"flex",alignItems:"center",gap:9,marginTop:22,fontSize:12,lineHeight:1.6,color:"var(--muted,#64748b)"}}><span aria-hidden="true">🛡️</span><span>We never ask for your mobile banking PIN, OTP or card PIN on this website. Complete sensitive payment steps only on the secure payment partner page.</span></div>
+ </>}
+ </div></section></div>
 }
