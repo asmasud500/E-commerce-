@@ -1265,3 +1265,4 @@ img{max-width:100%}
  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
 .trk-return{display:grid;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid #e5e7eb}.trk-return select,.trk-return textarea{padding:10px;border:1px solid #d1d5db;border-radius:8px;font:inherit}
+.rv-box{display:grid;gap:12px}.rv-item{border-bottom:1px solid #e5e7eb;padding-bottom:10px}.rv-item span{color:#FF6801}.rv-form{display:grid;gap:8px;max-width:520px}.rv-form textarea,.rv-form select{padding:10px;border:1px solid #d1d5db;border-radius:8px;font:inherit}

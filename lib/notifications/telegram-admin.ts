@@ -50,7 +50,7 @@ const statusRow=(id:string)=>[[{text:"⚙️ Processing",callback_data:"status:"
 export async function sendNewOrderTelegram(orderId:string){
   const chatId=process.env.TELEGRAM_CHAT_ID;if(!chatId)return;
   const o=await db.order.findUnique({where:{id:orderId},include:{items:true,paymentGateway:true}});if(!o)return;
-  return telegramApi("sendMessage",{chat_id:chatId,text:"<b>🛒 New Order</b>\n"+orderDetailsText(o),parse_mode:"HTML",disable_web_page_preview:true,reply_markup:{inline_keyboard:[[{text:"💳 Confirm Payment",callback_data:"pay_confirm:"+o.id},{text:"❌ Reject Payment",callback_data:"pay_reject:"+o.id}],[{text:"👁 View Order",callback_data:"order_view:"+o.id}],[{text:"📦 Status",callback_data:"status_menu:"+o.id}]]}});
+  return telegramApi("sendMessage",{chat_id:chatId,text:"<b>🛒 New Order</b>\n"+orderDetailsText(o),parse_mode:"HTML",disable_web_page_preview:true,reply_markup:{inline_keyboard:[(o as any).paymentProvider==="COD"?[{text:"✅ Confirm COD order",callback_data:"status:"+o.id+":CONFIRMED"},{text:"❌ Cancel",callback_data:"status:"+o.id+":CANCELLED"}]:[{text:"💳 Confirm Payment",callback_data:"pay_confirm:"+o.id},{text:"❌ Reject Payment",callback_data:"pay_reject:"+o.id}],[{text:"👁 View Order",callback_data:"order_view:"+o.id}],[{text:"📦 Status",callback_data:"status_menu:"+o.id}]]}});
 }
 
 /** Sent whenever a payment becomes PAID, however it was confirmed (dashboard, Telegram, SMS or gateway). */

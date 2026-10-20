@@ -34,16 +34,17 @@ const iso=(v:unknown)=>{
   return Number.isFinite(d.getTime())?d.toISOString():null;
 };
 
-export function buildTimeline(o:{status?:string;paymentStatus?:string;createdAt?:unknown;paymentProofSubmittedAt?:unknown;shippedAt?:unknown;deliveredAt?:unknown;courierName?:unknown;trackingNumber?:unknown}):TimelineStep[]{
+export function buildTimeline(o:{status?:string;paymentStatus?:string;createdAt?:unknown;paymentProofSubmittedAt?:unknown;shippedAt?:unknown;deliveredAt?:unknown;courierName?:unknown;trackingNumber?:unknown;paymentProvider?:unknown}):TimelineStep[]{
+  const cod=o.paymentProvider==="COD";
   const status=String(o.status||"PENDING"),pay=String(o.paymentStatus||"PENDING");
   const ended=status==="CANCELLED"||status==="REFUNDED"||pay==="FAILED";
   const rank:Record<string,number>={PENDING:0,CONFIRMED:1,PROCESSING:2,SHIPPED:3,DELIVERED:4};
   const r=rank[status]??0;
-  const paid=pay==="PAID"||pay==="REFUNDED"||r>=1;
+  const paid=pay==="PAID"||pay==="REFUNDED"||r>=1||cod;
 
   const steps:TimelineStep[]=[
     {key:"placed",label:"Order placed",detail:"We received your order.",state:"done",at:iso(o.createdAt)},
-    {key:"payment",label:"Payment",detail:paid?"Payment verified.":o.paymentProofSubmittedAt?"Payment details received. We are verifying them.":"Waiting for your payment details.",state:paid?"done":"current",at:paid?null:iso(o.paymentProofSubmittedAt)},
+    {key:"payment",label:"Payment",detail:cod&&pay!=="PAID"?"Cash on delivery — pay when your parcel arrives.":paid?"Payment verified.":o.paymentProofSubmittedAt?"Payment details received. We are verifying them.":"Waiting for your payment details.",state:paid?"done":"current",at:paid?null:iso(o.paymentProofSubmittedAt)},
     {key:"confirmed",label:"Confirmed",detail:"Your order is confirmed.",state:r>=1?"done":"todo",at:null},
     {key:"processing",label:"Packing",detail:"We are preparing your items.",state:r>=2?"done":"todo",at:null},
     {key:"shipped",label:"On the way",detail:[o.courierName,o.trackingNumber].filter(Boolean).join(" · ")||"Handed to the courier.",state:r>=3?"done":"todo",at:iso(o.shippedAt)},

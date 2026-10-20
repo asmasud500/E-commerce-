@@ -24,3 +24,12 @@ export async function deleteImageBlobForUrl(url:string){
   const m=/^\/api\/img\/([a-z0-9]+)$/.exec(url||"");
   if(m)await db.imageBlob.delete({where:{id:m[1]}}).catch(()=>{});
 }
+
+/** Store a review photo and return its public URL (no product image row). */
+export async function saveBlobImage(bytes:Uint8Array,mime:string){
+  if(!MIME.has(mime))throw new Error("Only JPEG, PNG or WebP images are supported.");
+  if(!bytes.length||bytes.length>MAX_IMAGE_BYTES)throw new Error("Image is too large. Please use one under 650 KB.");
+  const blobId=crypto.randomUUID().replace(/-/g,"").slice(0,24);
+  await db.imageBlob.create({data:{id:blobId,mime,data:Buffer.from(bytes).toString("base64")}});
+  return "/api/img/"+blobId;
+}

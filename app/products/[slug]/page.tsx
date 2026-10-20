@@ -1,3 +1,4 @@
+import ReviewForm from "./ReviewForm";
 import type{Metadata}from"next";import Link from "next/link";import {notFound} from "next/navigation";import {db} from "@/lib/prisma";import ProductActions from "./ProductActions";import Gallery from "./Gallery";import {deliveryLabel,isFreeDelivery} from "@/lib/shipping";import {Icon} from "@/components/Icons";import {ProductCard,money,Stars,type HomeProduct} from "@/components/home/ProductCard";import StoreHeader from "@/components/StoreHeader";import StoreFooter from "@/components/StoreFooter";
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const{slug}=await params;let p:any=null;try{p=await db.product.findUnique({where:{slug},include:{images:{orderBy:{sortOrder:"asc"},take:1}}});}catch(error){console.error("Product metadata error:",error instanceof Error?error.message:String(error));}if(!p)return{};const description=p.description||("Shop "+p.name+" at Store.");return{title:p.name,description,openGraph:{title:p.name,description,images:p.images?.[0]?.url?[{url:p.images[0].url}]:undefined}}}
 export default async function ProductDetails({params}:{params:Promise<{slug:string}>}){
@@ -11,9 +12,9 @@ export default async function ProductDetails({params}:{params:Promise<{slug:stri
   const discount=original?Math.round((1-effective/original)*100):0;
 
   // Rating and related items only decorate the page, so failures here must not break it.
-  let rating={sum:0,n:0};let related:HomeProduct[]=[];
+  let reviewList:any[]=[];let rating={sum:0,n:0};let related:HomeProduct[]=[];
   try{
-    const rs=await db.review.findMany({where:{productId:p.id,approved:true}});
+    const rs=await db.review.findMany({where:{productId:p.id,approved:true},include:{user:{select:{name:true}}},orderBy:{createdAt:"desc"}});reviewList=rs.slice(0,20);
     for(const r of rs as any[]){rating.sum+=Number(r.rating)||0;rating.n+=1}
   }catch(error){console.error("Product reviews error:",error instanceof Error?error.message:String(error))}
   try{
@@ -62,6 +63,14 @@ export default async function ProductDetails({params}:{params:Promise<{slug:stri
           </ul>
         </div>
       </div>
+      <section className="pg-sec rv" aria-labelledby="rv-h">
+        <div className="hp-sec-h hp-tab"><h2 id="rv-h">Customer reviews</h2></div>
+        <div className="pg-card rv-box">
+          {reviewList.length===0&&<p>No reviews yet. Be the first to review this product.</p>}
+          {reviewList.map((r:any)=><article key={r.id} className="rv-item"><b>{r.user?.name||"Customer"}</b> <span aria-label={r.rating+" out of 5"}>{"★".repeat(Number(r.rating)||0)}</span>{r.comment&&<p>{r.comment}</p>}{r.photoUrl&&<img src={r.photoUrl} alt="Customer photo" loading="lazy" style={{maxWidth:160,borderRadius:8}}/>}</article>)}
+          <ReviewForm productId={p.id}/>
+        </div>
+      </section>
       {related.length>0&&<section className="pg-sec" aria-labelledby="rel-h"><div className="hp-sec-h hp-tab"><h2 id="rel-h">More in {p.category?.name}</h2></div><div className="hp-grid">{related.map(r=><ProductCard key={r.id} p={r}/>)}</div></section>}
     </main>
     <StoreFooter/>

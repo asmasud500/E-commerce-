@@ -65,7 +65,7 @@ async function req(path:string,init:RequestInit={}){
 function enc(v:any):any{if(v===null||v===undefined)return {nullValue:null};if(v instanceof Date)return {timestampValue:v.toISOString()};if(typeof v==="string")return {stringValue:v};if(typeof v==="boolean")return {booleanValue:v};if(typeof v==="number")return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};if(Array.isArray(v))return {arrayValue:{values:v.map(enc)}};if(typeof v==="object")return {mapValue:{fields:Object.fromEntries(Object.entries(v).map(([k,x])=>[k,enc(x)]))}};return {stringValue:String(v)};}
 function dec(v:any):any{if(!v)return null;if("nullValue"in v)return null;if("stringValue"in v)return v.stringValue;if("booleanValue"in v)return v.booleanValue;if("integerValue"in v)return Number(v.integerValue);if("doubleValue"in v)return v.doubleValue;if("timestampValue"in v)return new Date(v.timestampValue);if("arrayValue"in v)return (v.arrayValue.values||[]).map(dec);if("mapValue"in v)return Object.fromEntries(Object.entries(v.mapValue.fields||{}).map(([k,x])=>[k,dec(x)]));return null;}
 function docToObj(d:any){return d?{id:d.name.split("/").pop(),...Object.fromEntries(Object.entries(d.fields||{}).map(([k,v])=>[k,dec(v)]))}:null;}
-const collections:AnyObj={user:"users",category:"categories",product:"products",productImage:"productImages",wishlistItem:"wishlistItems",review:"reviews",paymentGateway:"paymentGateways",order:"orders",paymentTransaction:"paymentTransactions",stockReservation:"stockReservations",orderItem:"orderItems",coupon:"coupons",auditLog:"auditLogs",storeSetting:"storeSettings",deliveryZone:"deliveryZones",banner:"banners",flashSale:"flashSales",staffAccount:"staffAccounts",imageBlob:"imageBlobs",returnRequest:"returnRequests"};
+const collections:AnyObj={user:"users",category:"categories",product:"products",productImage:"productImages",wishlistItem:"wishlistItems",review:"reviews",paymentGateway:"paymentGateways",order:"orders",paymentTransaction:"paymentTransactions",stockReservation:"stockReservations",orderItem:"orderItems",coupon:"coupons",auditLog:"auditLogs",storeSetting:"storeSettings",deliveryZone:"deliveryZones",banner:"banners",flashSale:"flashSales",staffAccount:"staffAccounts",imageBlob:"imageBlobs",returnRequest:"returnRequests",abandonedCart:"abandonedCarts"};
 function cmp(a:any,b:any){if(a instanceof Date)a=a.getTime();if(b instanceof Date)b=b.getTime();return a<b?-1:a>b?1:0;}
 function get(obj:any,key:string){return key.split(".").reduce((x,k)=>x?.[k],obj);}
 function match(obj:any,where:any):boolean{if(!where)return true;if(where.AND&&!(Array.isArray(where.AND)?where.AND:[where.AND]).every((x:any)=>match(obj,x)))return false;if(where.OR&&!where.OR.some((x:any)=>match(obj,x)))return false;if(where.NOT&&match(obj,where.NOT))return false;for(const [k,cond] of Object.entries(where)){if(k==="AND"||k==="OR"||k==="NOT")continue;const v=get(obj,k);if(cond&&typeof cond==="object"&&!Array.isArray(cond)){if("equals"in cond&&v!==cond.equals)return false;if("in"in cond&&!((cond as any).in as any[]).includes(v))return false;if("notIn"in cond&&((cond as any).notIn as any[]).includes(v))return false;if("contains"in cond&&!String(v??"").toLowerCase().includes(String((cond as any).contains).toLowerCase()))return false;if("startsWith"in cond&&!String(v??"").toLowerCase().startsWith(String((cond as any).startsWith).toLowerCase()))return false;if("gt"in cond&&!(v>(cond as any).gt))return false;if("gte"in cond&&!(v>=(cond as any).gte))return false;if("lt"in cond&&!(v<(cond as any).lt))return false;if("lte"in cond&&!(v<=(cond as any).lte))return false;}else if(v!==cond)return false;}return true;}
@@ -623,3 +623,87 @@ export async function releaseOrderStockAtomically(orderId: string, now = new Dat
 }
 
 export {db};
+/* ---------------- Cash on Delivery ----------------
+ * COD orders carry paymentProvider "COD". They are confirmed by an admin without a payment,
+ * their stock reservations never expire, and the payment is marked PAID only after delivery.
+ */
+export const COD_PROVIDER = "COD";
+export const COD_RESERVATION_EXPIRY = new Date("2100-01-01T00:00:00Z");
+
+async function codTransaction<T>(orderId: string, work: (ctx: { order: AnyObj; orderDocument: any; transaction: string; project: string; now: Date }) => Promise<T | { __abort: string }>) {
+  const now = new Date();
+  const started: any = await req(":beginTransaction", { method: "POST", body: JSON.stringify({ options: { readWrite: {} } }) });
+  const transaction = String(started?.transaction || "");
+  if (!transaction) throw new Error("Firestore did not create a COD transaction");
+  try {
+    const orderDocument: any = await transactionGet("orders", orderId, transaction);
+    const order = docToObj(orderDocument) as AnyObj | null;
+    if (!order || order.paymentProvider !== COD_PROVIDER) {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { ok: false as const, reason: "not_cod" };
+    }
+    const project = await serviceAccountValue("FIREBASE_PROJECT_ID", "project_id");
+    if (!project) throw new Error("FIREBASE_PROJECT_ID is required");
+    const out: any = await work({ order, orderDocument, transaction, project, now });
+    if (out && out.__abort) {
+      await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return { ok: false as const, reason: String(out.__abort) };
+    }
+    return { ok: true as const, reason: "ok" };
+  } catch (error) {
+    await req(":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+    throw error;
+  }
+}
+
+/** Admin/Telegram confirms a pending COD order: PENDING → CONFIRMED, reservations become permanent. */
+export async function confirmCodOrderAtomically(orderId: string, actorId?: string | null) {
+  return codTransaction(orderId, async ({ order, orderDocument, transaction, project, now }) => {
+    if (order.status !== "PENDING" || order.paymentStatus !== "PENDING") return { __abort: "state_changed" };
+    const reservations = await transactionQuery("stockReservations", [{ field: "orderId", value: orderId }, { field: "status", value: "HELD" }], transaction);
+    const writes: AnyObj[] = [firestorePatchWrite("orders", orderDocument, { status: "CONFIRMED", updatedAt: now }, project)];
+    for (const r of reservations) writes.push(firestorePatchWrite("stockReservations", r, { status: "CONFIRMED", updatedAt: now }, project));
+    writes.push(firestoreCreateWrite("auditLogs", { id: id(), actorId: actorId || null, action: "COD_ORDER_CONFIRMED", entity: "Order", entityId: orderId, metadata: {}, createdAt: now, updatedAt: now }, project));
+    await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
+    return true;
+  });
+}
+
+/** Cash collected: a DELIVERED COD order becomes PAID and a payment transaction is recorded. */
+export async function collectCodPaymentAtomically(orderId: string, actorId?: string | null) {
+  return codTransaction(orderId, async ({ order, orderDocument, transaction, project, now }) => {
+    if (order.status !== "DELIVERED" || order.paymentStatus !== "PENDING") return { __abort: "state_changed" };
+    const ref = "COD-" + String(order.orderNumber);
+    const txId = await deterministicId("payment:cod:" + ref);
+    const writes: AnyObj[] = [
+      firestorePatchWrite("orders", orderDocument, { paymentStatus: "PAID", paymentReference: ref, updatedAt: now }, project),
+      firestoreCreateWrite("paymentTransactions", { id: txId, orderId, gatewayId: String(order.paymentGatewayId || ""), reference: ref, providerTransactionId: ref, amount: Number(order.total), status: "PAID", rawResponse: { source: "cod_collected" }, verifiedAt: now, createdAt: now, updatedAt: now }, project),
+      firestoreCreateWrite("auditLogs", { id: id(), actorId: actorId || null, action: "COD_PAYMENT_COLLECTED", entity: "Order", entityId: orderId, metadata: { amount: Number(order.total) }, createdAt: now, updatedAt: now }, project)
+    ];
+    await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
+    return true;
+  });
+}
+
+/** Cancel an unpaid COD order before it ships and put the reserved stock back. */
+export async function cancelCodOrderAtomically(orderId: string, actorId?: string | null) {
+  return codTransaction(orderId, async ({ order, orderDocument, transaction, project, now }) => {
+    if (!["PENDING", "CONFIRMED", "PROCESSING"].includes(String(order.status)) || order.paymentStatus !== "PENDING") return { __abort: "state_changed" };
+    const held = await transactionQuery("stockReservations", [{ field: "orderId", value: orderId }, { field: "status", value: "HELD" }], transaction);
+    const confirmed = await transactionQuery("stockReservations", [{ field: "orderId", value: orderId }, { field: "status", value: "CONFIRMED" }], transaction);
+    const reservations = [...held, ...confirmed];
+    const increments = new Map<string, number>();
+    for (const r of reservations) { const o = docToObj(r) as AnyObj; increments.set(String(o.productId), (increments.get(String(o.productId)) || 0) + Number(o.quantity || 0)); }
+    const writes: AnyObj[] = [firestorePatchWrite("orders", orderDocument, { status: "CANCELLED", updatedAt: now }, project)];
+    for (const r of reservations) writes.push(firestorePatchWrite("stockReservations", r, { status: "RELEASED", updatedAt: now }, project));
+    for (const [productId, qty] of increments) {
+      const pd: any = await transactionGet("products", productId, transaction);
+      const p = docToObj(pd) as AnyObj | null;
+      if (!p) throw new Error("Reserved product is missing; COD cancellation needs manual review");
+      writes.push(firestorePatchWrite("products", pd, { stock: Number(p.stock || 0) + qty, updatedAt: now }, project));
+    }
+    writes.push(firestoreCreateWrite("auditLogs", { id: id(), actorId: actorId || null, action: "COD_ORDER_CANCELLED", entity: "Order", entityId: orderId, metadata: {}, createdAt: now, updatedAt: now }, project));
+    await req(":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
+    return true;
+  });
+}

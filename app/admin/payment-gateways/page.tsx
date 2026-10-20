@@ -9,7 +9,7 @@ type Gateway = {
   publicConfig?: Record<string, unknown>;
 };
 const types = ["SSLCOMMERZ", "BKASH", "NAGAD", "ROCKET", "BANGLA_QR", "CUSTOM"];
-const initialForm = { name: "", type: "SSLCOMMERZ", mode: "SANDBOX", apiBaseUrl: "", qrImageUrl: "", qrMerchantName: "", merchantNumber: "", instructions: "", storeId: "", storePassword: "" };
+const initialForm = { name: "", type: "SSLCOMMERZ", mode: "SANDBOX", apiBaseUrl: "", qrImageUrl: "", qrMerchantName: "", merchantNumber: "", instructions: "", cod: false, storeId: "", storePassword: "" };
 const MANUAL_TYPES = ["BKASH", "NAGAD", "ROCKET", "BANGLA_QR", "CUSTOM"];
 const moneyLabel = (s: string) => s.replaceAll("_", " ");
 const gatewayLogoDomain: Record<string, string> = {
@@ -59,7 +59,7 @@ export default function PaymentGateways() {
       const r = await fetch("/api/admin/payment-gateways", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
         name: form.name.trim(), type: form.type, mode: form.mode, apiBaseUrl: form.apiBaseUrl || undefined,
         qrImageUrl: form.qrImageUrl || undefined, qrMerchantName: form.qrMerchantName || undefined,
-        publicConfig: MANUAL_TYPES.includes(form.type) ? { merchantNumber: form.merchantNumber.trim(), instructions: form.instructions.trim() } : {},
+        publicConfig: MANUAL_TYPES.includes(form.type) ? { merchantNumber: form.merchantNumber.trim(), instructions: form.instructions.trim(), ...(form.type === "CUSTOM" && form.cod ? { cod: true } : {}) } : {},
         enabled: false, sortOrder: items.length, secrets
       }) });
       const data = await r.json();
@@ -133,6 +133,7 @@ export default function PaymentGateways() {
         <label>Provider<select value={form.type} onChange={e => set("type", e.target.value)}>{types.map(x => <option key={x} value={x}>{moneyLabel(x)}</option>)}</select></label>
         <label>Environment<select value={form.mode} onChange={e => set("mode", e.target.value)}><option value="SANDBOX">Sandbox / Test</option><option value="LIVE">Live / Production</option></select></label>
         <label>API base URL (optional)<input type="url" placeholder="https://…" value={form.apiBaseUrl} onChange={e => set("apiBaseUrl", e.target.value)} /></label>
+        {form.type === "CUSTOM" && <label style={{ gridColumn: "1 / -1" }}><input type="checkbox" checked={form.cod} onChange={e => setForm({ ...form, cod: e.target.checked })} /> This is Cash on Delivery (no online payment; you confirm the order and mark cash collected after delivery)</label>}
         {MANUAL_TYPES.includes(form.type) && <><label>Number customers send money to<input placeholder="01XXXXXXXXX" value={form.merchantNumber} onChange={e => set("merchantNumber", e.target.value)} /></label>
         <label style={{ gridColumn: "1 / -1" }}>Payment instructions shown to the customer<textarea rows={5} placeholder={"Example:\nSend {amount} by bKash Send Money to {number}.\nUse {order} as the reference, then submit the transaction ID."} value={form.instructions} onChange={e => set("instructions", e.target.value)} /><small>{"You can use {amount}, {order} and {number}; they are filled in for each order."}</small></label></>}
         {form.type === "SSLCOMMERZ" && <><label>Store ID<input required value={form.storeId} onChange={e => set("storeId", e.target.value)} /></label><label>Store password<input type="password" required autoComplete="new-password" value={form.storePassword} onChange={e => set("storePassword", e.target.value)} /></label></>}

@@ -1,6 +1,7 @@
 import {db} from "@/lib/prisma";
 import {esc,telegramApi,orderDetailsText} from "@/lib/notifications/telegram-admin";
 import {saveProductImage,MAX_IMAGE_BYTES} from "@/lib/store/images";
+import {collectCodPaymentAtomically} from "@/lib/firestore";
 import {deliveryLabel} from "@/lib/shipping";
 
 const tk=(n:unknown)=>"৳"+Number(n||0).toLocaleString("en-BD",{maximumFractionDigits:2});
@@ -38,6 +39,8 @@ Photo পাঠিয়ে caption এ <code>/photo SKU</code> দিলে ছ
 <b>Delivery</b>: /delivery SKU free|default|FEE · /shipping · /shipping FEE [FREE-OVER] · /freelist
 <b>Voucher</b>: /vouchers · /voucher CODE percent|fixed VALUE [min] [days] · /voucheroff CODE · /voucheron CODE
 <b>Flash sale</b>: /flash PERCENT HOURS SKU1,SKU2 · /flashlist · /flashoff
+<b>Abandoned cart</b>: /abandoned (ফোন দিয়েছে কিন্তু অর্ডার করেনি)
+<b>COD</b>: /addcod (Cash on Delivery চালু) · /cash ORDER-NO (টাকা হাতে পেয়েছি)
 <b>Payment</b>: /gateways · /paynumber ID NUMBER · /payinfo ID text · /gatewayon ID · /gatewayoff ID`;
 
 export async function handleTextCommand(text:string,photo?:{fileId:string},messageId?:number,parentMenu?:string):Promise<boolean>{
@@ -209,6 +212,24 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
     if(!["PROCESSING","SHIPPED","DELIVERED"].includes(o.status)){await respond("❌ Order এখন "+esc(o.status)+" — Processing/Shipped হলে courier দিন");return true}
     await db.order.update({where:{id:o.id},data:{courierName:courier.slice(0,120),trackingNumber:t.join(" ").slice(0,160)}});await audit("TRACKING_SET_TELEGRAM","Order",o.id,{courier,trackingNumber:t.join(" ")});
     await respond("✅ <b>TRACKING UPDATED</b>\nOrder: <code>"+esc(o.orderNumber)+"</code>\nCourier: "+esc(courier)+"\nTracking ID: <code>"+esc(t.join(" "))+"</code>\nStatus: "+esc(o.status));return true;
+  }
+  if(cmd==="/abandoned"){
+    const cs:any[]=await db.abandonedCart.findMany({where:{recovered:false},orderBy:{updatedAt:"desc"},take:100});
+    const now=Date.now();
+    const list=cs.filter(c=>{const t=new Date(c.updatedAt).getTime();return now-t>3600000&&now-t<7*86400000}).slice(0,15);
+    await reply("<b>🛒 Abandoned carts</b>\n"+(list.length?list.map(c=>"📞 <code>0"+esc(c.phone)+"</code> "+esc(c.name||"")+" · "+tk(c.total)+"\n"+(c.items||[]).map((i:any)=>esc(i.name)+" ×"+i.quantity).join(", ")).join("\n\n"):"এখন কোনো abandoned cart নেই"));return true;
+  }
+  if(cmd==="/addcod"){
+    const all=await db.paymentGateway.findMany({});const ex=all.find((g:any)=>g.publicConfig?.cod===true);
+    if(ex){await db.paymentGateway.update({where:{id:ex.id},data:{enabled:true}});await reply("✅ COD আগে থেকেই ছিল, এখন ON");return true}
+    const g=await db.paymentGateway.create({data:{name:"Cash on Delivery",type:"CUSTOM",mode:"LIVE",enabled:true,sortOrder:all.length,apiBaseUrl:null,publicConfig:{cod:true,instructions:"পণ্য হাতে পেয়ে টাকা দিন।"},qrImageUrl:null,qrMerchantName:null}});
+    await audit("COD_GATEWAY_CREATED_TELEGRAM","paymentGateway",g.id,{});await reply("✅ Cash on Delivery চালু হয়েছে। বন্ধ করতে: <code>/gatewayoff "+esc(g.id)+"</code>");return true;
+  }
+  if(cmd==="/cash"){
+    const o:any=args[0]?await db.order.findFirst({where:{orderNumber:args[0].toUpperCase()}}):null;
+    if(!o){await reply("ব্যবহার: <code>/cash ORDER-NO</code>");return true}
+    const r=await collectCodPaymentAtomically(o.id,"telegram");
+    await reply(r.ok?"✅ "+esc(o.orderNumber)+" — টাকা পাওয়া গেছে, PAID":"❌ শুধু Delivered COD অর্ডারে এটা চলে");return true;
   }
   if(cmd==="/gateways"){
     const gs=await db.paymentGateway.findMany({orderBy:{sortOrder:"asc"}});

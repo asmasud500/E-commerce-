@@ -16,6 +16,7 @@ export async function POST(req:NextRequest){
   if(!order||!order.paymentGateway)return NextResponse.json({error:"Order or payment gateway not found."},{status:404});
   if(order.userId && (!session||session.userId!==order.userId))return NextResponse.json({error:"You do not have access to this order."},{status:403});
   if(!order.userId && !session && !(await verifyOrderAccessToken(order.id,accessToken)))return NextResponse.json({error:"Invalid order payment access."},{status:403});
+  if((order as any).paymentProvider==="COD")return NextResponse.json({error:"This is a Cash on Delivery order; no online payment is needed."},{status:409});
   if(order.status==="CANCELLED"||order.status==="REFUNDED")return NextResponse.json({error:"This order cannot accept payment."},{status:409});
   if(order.paymentStatus==="PAID")return NextResponse.json({error:"Order is already paid."},{status:409});
   const gateway=order.paymentGateway;if(!gateway.enabled)return NextResponse.json({error:"Payment gateway is no longer available."},{status:409});
