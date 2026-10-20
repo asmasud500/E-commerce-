@@ -2,6 +2,7 @@ import {db} from "@/lib/prisma";
 import {esc,telegramApi,orderDetailsText} from "@/lib/notifications/telegram-admin";
 import {saveProductImage,MAX_IMAGE_BYTES} from "@/lib/store/images";
 import {collectCodPaymentAtomically} from "@/lib/firestore";
+import {parseOptionsText} from "@/lib/options";
 import {deliveryLabel} from "@/lib/shipping";
 
 const tk=(n:unknown)=>"৳"+Number(n||0).toLocaleString("en-BD",{maximumFractionDigits:2});
@@ -36,6 +37,7 @@ export const HELP=`<b>🤖 Store Admin Bot</b>
 <b>Products</b>: /products · /product SKU · /newproduct নাম | দাম | stock | category | description
 /setprice SKU PRICE [SALE] · /describe SKU text · /publish SKU · /unpublish SKU
 Photo পাঠিয়ে caption এ <code>/photo SKU</code> দিলে ছবি যোগ হবে (caption এ /newproduct দিলে নতুন product-এ ছবি)
+<b>Options</b>: /options SKU Size: S, M, L ; Color: Red, Blue · /options SKU clear
 <b>Delivery</b>: /delivery SKU free|default|FEE · /shipping · /shipping FEE [FREE-OVER] · /freelist
 <b>Voucher</b>: /vouchers · /voucher CODE percent|fixed VALUE [min] [days] · /voucheroff CODE · /voucheron CODE
 <b>Flash sale</b>: /flash PERCENT HOURS SKU1,SKU2 · /flashlist · /flashoff
@@ -113,6 +115,14 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
     const p=await findProduct(args[0]||"");if(!p){await respond("ব্যবহার: <code>"+cmd+" SKU</code>");return true}
     await db.product.update({where:{id:p.id},data:{published:cmd==="/publish"}});await audit("PRODUCT_UPDATED_TELEGRAM","Product",p.id,{published:cmd==="/publish"});
     await respond("✅ "+esc(p.name)+" → "+(cmd==="/publish"?"Published":"Draft"));return true;
+  }
+  if(cmd==="/options"){
+    const p=await findProduct(args[0]||"");const rest=arg.slice((args[0]||"").length).trim();
+    if(!p||!rest){await reply("ব্যবহার: <code>/options SKU Size: S, M, L ; Color: Red, Blue</code> অথবা <code>/options SKU clear</code>");return true}
+    const opts=rest.toLowerCase()==="clear"?[]:parseOptionsText(rest.split(";").join("\n"));
+    if(rest.toLowerCase()!=="clear"&&!opts.length){await reply("❌ Format: <code>Size: S, M, L</code>");return true}
+    await db.product.update({where:{id:p.id},data:{options:opts}});await audit("OPTIONS_CHANGED_TELEGRAM","Product",p.id,{count:opts.length});
+    await reply("✅ "+esc(p.name)+" options: "+(opts.length?opts.map(o=>esc(o.name)+" ("+o.values.map(esc).join(", ")+")").join(" · "):"নেই"));return true;
   }
   if(cmd==="/delivery"){
     const p=await findProduct(args[0]||"");const mode=(args[1]||"").toLowerCase();

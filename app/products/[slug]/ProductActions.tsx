@@ -4,13 +4,17 @@ import {useState} from "react";
 import {addToCart} from "@/lib/cart";
 import {Icon} from "@/components/Icons";
 type P={id:string;name:string;slug:string;sku:string;price:number;salePrice:any;stock:number;description:string|null;compareAtPrice:any;imageUrl?:string|null};
-export default function ProductActions({p}:{p:P}){
+type Opt={name:string;values:string[]};
+export default function ProductActions({p,options=[]}:{p:P;options?:Opt[]}){
+ const [sel,setSel]=useState<Record<string,string>>({}),[err,setErr]=useState("");
  const [qty,setQty]=useState(1),[added,setAdded]=useState(false);
  const maxQty=Math.max(1,Math.min(100,p.stock));
- function put(){addToCart({productId:p.id,name:p.name,price:Number(p.price),quantity:Math.min(qty,maxQty),sku:p.sku,imageUrl:p.imageUrl,stock:p.stock})}
- function add(){if(p.stock<1)return;put();setAdded(true)}
- function buyNow(){if(p.stock<1)return;put();window.location.href="/checkout"}
+ function put(){const miss=options.find(o=>!sel[o.name]);if(miss){setErr("Please choose "+miss.name);return false}setErr("");addToCart({productId:p.id,name:p.name,price:Number(p.price),quantity:Math.min(qty,maxQty),sku:p.sku,imageUrl:p.imageUrl,stock:p.stock,...(options.length?{options:sel}:{})});return true}
+ function add(){if(p.stock<1)return;if(put())setAdded(true)}
+ function buyNow(){if(p.stock<1)return;if(put())window.location.href="/checkout"}
  return <div>
+  {options.map(o=><div key={o.name} className="pd-qty-row"><span className="pd-label">{o.name}</span><div className="pd-opts">{o.values.map(v=><button key={v} type="button" className={"pd-opt"+(sel[o.name]===v?" on":"")} aria-pressed={sel[o.name]===v} onClick={()=>{setSel({...sel,[o.name]:v});setErr("")}}>{v}</button>)}</div></div>)}
+  {err&&<p role="alert" className="form-error">{err}</p>}
   <div className="pd-qty-row"><span className="pd-label">Quantity</span>
    <div className="pd-qty">
     <button type="button" disabled={qty<=1} aria-label="Decrease quantity" onClick={()=>setQty(Math.max(1,qty-1))}>−</button><span aria-live="polite">{qty}</span>

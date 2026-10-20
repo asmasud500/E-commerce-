@@ -55,7 +55,7 @@ export default async function ProductDetails({params}:{params:Promise<{slug:stri
           <div className="pd-price"><strong>{money(effective)}</strong>{original&&<s>{money(original)}</s>}{discount>0&&<span className="pd-off">-{discount}%</span>}</div>
           <p className={"pd-stock "+(inStock?"ok":"out")}>{inStock?<><Icon name="check" size={16}/> In stock · {p.stock} available</>:"Out of stock"}</p>
           <p className="pd-desc">{p.description||"Premium quality product."}</p>
-          <div className="pd-buy"><ProductActions p={{id:p.id,name:p.name,slug:p.slug,sku:p.sku,price:effective,salePrice:p.salePrice,stock:p.stock,description:p.description,compareAtPrice:p.compareAtPrice,imageUrl:p.images[0]?.url||null}}/></div>
+          <div className="pd-buy"><ProductActions options={(Array.isArray((p as any).options)?(p as any).options:[])} p={{id:p.id,name:p.name,slug:p.slug,sku:p.sku,price:effective,salePrice:p.salePrice,stock:p.stock,description:p.description,compareAtPrice:p.compareAtPrice,imageUrl:p.images[0]?.url||null}}/></div>
           <ul className="pd-perks">
             <li><Icon name="truck" size={18}/>{delivery}</li>
             <li><Icon name="ticket" size={18}/>Order is confirmed once your payment is verified</li>

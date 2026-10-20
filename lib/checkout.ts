@@ -1,3 +1,4 @@
+import {resolveSelection} from "@/lib/options";
 import {db} from "@/lib/prisma";
 import {getEffectivePrice} from "@/lib/products/pricing";
 import {computeDelivery,productDelivery,type DeliveryMode} from "@/lib/shipping";
@@ -5,7 +6,7 @@ import {computeDelivery,productDelivery,type DeliveryMode} from "@/lib/shipping"
 export class QuoteError extends Error{status:number;constructor(message:string,status=400){super(message);this.status=status}}
 
 export type QuoteInput={
-  items:{productId:string;quantity:number}[];
+  items:{productId:string;quantity:number;options?:Record<string,string>}[];
   couponCode?:string|null;
   shippingDivision?:string;shippingDistrict?:string;shippingUpazila?:string;
 };
@@ -55,7 +56,8 @@ export async function buildQuote(input:QuoteInput,opts:{strictCoupon?:boolean}={
     const unitPrice=getEffectivePrice(p,flashSales),lineTotal=unitPrice*item.quantity;
     subtotal+=lineTotal;
     const d=productDelivery(p);
-    lines.push({productId:p.id,name:p.name,unitPrice,quantity:item.quantity,lineTotal,delivery:d.mode,deliveryFee:d.fee});
+    const sel=resolveSelection(p.options,item.options);if(!sel.ok)throw new QuoteError(sel.error+" ("+p.name+")");
+    lines.push({productId:p.id,name:p.name+(sel.label?" ("+sel.label+")":""),unitPrice,quantity:item.quantity,lineTotal,delivery:d.mode,deliveryFee:d.fee});
   }
 
   let discount=0,couponError:string|null=null;

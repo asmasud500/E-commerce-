@@ -8,7 +8,7 @@ const schema=z.object({
   shippingDivision:z.string().trim().max(80).optional(),
   shippingDistrict:z.string().trim().max(100).optional(),
   shippingUpazila:z.string().trim().max(100).optional(),
-  items:z.array(z.object({productId:z.string().min(1),quantity:z.number().int().positive().max(100)})).min(1).max(100)
+  items:z.array(z.object({productId:z.string().min(1),quantity:z.number().int().positive().max(100),options:z.record(z.string().max(40),z.string().max(40)).optional()})).min(1).max(100)
 });
 
 /** Live price preview for the checkout page: prices, voucher, delivery and total exactly as the order will be charged. */

@@ -1,4 +1,4 @@
-export type CartItem = { productId: string; name: string; price: number; quantity: number; sku: string; imageUrl?: string | null; stock?: number };
+export type CartItem = { productId: string; name: string; price: number; quantity: number; sku: string; imageUrl?: string | null; stock?: number; options?: Record<string,string> };
 
 const KEY = "ecommerce-cart";
 const MAX_QTY = 100;
@@ -23,6 +23,7 @@ export function saveCart(items: CartItem[]) {
 export function addToCart(item: CartItem) {
   const items = getCart();
   const existing = items.find(i => i.productId === item.productId);
+  if (existing && item.options) existing.options = item.options;
   if (existing) existing.quantity = Math.min(MAX_QTY, existing.quantity + Math.max(1, item.quantity));
   else items.push({...item, price:Number(item.price), quantity:Math.min(MAX_QTY, Math.max(1,item.quantity))});
   saveCart(items);
