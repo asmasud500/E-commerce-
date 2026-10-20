@@ -1,9 +1,12 @@
-import {NextResponse} from "next/server";
+import {NextRequest,NextResponse} from "next/server";
+import {readAdminSession} from "@/lib/auth/admin";
 import {db} from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req:NextRequest) {
+  const session=await readAdminSession(req.cookies.get("admin_session")?.value||"");
+  if(!session)return NextResponse.json({error:"Admin authentication required."},{status:401,headers:{"Cache-Control":"no-store"}});
   try {
     // Use findMany and calculate aggregates in application code because the
     // current Firestore compatibility adapter does not implement Prisma groupBy
