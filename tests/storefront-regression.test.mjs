@@ -9,6 +9,8 @@ test("product listing supports search, category, featured, delivery and allow-li
   const api = await read("../app/api/products/route.ts");
   assert.match(source, /hasAvailableStock/);
   assert.match(api, /hasAvailableStock/);
+  assert.match(source, /filter\(\(v:any\)=>Number\(v\.stock\)>0\)/);
+  assert.match(await read("../app/products/[slug]/page.tsx"), /filter\(\(v:any\)=>Number\(v\.stock\)>0\)/);
   assert.match(source, /\.filter\(hasAvailableStock\)/);
   assert.match(api, /availableProducts=hydrated\.filter\(hasAvailableStock\)/);
   for (const token of ["sp.q", "sp.category", "sp.featured", "sp.delivery", "price_asc", "price_desc", "name_asc", "name_desc", "newest"]) {
