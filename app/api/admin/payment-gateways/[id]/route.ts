@@ -11,6 +11,12 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
  const {id}=await params;
  try{
   const b=input.parse(await req.json());
+  const existing=await db.paymentGateway.findUnique({where:{id},select:{id:true,type:true,enabled:true,encryptedSecrets:true}});
+  if(!existing)return NextResponse.json({error:"Gateway not found"},{status:404});
+  const finalType=b.type||existing.type;
+  const hasCredentials=!!(b.secrets?String(b.secrets.storeId||"").trim()&&String(b.secrets.storePassword||"").trim():existing.encryptedSecrets);
+  if(b.enabled===true&&finalType!=="SSLCOMMERZ")return NextResponse.json({error:"This provider has no verified automatic adapter yet. Keep it disabled until an approved automatic integration is implemented."},{status:409});
+  if(b.enabled===true&&finalType==="SSLCOMMERZ"&&!hasCredentials)return NextResponse.json({error:"Store ID and Store Password are required before enabling SSLCOMMERZ."},{status:409});
   const {secrets,...rest}=b;
   const data:any={...rest,...(secrets?{encryptedSecrets:encryptSecrets(secrets)}:{})};
   const g=await db.paymentGateway.update({where:{id},data,select:safe});
