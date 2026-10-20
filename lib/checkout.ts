@@ -1,5 +1,6 @@
 import {resolveSelection} from "@/lib/options";
 import {resolveProductVariant} from "@/lib/product-variants";
+import {resolveProductVariant} from "@/lib/product-variants";
 import {db} from "@/lib/prisma";
 import {getEffectivePrice} from "@/lib/products/pricing";
 import {computeDelivery,productDelivery,type DeliveryMode} from "@/lib/shipping";
@@ -41,7 +42,7 @@ export function matchZone(zones:any[],division:string,district:string,upazila:st
 export async function buildQuote(input:QuoteInput,opts:{strictCoupon?:boolean}={}):Promise<Quote>{
   if(!input.items.length)throw new QuoteError("Your cart is empty.");
   const unique=[...new Set(input.items.map(i=>i.productId))];
-  if(unique.length!==input.items.length)throw new QuoteError("Duplicate products are not allowed.");
+
   const [products,flashSales,storedSettings,zones]=await Promise.all([
     db.product.findMany({where:{id:{in:unique},published:true}}),
     db.flashSale.findMany({where:{active:true}}),
@@ -54,11 +55,16 @@ export async function buildQuote(input:QuoteInput,opts:{strictCoupon?:boolean}={
   let subtotal=0;const lines:QuoteLine[]=[];
   for(const item of input.items){
     const p=byId.get(item.productId)!;
-    const unitPrice=getEffectivePrice(p,flashSales),lineTotal=unitPrice*item.quantity;
+    const sel=resolveSelection(p.options,item.options);if(!sel.ok)throw new QuoteError(sel.error+" ("+p.name+")");
+    const variant=resolveProductVariant(p.variants,item.options);
+    if(Array.isArray(p.variants)&&p.variants.length&&!variant)throw new QuoteError("This size/colour combination is unavailable ("+p.name+").");
+    const pricingProduct=variant?{...p,price:variant.price,salePrice:variant.salePrice,id:p.id}:p;
+    const unitPrice=getEffectivePrice(pricingProduct,flashSales),lineTotal=unitPrice*item.quantity;
+    const available=variant?Number(variant.stock):Number(p.stock);
+    if(!Number.isFinite(available)||available<item.quantity)throw new QuoteError("Not enough stock for "+p.name+(sel.label?" ("+sel.label+")":"")+".");
     subtotal+=lineTotal;
     const d=productDelivery(p);
-    const sel=resolveSelection(p.options,item.options);if(!sel.ok)throw new QuoteError(sel.error+" ("+p.name+")");
-    lines.push({productId:p.id,name:p.name+(sel.label?" ("+sel.label+")":""),unitPrice,quantity:item.quantity,lineTotal,delivery:d.mode,deliveryFee:d.fee});
+    lines.push({productId:p.id,name:p.name+(sel.label?" ("+sel.label+")":""),unitPrice,quantity:item.quantity,lineTotal,delivery:d.mode,deliveryFee:d.fee,options:item.options||{},...(variant?{variantId:variant.id||undefined}:{})});
   }
 
   let discount=0,couponError:string|null=null;
