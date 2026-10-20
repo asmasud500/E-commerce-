@@ -1,6 +1,7 @@
 import {notFound} from "next/navigation";
 import {db} from "@/lib/prisma";
 import PrintButton from "./PrintButton";
+import TelegramInvoiceStorageButton from "./TelegramInvoiceStorageButton";
 export const dynamic="force-dynamic";
 const tk=(n:unknown)=>"৳"+Number(n||0).toLocaleString("en-BD",{maximumFractionDigits:2});
 export default async function Invoice({params}:{params:Promise<{id:string}>}){
@@ -10,7 +11,7 @@ export default async function Invoice({params}:{params:Promise<{id:string}>}){
   const s:any=await db.storeSetting.findUnique({where:{id:"store"}}).catch(()=>null);
   return <main style={{maxWidth:780,margin:"24px auto",padding:24,background:"#fff",color:"#111",fontFamily:"Inter,Arial,sans-serif"}}>
     <style>{`@media print{.no-print{display:none!important}body{background:#fff}}`}</style>
-    <div className="no-print" style={{marginBottom:16}}><PrintButton/></div>
+    <div className="no-print" style={{marginBottom:16}}><PrintButton/><TelegramInvoiceStorageButton orderId={id}/></div>
     <div style={{display:"flex",justifyContent:"space-between",borderBottom:"2px solid #131921",paddingBottom:12}}>
       <div><h1 style={{margin:0}}>{s?.storeName||"MART Store"}</h1><small>{s?.supportPhone||""} {s?.supportEmail||""}</small></div>
       <div style={{textAlign:"right"}}><strong>INVOICE</strong><br/>{o.orderNumber}<br/><small>{new Date(o.createdAt).toLocaleDateString("en-GB")}</small></div>
