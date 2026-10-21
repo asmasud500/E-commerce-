@@ -36,7 +36,7 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{fileId:strin
     return new Response(file.bytes.buffer.slice(file.bytes.byteOffset,file.bytes.byteOffset+file.bytes.byteLength) as ArrayBuffer,{headers:{
       "Content-Type":mime,
       "Content-Length":String(file.bytes.byteLength),
-      "Cache-Control":isPublicProductImage?"public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800":"private, no-store, max-age=0",
+      "Cache-Control":isPublicProductImage?"public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000":"private, no-store, max-age=0",
       "X-Content-Type-Options":"nosniff"
     }});
   }catch(error){
