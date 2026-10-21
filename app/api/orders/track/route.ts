@@ -16,11 +16,12 @@ export async function POST(req:NextRequest){
     const parsed=schema.safeParse(await req.json().catch(()=>null));
     if(!parsed.success)return NextResponse.json({error:"Enter your order number and the phone number or email used at checkout."},{status:400});
     const orderNumber=normalizeOrderNumber(parsed.data.orderNumber);
-    let o:any=await db.order.findFirst({where:{orderNumber}});
-    if(!o){const recent:any[]=await db.order.findMany({take:500,orderBy:{createdAt:"desc"}});o=recent.find(row=>normalizeOrderNumber(row.orderNumber)===orderNumber)||null;}
+    const trackingSelect={id:true,orderNumber:true,status:true,paymentStatus:true,createdAt:true,courierName:true,trackingNumber:true,paymentProofSubmittedAt:true,shippedAt:true,deliveredAt:true,paymentProvider:true,customerPhone:true,customerEmail:true} as const;
+    let o:any=await db.order.findFirst({where:{orderNumber},select:trackingSelect});
+    if(!o){const recent:any[]=await db.order.findMany({take:500,orderBy:{createdAt:"desc"},select:trackingSelect});o=recent.find(row=>normalizeOrderNumber(row.orderNumber)===orderNumber)||null;}
     if(!o)return NextResponse.json(NOT_FOUND,{status:404});
-    const phones=[o.customerPhone,o.phone,o.mobile,o.contactPhone].filter((v:any)=>String(v??"").trim());
-    const emails=[o.customerEmail,o.email,o.contactEmail].filter((v:any)=>String(v??"").trim());
+    const phones=[o.customerPhone].filter((v:any)=>String(v??"").trim());
+    const emails=[o.customerEmail].filter((v:any)=>String(v??"").trim());
     const matches=phones.some((v:any)=>contactMatches({customerPhone:v},parsed.data.contact))||emails.some((v:any)=>contactMatches({customerEmail:v},parsed.data.contact));
     if(!matches)return NextResponse.json(NOT_FOUND,{status:404});
     const ret:any=await db.returnRequest.findFirst({where:{orderId:o.id}}).catch(()=>null);
