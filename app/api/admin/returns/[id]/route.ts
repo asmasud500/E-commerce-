@@ -23,14 +23,13 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
       const order:any=await db.order.findUnique({where:{id:r.orderId}});
       if(!order)return NextResponse.json({error:"The order linked to this return request was not found."},{status:404});
       if(order.status!=="DELIVERED"&&order.status!=="REFUNDED")return NextResponse.json({error:"Only delivered orders can be refunded through returns."},{status:409});
-      if(order.paymentStatus==="PAID"&&order.paymentGatewayId){
-        if(order.paymentStatus==="REFUNDED"&&order.refundReference===p.data.refundReference){
-          refundMethod="PAYMENT_GATEWAY";
-        }else{
-          const result=await recordRefundAtomically({orderId:r.orderId,gatewayId:order.paymentGatewayId,reference:p.data.refundReference,reason:"Customer return: "+String(r.reason||"Return request")});
-          if(!result.refunded)return NextResponse.json({error:result.reason==="duplicate_reference"?"This refund reference has already been processed.":"Order payment state changed. Refresh the order and verify the refund."},{status:409});
-          refundMethod="PAYMENT_GATEWAY";
-        }
+      if(order.paymentStatus==="REFUNDED"&&order.refundReference===p.data.refundReference&&order.paymentGatewayId){
+        // Idempotent retry if the payment refund committed but the return record update failed.
+        refundMethod="PAYMENT_GATEWAY";
+      }else if(order.paymentStatus==="PAID"&&order.paymentGatewayId){
+        const result=await recordRefundAtomically({orderId:r.orderId,gatewayId:order.paymentGatewayId,reference:p.data.refundReference,reason:"Customer return: "+String(r.reason||"Return request")});
+        if(!result.refunded)return NextResponse.json({error:result.reason==="duplicate_reference"?"This refund reference has already been processed.":"Order payment state changed. Refresh the order and verify the refund."},{status:409});
+        refundMethod="PAYMENT_GATEWAY";
       }else if(String(order.paymentProvider||"").toUpperCase()==="COD"){
         // COD refunds are paid outside the gateway; require the actual completed transfer reference.
         if(order.paymentStatus==="REFUNDED"&&order.refundReference&&order.refundReference!==p.data.refundReference)return NextResponse.json({error:"This order already has a different refund reference."},{status:409});
