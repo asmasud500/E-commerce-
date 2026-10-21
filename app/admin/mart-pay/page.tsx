@@ -210,6 +210,86 @@ export default function MartPayAdminPage() {
       .martpay-alert{border-radius:14px}
       @media(max-width:760px){.martpay-hero h1{font-size:30px}.martpay-section{box-shadow:0 5px 18px rgba(24,40,65,.035)}.martpay-gateway:hover,.martpay-stat:hover,.martpay-quick:hover{transform:none}}
       @media(prefers-reduced-motion:reduce){.martpay-stat,.martpay-gateway,.martpay-gateway-actions .admin-button,.martpay-hero-actions .admin-button,.martpay-quick{transition:none!important}.martpay-stat:hover,.martpay-gateway:hover,.martpay-quick:hover{transform:none}}
+
+      /* Mart Pay overflow/alignment hardening */
+      .martpay-shell,.martpay-shell *{box-sizing:border-box}
+      .martpay-shell{min-width:0;max-width:100vw}
+      .martpay-shell .admin-main,.martpay-content{min-width:0;max-width:100%;overflow-wrap:anywhere}
+      .martpay-hero{min-width:0;align-items:flex-start}
+      .martpay-hero>div:first-child{flex:1 1 360px;min-width:0}
+      .martpay-hero h1,.martpay-hero p,.martpay-section-head h2,.martpay-section-head p{max-width:100%;overflow-wrap:anywhere}
+      .martpay-hero-actions{min-width:0;max-width:100%;align-items:stretch}
+      .martpay-hero-actions>*{min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:center;line-height:1.35}
+      .martpay-stats{grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch}
+      .martpay-stat,.martpay-stat-top,.martpay-stat-top>span:first-child{min-width:0;overflow-wrap:anywhere}
+      .martpay-stat-top{align-items:flex-start}
+      .martpay-section-head{min-width:0;align-items:flex-start}
+      .martpay-section-head>div:first-child{flex:1 1 240px;min-width:0}
+      .martpay-section-head>*{max-width:100%}
+      .martpay-gateway{min-width:0;max-width:100%}
+      .martpay-gateway-body,.martpay-gateway-title,.martpay-gateway-actions{min-width:0;max-width:100%}
+      .martpay-gateway-title strong{min-width:0;overflow-wrap:anywhere}
+      .martpay-gateway-actions .admin-button{white-space:normal;max-width:100%;overflow-wrap:anywhere;text-align:center}
+      .martpay-ledger-summary>*{min-width:0;max-width:100%}
+      .martpay-ledger-metric{min-width:0}
+      .martpay-ledger-metric strong{overflow-wrap:anywhere;word-break:break-word}
+      .martpay-ledger-tools{min-width:0;max-width:100%}
+      .martpay-ledger-wrap{min-width:0;max-width:100%;overscroll-behavior-x:contain}
+      .martpay-ledger{min-width:850px}
+      .martpay-quick-grid{align-items:stretch}
+      .martpay-quick{min-width:0;max-width:100%;overflow-wrap:anywhere}
+      .martpay-security{min-width:0;max-width:100%}
+      .martpay-security>div:last-child{min-width:0;overflow-wrap:anywhere}
+      @media(max-width:1180px){
+        .martpay-shell .admin-main{padding:20px!important}
+        .martpay-hero{flex-wrap:wrap}
+        .martpay-hero-actions{flex:1 1 100%}
+      }
+      @media(max-width:760px){
+        .martpay-shell{display:flex!important;flex-direction:column!important;width:100%;height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:visible}
+        .martpay-shell .admin-main{width:100%;max-width:100%;height:auto;max-height:none;min-height:0;overflow:visible;padding:14px!important}
+        .martpay-hero{padding:20px 16px;gap:16px;border-radius:18px}
+        .martpay-hero h1{font-size:clamp(26px,7vw,32px);line-height:1.15;overflow-wrap:anywhere}
+        .martpay-hero p{font-size:13px;line-height:1.55}
+        .martpay-hero-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px}
+        .martpay-hero-actions>*{width:100%;min-height:42px;padding:9px 8px!important;font-size:12px}
+        .martpay-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+        .martpay-stat{padding:13px;border-radius:15px}
+        .martpay-stat-top{gap:6px;font-size:11px}
+        .martpay-stat-icon{width:30px;height:30px;flex:0 0 30px;border-radius:10px}
+        .martpay-stat strong{font-size:clamp(22px,6vw,28px);letter-spacing:-.6px;overflow-wrap:anywhere}
+        .martpay-section{padding:14px;margin-top:14px;border-radius:17px}
+        .martpay-section-head{gap:12px;margin-bottom:14px}
+        .martpay-section-head .admin-button,.martpay-section-head .martpay-hero-actions>*{white-space:normal}
+        .martpay-gateway-grid{grid-template-columns:minmax(0,1fr);gap:10px}
+        .martpay-gateway{gap:10px;padding:12px;border-radius:14px}
+        .martpay-gateway-icon{width:36px;height:36px;flex-basis:36px;font-size:16px;border-radius:11px}
+        .martpay-gateway-title{gap:6px}
+        .martpay-gateway-actions{display:flex;flex-wrap:wrap}
+        .martpay-gateway-actions>*{flex:1 1 110px}
+        .martpay-ledger-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+        .martpay-ledger-metric{padding:10px;border-radius:11px}
+        .martpay-ledger-metric strong{font-size:16px}
+        .martpay-ledger-tools{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+        .martpay-ledger-tools input,.martpay-ledger-tools select{width:100%;min-width:0;max-width:100%}
+        .martpay-ledger-wrap{border-radius:11px}
+        .martpay-quick-grid{grid-template-columns:minmax(0,1fr);gap:10px}
+        .martpay-quick{padding:15px;border-radius:14px}
+        .martpay-security{padding:13px;border-radius:14px;gap:9px}
+      }
+      @media(max-width:380px){
+        .martpay-shell .admin-main{padding:10px!important}
+        .martpay-hero{padding:17px 13px}
+        .martpay-hero-actions{grid-template-columns:minmax(0,1fr)}
+        .martpay-stats{gap:8px}
+        .martpay-stat{padding:10px}
+        .martpay-stat-top{font-size:10px}
+        .martpay-stat-icon{width:26px;height:26px;flex-basis:26px}
+        .martpay-stat strong{font-size:22px}
+        .martpay-section{padding:11px}
+        .martpay-gateway{padding:10px;gap:8px}
+        .martpay-gateway-actions>*{flex-basis:100%}
+      }
     `}</style>
     <AdminSidebar />
     <main className="admin-main">
