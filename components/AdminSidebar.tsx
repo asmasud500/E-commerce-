@@ -20,8 +20,9 @@ const groups = [
     ["/admin/reviews", "Reviews & moderation", "☆"],
   ]},
   { title: "Sales & payments", items: [
+    ["/admin/mart-pay", "Mart Pay", "৳"],
     ["/admin/payment-transactions", "Transactions", "⇄"],
-    ["/admin/payment-gateways", "Payment gateways", "৳"],
+    ["/admin/payment-gateways", "Payment gateways", "⚙"],
     ["/admin/coupons", "Coupons & discounts", "％"],
     ["/admin/gift-cards", "Gift cards", "🎁"],
     ["/admin/marketing", "Marketing", "✦"],
