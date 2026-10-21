@@ -2,7 +2,7 @@
 import{useEffect,useState}from"react";import{useSearchParams}from"next/navigation";
 type PaymentResult={ok:boolean;status?:string;demo?:boolean;paymentUrl?:string;amount?:number;gatewayName?:string;reference?:string;message?:string;error?:string};
 export default function PaymentClient(){
- const search=useSearchParams();const[orderId,setOrderId]=useState(""),[loading,setLoading]=useState(false),[result,setResult]=useState<PaymentResult|null>(null),[message,setMessage]=useState("");
+ const search=useSearchParams();const[orderId,setOrderId]=useState(""),[loading,setLoading]=useState(false),[confirmingDemo,setConfirmingDemo]=useState(false),[result,setResult]=useState<PaymentResult|null>(null),[message,setMessage]=useState("");
  useEffect(()=>{const id=search.get("order")||sessionStorage.getItem("lastOrderId")||"";setOrderId(id)},[search]);
  useEffect(()=>{if(orderId)void pay(orderId)},[orderId]);
  async function pay(id=orderId){if(!id)return;setLoading(true);setMessage("");setResult(null);try{const r=await fetch("/api/payments/initiate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId:id,accessToken:sessionStorage.getItem("orderPaymentToken")||""})});const d=await r.json() as PaymentResult;setResult(d);if(!r.ok||!d.ok)setMessage(d.message||d.error||"Automatic payment could not be started. Please try again.");}catch{setMessage("Unable to connect. Check your internet connection and try again.")}finally{setLoading(false)}}
