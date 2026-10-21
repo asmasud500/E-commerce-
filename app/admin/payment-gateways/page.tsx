@@ -288,7 +288,7 @@ export default function PaymentGateways() {
           </div>}
           {MANUAL_TYPES.includes(g.type) && payEdit?.id === g.id && <div style={{ display: "grid", gap: 8, margin: "8px 0" }}>
             <label style={{ display: "grid", gap: 4, fontSize: 13 }}>Payment number<input value={payEdit.number} onChange={e => setPayEdit({ ...payEdit, number: e.target.value })} placeholder="01XXXXXXXXX" /></label>
-            {g.type === "CUSTOM" && <label style={{display:"flex",gap:8,alignItems:"center"}}><input type="checkbox" checked={payEdit.cod} onChange={e => setPayEdit({ ...payEdit, cod: e.target.checked })} /> This is Cash on Delivery (not an online transfer)</label>
+            {g.type === "CUSTOM" && <label style={{display:"flex",gap:8,alignItems:"center"}}><input type="checkbox" checked={payEdit.cod} onChange={e => setPayEdit({ ...payEdit, cod: e.target.checked })} /> This is Cash on Delivery (not an online transfer)</label>}
             <label style={{ display: "grid", gap: 4, fontSize: 13 }}>Instructions for customers<textarea rows={5} value={payEdit.instructions} onChange={e => setPayEdit({ ...payEdit, instructions: e.target.value })} placeholder={"Send {amount} to {number} and use {order} as the reference."} /></label>
             <small>{"Use {amount}, {order} and {number} as placeholders."}</small>
             <div style={{ display: "flex", gap: 8 }}><button type="button" onClick={() => void savePayEdit(g)}>Save instructions</button><button type="button" onClick={() => setPayEdit(null)}>Cancel</button></div>
