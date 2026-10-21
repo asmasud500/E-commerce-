@@ -34,3 +34,5 @@ test("storage registry collections are available in Firestore adapter",async()=>
  assert.match(source,/storageAsset:"storageAssets"/);
  assert.match(source,/storageBackupJob:"storageBackupJobs"/);
 });
+
+test("scheduled backup retry endpoint requires CRON_SECRET and disables caching",async()=>{ const route=await read("../app/api/cron/storage-backups/route.ts"); assert.match(route,/process\.env\.CRON_SECRET/); assert.match(route,/authorization/); assert.match(route,/status:401/); assert.match(route,/processStorageBackupQueue/); assert.match(route,/Cache-Control/); });
