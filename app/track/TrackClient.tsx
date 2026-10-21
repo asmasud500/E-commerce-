@@ -63,21 +63,21 @@ export default function TrackClient({initialOrder}:{initialOrder:string}){
           <div><small>Order</small><h2>{result.orderNumber}</h2><span className="trk-date">Placed {when(result.createdAt)}</span></div>
           <span className={"tag "+(result.status==="DELIVERED"?"ok":result.status==="CANCELLED"||result.status==="REFUNDED"?"bad":"wait")}>{status}</span>
         </div>
-        <section className="trk-live-map" aria-label="Animated order delivery route">
-          <div className="trk-map-top"><div><span className="trk-map-kicker">DELIVERY JOURNEY</span><h3>{result.status==="DELIVERED"?"Your parcel has arrived":result.status==="SHIPPED"?"Your parcel is on the way":"Your order journey"}</h3><p>{"Follow your order status from confirmation to delivery."}</p></div><span className={"trk-map-live "+(result.status==="SHIPPED"?"moving":"")}>{result.status==="SHIPPED"?"IN TRANSIT":result.status==="DELIVERED"?"DELIVERED":"TRACKING"}</span></div>
-          <div className={"trk-map-canvas "+(result.status==="CANCELLED"||result.status==="REFUNDED"?"is-ended":"")}>
+        <section className="trk-live-map" aria-label="Seven-stage order journey map">
+          <div className="trk-map-top"><div><span className="trk-map-kicker">MART DELIVERY JOURNEY</span><h3>{result.status==="DELIVERED"?"Your parcel has arrived":result.status==="SHIPPED"?"Your parcel is on the way":"Your order journey"}</h3><p>Seven milestones from order receipt to your doorstep.</p></div><span className={"trk-map-live "+(result.status==="SHIPPED"?"moving":"")}>{result.status==="SHIPPED"?"IN TRANSIT":result.status==="DELIVERED"?"DELIVERED":"ORDER TRACKING"}</span></div>
+          <div className="trk-map-canvas trk-map-seven">
             <div className="trk-map-grid"></div>
-            <svg className="trk-map-art" viewBox="0 0 600 190" role="img" aria-label="Animated route from store to delivery destination">
-              <path className="trk-map-road" d="M25 150 C85 140 70 65 155 80 S245 165 305 105 S405 25 465 72 S530 115 575 35"/>
-              <path className="trk-map-route" d="M25 150 C85 140 70 65 155 80 S245 165 305 105 S405 25 465 72 S530 115 575 35"/>
-              <circle cx="25" cy="150" r="7" className="trk-map-origin"/>
-              <g className={"trk-map-pin "+(result.status==="SHIPPED"?"pin-moving":"")}><circle cx="305" cy="105" r="17"/><path d="M298 103h14v10h-14zM301 99h8v4h-8z"/><circle cx="302" cy="114" r="1.5"/><circle cx="309" cy="114" r="1.5"/></g>
-              <g className="trk-map-destination" transform="translate(575 35)"><circle r="14"/><path d="M-6 -2 0 -8 6 -2 V6 H-3 V0 H2 V6"/></g>
+            <svg className="trk-map-art" viewBox="0 0 700 320" role="img" aria-label="Illustrative route with seven separate milestone locations">
+              <path className="trk-map-road" d="M58 250 C95 220 80 170 150 175 S205 250 265 210 S315 115 365 135 S425 205 475 155 S550 60 600 90 S640 140 665 45"/>
+              <path className="trk-map-route" d="M58 250 C95 220 80 170 150 175 S205 250 265 210 S315 115 365 135 S425 205 475 155 S550 60 600 90 S640 140 665 45"/>
+              {result.timeline.slice(0,7).map((s,i)=>{const pts=[[58,250],[150,175],[265,210],[365,135],[475,155],[600,90],[665,45]];const [x,y]=pts[i];return <g key={s.key} className={"trk-map-stop "+(s.state==="done"?"is-done":s.state==="current"?"is-current":s.state==="failed"?"is-failed":"is-todo")} transform={"translate("+x+" "+y+")"}><circle className="trk-map-stop-halo" r="17"/><circle className="trk-map-stop-core" r="10"/><text className="trk-map-stop-number" y="4">{i+1}</text></g>})}
             </svg>
-            <div className="trk-map-label store"><span>01</span><b>Order placed</b></div><div className="trk-map-label destination"><span>02</span><b>{result.status==="DELIVERED"?"Delivered":"Your destination"}</b></div>
-            <div className="trk-map-van" aria-hidden="true">▰</div>
+            <div className="trk-map-stop-labels">
+              {result.timeline.slice(0,7).map((s,i)=><div key={s.key} className={"trk-map-label-point point-"+(i+1)+" "+(s.state==="done"?"is-done":s.state==="current"?"is-current":s.state==="failed"?"is-failed":"is-todo")}><span>{String(i+1).padStart(2,"0")}</span><b>{s.label}</b><small>{s.state==="done"?"Completed":s.state==="current"?"In progress":s.state==="failed"?"Stopped":"Upcoming"}</small></div>)}
+            </div>
           </div>
-          <div className="trk-map-legend"><span><i className="origin-dot"></i>Store</span><span><i className="route-dot"></i>Delivery route</span><span><i className="destination-dot"></i>Destination</span></div>
+          <div className="trk-map-legend"><span><i className="origin-dot"></i>Completed</span><span><i className="route-dot"></i>Journey route</span><span><i className="destination-dot"></i>Upcoming</span></div>
+          <p className="trk-map-note">Map view shows the seven order milestones, not live GPS courier coordinates. Location tracking can become live when courier GPS data is connected.</p>
         </section>
         {(result.courierName||result.trackingNumber)&&<div className="trk-courier"><Icon name="truck" size={20}/><div><b>{result.courierName||"Courier"}</b>{result.trackingNumber&&<span>Tracking no. <code>{result.trackingNumber}</code></span>}</div></div>}
         <ol className="trk-steps">
