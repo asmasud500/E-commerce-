@@ -26,13 +26,17 @@ export default function MartPayAdminPage() {
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
     try {
-      const response = await fetch("/api/admin/payment-gateways", { cache: "no-store" });
-      const data = await response.json();
-      if (!response.ok || !Array.isArray(data)) throw new Error(data.error || "Payment settings could not be loaded.");
-      setGateways(data.filter((g: Gateway) => moneyMethods.has(g.type)));
-    } catch (e) { setError(e instanceof Error ? e.message : "Payment settings could not be loaded."); }
-    finally { setLoading(false); }
+      const response = await fetch("/api/admin/payment-gateways", { cache: "no-store", signal: controller.signal });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "Payment settings could not be loaded.");
+      if (!Array.isArray(data)) throw new Error("The payment settings response was invalid. Please refresh and try again.");
+      setGateways(data.filter((g: Gateway) => g && typeof g.id === "string" && moneyMethods.has(g.type)));
+    } catch (e) {
+      setError(e instanceof Error && e.name === "AbortError" ? "Loading payment settings timed out. Check your connection and try again." : e instanceof Error ? e.message : "Payment settings could not be loaded.");
+    } finally { clearTimeout(timer); setLoading(false); }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
@@ -44,8 +48,8 @@ export default function MartPayAdminPage() {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !gateway.enabled }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not update payment method.");
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "Could not update payment method.");
       setNotice(`${gateway.name}: ${!gateway.enabled ? "enabled" : "disabled"} successfully.`);
       await load();
     } catch (e) { setError(e instanceof Error ? e.message : "Could not update payment method."); }
@@ -55,6 +59,9 @@ export default function MartPayAdminPage() {
   const enabledCount = gateways.filter(g => g.enabled).length;
   const liveCount = gateways.filter(g => g.enabled && g.mode === "LIVE").length;
   const configuredCount = gateways.filter(g => g.credentialsConfigured).length;
+  const canActivate = (g: Gateway) => g.type === "SSLCOMMERZ"
+    ? !!g.credentialsConfigured
+    : g.type === "CUSTOM" && ((g.mode === "SANDBOX" && g.publicConfig?.demo === true) || g.publicConfig?.cod === true);
 
   return <div className="admin-shell martpay-shell">
     <style>{`
@@ -101,6 +108,10 @@ export default function MartPayAdminPage() {
       .martpay-alert{padding:12px 15px;border-radius:12px;font-size:13px;margin:15px 0}
       .martpay-alert.success{background:#e9f9ef;color:#167445;border:1px solid #c7eed5}.martpay-alert.error{background:#fff0ef;color:#a53229;border:1px solid #f6d1ce}
       .martpay-empty{padding:35px 20px;text-align:center;color:#748197;border:1px dashed #d7dee8;border-radius:14px}
+      .martpay-skeleton{border:1px solid #e8edf4;border-radius:16px;padding:16px;display:flex;gap:13px;min-width:0}
+      .martpay-skeleton-line{height:12px;border-radius:7px;background:linear-gradient(90deg,#edf0f4 25%,#f7f8fa 37%,#edf0f4 63%);background-size:400% 100%;animation:martpay-shimmer 1.35s ease infinite}
+      @keyframes martpay-shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+      @media(prefers-reduced-motion:reduce){.martpay-skeleton-line{animation:none}}
       @media(max-width:1000px){.martpay-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.martpay-quick-grid{grid-template-columns:1fr}}
       @media(max-width:680px){.martpay-hero{padding:23px 19px;border-radius:19px;align-items:flex-start;flex-direction:column}.martpay-hero-actions{width:100%}.martpay-hero-actions .admin-button{flex:1;text-align:center;justify-content:center}.martpay-stats{gap:10px;margin:14px 0}.martpay-stat{padding:14px;border-radius:15px}.martpay-stat strong{font-size:25px}.martpay-section{padding:16px;border-radius:17px}.martpay-section-head{align-items:flex-start;flex-direction:column}.martpay-gateway-grid{grid-template-columns:1fr}.martpay-gateway{padding:13px}.martpay-quick-grid{grid-template-columns:1fr}.martpay-stat-top{font-size:11px}}
     `}</style>
@@ -126,7 +137,7 @@ export default function MartPayAdminPage() {
 
       <section className="martpay-section">
         <div className="martpay-section-head"><div><h2>Payment methods</h2><p>Quickly view status and enable or disable supported methods.</p></div><Link className="admin-button admin-button-primary" href="/admin/payment-gateways">Manage all settings ↗</Link></div>
-        {loading ? <div className="martpay-empty">Loading secure payment configuration…</div> :
+        {loading ? <div className="martpay-gateway-grid" aria-label="Loading payment methods" aria-busy="true">{[1,2,3,4].map(n => <div className="martpay-skeleton" key={n}><div className="martpay-skeleton-line" style={{width:43,height:43,flexShrink:0,borderRadius:13}}/><div style={{flex:1,display:"grid",gap:12,alignContent:"start"}}><div className="martpay-skeleton-line" style={{width:"55%"}}/><div className="martpay-skeleton-line" style={{width:"82%"}}/><div className="martpay-skeleton-line" style={{width:"65%"}}/><div className="martpay-skeleton-line" style={{width:125,height:32,marginTop:5}}/></div></div>)}</div> :
           gateways.length === 0 ? <div className="martpay-empty"><strong>No payment methods found</strong><p>Add a gateway configuration to get started.</p><Link className="admin-button admin-button-primary" href="/admin/payment-gateways">Add payment method</Link></div> :
           <div className="martpay-gateway-grid">{gateways.map(g => <article className="martpay-gateway" key={g.id}>
             <div className="martpay-gateway-icon">{methodIcon[g.type] || "৳"}</div>
@@ -134,7 +145,8 @@ export default function MartPayAdminPage() {
               <div className="martpay-gateway-title"><strong>{methodLabel[g.type] || g.name}</strong><span className={`martpay-chip ${g.enabled ? "on" : ""}`}>{g.enabled ? "ENABLED" : "DISABLED"}</span></div>
               <div className="martpay-meta">{g.name}{g.apiBaseUrl ? ` · ${g.apiBaseUrl}` : ""}</div>
               <div className="martpay-gateway-title" style={{marginTop:9,marginBottom:0}}><span className={`martpay-chip ${g.mode === "LIVE" ? "live" : ""}`}>{g.mode === "LIVE" ? "LIVE MODE" : "SANDBOX / DEMO"}</span><span className="martpay-chip">{g.credentialsConfigured ? "CREDENTIALS SAVED" : "CREDENTIALS UNCONFIRMED"}</span></div>
-              <div className="martpay-gateway-actions"><button type="button" className="admin-button" disabled={busyId === g.id} onClick={() => void toggle(g)}>{busyId === g.id ? "Saving…" : g.enabled ? "Disable method" : "Enable method"}</button><Link className="admin-button" href="/admin/payment-gateways">Configure ↗</Link></div>
+              <div className="martpay-gateway-actions"><button type="button" className="admin-button" disabled={busyId === g.id || (!g.enabled && !canActivate(g))} title={!g.enabled && !canActivate(g) ? "This provider cannot be activated until a verified automatic adapter and credentials are available." : undefined} onClick={() => void toggle(g)}>{busyId === g.id ? "Saving…" : g.enabled ? "Disable method" : "Enable method"}</button><Link className="admin-button" href="/admin/payment-gateways">Configure ↗</Link></div>
+              {!g.enabled && !canActivate(g) && <div className="martpay-meta" style={{marginTop:8,color:"#9a5b17"}}>Activation unavailable: provider integration or required credentials are not verified yet.</div>}
             </div>
           </article>)}</div>}
       </section>
