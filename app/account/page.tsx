@@ -9,17 +9,17 @@ import InvoiceDownloadButton from "@/components/InvoiceDownloadButton";
 const tone=(s:string)=>s==="PAID"||s==="DELIVERED"||s==="CONFIRMED"?"ok":s==="FAILED"||s==="CANCELLED"||s==="REFUNDED"?"bad":"wait";
 const money=(n:any)=>Number(n||0).toLocaleString("en-BD",{maximumFractionDigits:2});
 export default function Account(){
- const [user,setUser]=useState<any>(null),[isAdmin,setIsAdmin]=useState(false),[orders,setOrders]=useState<any[]>([]),[loading,setLoading]=useState(true);
+ const [user,setUser]=useState<any>(null),[isAdmin,setIsAdmin]=useState(false),[orders,setOrders]=useState<any[]>([]),[loading,setLoading]=useState(true),[ordersLoading,setOrdersLoading]=useState(true);
  const [query,setQuery]=useState(""),[filter,setFilter]=useState("ALL"),[busy,setBusy]=useState(""),[notice,setNotice]=useState(""),[loadError,setLoadError]=useState("");
  const load=useCallback(async()=>{
-  setLoading(true);setLoadError("");setNotice("");
+  setLoading(true);setOrdersLoading(true);setLoadError("");setNotice("");
   const timedFetch=async(url:string,ms:number)=>{const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ms);try{return await fetch(url,{cache:"no-store",signal:controller.signal})}finally{clearTimeout(timer)}};
   try{
    const response=await timedFetch("/api/customer/auth/me",8000);
    if(!response.ok)throw new Error("Could not verify your account session. Please sign in again.");
    const data=await response.json();
    setUser(data?.user||null);setIsAdmin(!!data?.isAdmin);
-   if(!data?.user){setOrders([]);setLoading(false);return}
+   if(!data?.user){setOrders([]);setLoading(false);setOrdersLoading(false);return}
    // Do not block the account page on the slower orders query.
    setLoading(false);
    try{
@@ -30,10 +30,10 @@ export default function Account(){
     setOrders(Array.isArray(orderData)?orderData:[]);
    }catch(e){
     setNotice(e instanceof Error&&e.name==="AbortError"?"Your account loaded, but orders are taking too long. Please retry.":e instanceof Error?e.message:"Orders could not be loaded.");
-   }
+   }finally{setOrdersLoading(false)}
   }catch(e){
    setLoadError(e instanceof Error&&e.name==="AbortError"?"Account verification timed out. Check your connection and try again.":e instanceof Error?e.message:"Could not load your account. Please retry.");
-  }finally{setLoading(false)}
+  }finally{setLoading(false);setOrdersLoading(false)}
  },[]);
  useEffect(()=>{void load()},[load]);
  async function logout(){try{await fetch("/api/customer/auth/logout",{method:"POST"})}finally{location.href="/account/login"}}
@@ -67,7 +67,7 @@ export default function Account(){
   <div className="hp-sec-h hp-tab ac-h"><h2>My orders</h2><span>{orders.length} total</span></div>
   {notice&&<div className="pg-card" role="status" style={{padding:14,marginBottom:16}}>{notice}</div>}
   {orders.length>0&&<div className="pg-card ac-order-filters"><input aria-label="Search orders" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search order number or product…" style={{minWidth:0,padding:"12px 14px",border:"1px solid #d9dee7",borderRadius:10}}/><select aria-label="Filter orders by status" value={filter} onChange={e=>setFilter(e.target.value)} style={{padding:"12px",border:"1px solid #d9dee7",borderRadius:10,background:"white"}}><option value="ALL">All statuses</option>{["PENDING","CONFIRMED","PROCESSING","SHIPPED","DELIVERED","CANCELLED","REFUNDED"].map(s=><option key={s} value={s}>{s}</option>)}</select></div>}
-  {!visible.length?<div className="pg-card pg-empty"><span className="pg-empty-ic"><Icon name="bag" size={26}/></span><h2>{orders.length?"No matching orders":"No orders yet"}</h2><p>{orders.length?"Try another search or status filter.":"When you place an order it will appear here."}</p><Link href="/products" className="pg-btn">Start shopping</Link></div>:
+  {ordersLoading?<section className="ac-orders" aria-label="Loading orders" aria-busy="true">{[1,2].map(n=><article key={n} className="pg-card ac-order" style={{padding:20}}><div style={{height:16,width:"42%",borderRadius:6,background:"#e9edf2",marginBottom:16}}/><div style={{height:12,width:"65%",borderRadius:6,background:"#f0f2f5",marginBottom:12}}/><div style={{height:12,width:"90%",borderRadius:6,background:"#f0f2f5",marginBottom:10}}/><div style={{height:12,width:"55%",borderRadius:6,background:"#f0f2f5",marginBottom:18}}/><div style={{display:"flex",gap:10}}><div style={{height:38,width:110,borderRadius:9,background:"#f0f2f5"}}/><div style={{height:38,width:100,borderRadius:9,background:"#f0f2f5"}}/></div></article>)}</section>:!visible.length?<div className="pg-card pg-empty"><span className="pg-empty-ic"><Icon name="bag" size={26}/></span><h2>{orders.length?"No matching orders":"No orders yet"}</h2><p>{orders.length?"Try another search or status filter.":"When you place an order it will appear here."}</p><Link href="/products" className="pg-btn">Start shopping</Link></div>:
   <div className="ac-orders">{visible.map(o=><article key={o.id} className="pg-card ac-order">
    <div className="ac-order-top"><b>{o.orderNumber}</b><strong>৳{money(o.total)}</strong></div>
    <div className="ac-tags"><span className={"tag "+tone(o.paymentStatus)}>Payment: {o.paymentStatus}</span><span className={"tag "+tone(o.status)}>Status: {o.status}</span></div>
