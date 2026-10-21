@@ -23,6 +23,11 @@ export async function POST(req:NextRequest){
   const adapter=paymentAdapters[gateway.type];if(!adapter)return NextResponse.json({error:"Payment adapter unavailable."},{status:400});
   const secrets=gateway.encryptedSecrets?decryptSecrets(gateway.encryptedSecrets):{};
   const config={...((gateway.publicConfig||{}) as Record<string,unknown>),mode:gateway.mode,apiBaseUrl:gateway.apiBaseUrl||undefined,qrImageUrl:gateway.qrImageUrl||undefined,qrMerchantName:gateway.qrMerchantName||undefined};
+  const isDemoGateway=gateway.type==="CUSTOM"&&gateway.mode==="SANDBOX"&&(gateway.publicConfig as Record<string,unknown>|null)?.demo===true;
+  if(isDemoGateway){
+   const result=await adapter.init({orderId:order.id,orderNumber:order.orderNumber,amount:Number(order.total),customerName:order.customerName,customerPhone:order.customerPhone,customerEmail:order.customerEmail||undefined,callbackBaseUrl:""},config,secrets);
+   return NextResponse.json({...result,amount:Number(order.total),gatewayName:gateway.name,demo:true},result.ok?{status:200}:{status:400});
+  }
   const configuredCallbackBase=process.env.PAYMENT_CALLBACK_BASE_URL||process.env.NEXT_PUBLIC_SITE_URL||"";
   let callbackBaseUrl="";
   try{
