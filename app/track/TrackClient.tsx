@@ -7,7 +7,7 @@ type Step={key:string;label:string;detail:string;state:"done"|"current"|"todo"|"
 type Result={
   orderNumber:string;status:string;paymentStatus:string;createdAt:string|null;paymentMethod:string|null;
   courierName:string|null;trackingNumber:string|null;
-  timeline:Step[];returnStatus?:string|null;
+  timeline:Step[];returnStatus?:string|null;canCancel?:boolean;
 };
 
 const tk=(n:number)=>"৳"+Number(n).toLocaleString("en-BD");
@@ -17,17 +17,16 @@ const label:Record<string,string>={PENDING:"Waiting for payment",CONFIRMED:"Conf
 export default function TrackClient({initialOrder}:{initialOrder:string}){
   const [orderNumber,setOrderNumber]=useState(initialOrder);
   const [contact,setContact]=useState("");
+  const [cancelReason,setCancelReason]=useState("Changed my mind");
+  const [cancelMsg,setCancelMsg]=useState("");
+  const [cancelBusy,setCancelBusy]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [result,setResult]=useState<Result|null>(null);
-  const [reason,setReason]=useState("Wrong or damaged item"),[details,setDetails]=useState(""),[retMsg,setRetMsg]=useState("");
-  async function requestReturn(e:React.FormEvent){
-    e.preventDefault();setRetMsg("");
-    try{
-      const r=await fetch("/api/orders/return",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderNumber,contact,reason,details})});
-      const d=await r.json().catch(()=>({}));
-      if(r.ok){setRetMsg("Return request submitted. We will contact you soon.");setResult(x=>x?{...x,returnStatus:"REQUESTED"}:x)}else setRetMsg(d.error||"Could not submit.");
-    }catch{setRetMsg("Unable to connect. Please try again.")}
+
+  async function cancelOrder(e:React.FormEvent){
+    e.preventDefault();if(cancelBusy)return;setCancelBusy(true);setCancelMsg("");
+    try{const r=await fetch("/api/orders/cancel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderNumber,contact,reason:cancelReason})});const d=await r.json().catch(()=>({}));if(!r.ok)setCancelMsg(d.error||"Could not cancel this order.");else{setCancelMsg("Order cancelled successfully.");setResult(x=>x?{...x,status:"CANCELLED",canCancel:false,timeline:d.timeline||x.timeline}:x)}}catch{setCancelMsg("Unable to connect. Please try again.")}finally{setCancelBusy(false)}
   }
 
   async function submit(e:React.FormEvent){
@@ -35,10 +34,10 @@ export default function TrackClient({initialOrder}:{initialOrder:string}){
     if(busy)return;
     setBusy(true);setError("");setResult(null);
     try{
-      const r=await fetch("/api/orders/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderNumber})});
+      const r=await fetch("/api/orders/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderNumber,contact})});
       const d=await r.json().catch(()=>({}));
       if(!r.ok)setError(d.error||"Could not find that order.");
-      else setResult(d);
+      else {setResult(d);sessionStorage.setItem("mart_return_order",JSON.stringify({orderNumber:d.orderNumber,contact}));}
     }catch{setError("Unable to connect. Please try again.")}
     finally{setBusy(false)}
   }
@@ -50,9 +49,10 @@ export default function TrackClient({initialOrder}:{initialOrder:string}){
       <nav className="pg-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><Icon name="chevronRight" size={14}/><b>Track order</b></nav>
       <section className="pg-card trk-form">
         <h1>Track your order</h1>
-        <p>Enter your order number to check the latest status and delivery progress. No phone number or email needed.</p>
+        <p>Enter your order number and the phone number or email used when placing the order.</p>
         <form onSubmit={submit}>
           <label className="fld"><span>Order number</span><input required value={orderNumber} onChange={e=>setOrderNumber(e.target.value)} placeholder="ORD-XXXXXXXX-XXXXX" autoComplete="off" autoCapitalize="characters" maxLength={60}/></label>
+          <label className="fld"><span>Mobile number or email address</span><input required value={contact} onChange={e=>setContact(e.target.value)} placeholder="Phone number or email" autoComplete="email" maxLength={254}/></label>
           {error&&<p className="form-error" role="alert">{error}</p>}
           <button className="pg-btn pg-btn-block" disabled={busy} type="submit">{busy?"Checking...":"Track order"}{!busy&&<Icon name="arrowRight" size={18}/>}</button>
         </form>
@@ -87,14 +87,8 @@ export default function TrackClient({initialOrder}:{initialOrder:string}){
             <div><b>{s.label}</b><small>{s.detail}</small>{s.at&&<em>{when(s.at)}</em>}</div>
           </li>)}
         </ol>
-        {result.status==="DELIVERED"&&(result.returnStatus?<p className="trk-return"><b>Return request:</b> {result.returnStatus.toLowerCase()}</p>:<form onSubmit={requestReturn} className="trk-return">
-          <h3>Need to return something?</h3>
-          <label className="fld"><span>Phone number or email used for this order</span><input required value={contact} onChange={e=>setContact(e.target.value)} placeholder="Phone number or email" autoComplete="off" maxLength={254}/></label>
-          <select value={reason} onChange={e=>setReason(e.target.value)}><option>Wrong or damaged item</option><option>Not as described</option><option>Changed my mind</option><option>Other</option></select>
-          <textarea value={details} onChange={e=>setDetails(e.target.value)} placeholder="Tell us more (optional)" rows={3} maxLength={1000}/>
-          <button className="pg-btn" type="submit">Request return</button>
-          {retMsg&&<small>{retMsg}</small>}
-        </form>)}
+        {result.status==="DELIVERED"&&(result.returnStatus?<p className="trk-return"><b>Return request:</b> {result.returnStatus.toLowerCase()}</p>:<div className="trk-return"><h3>Need to return something?</h3><p>Your order details are carried forward, so you will not need to enter your phone number or email again.</p><Link className="pg-btn" href="/return" onClick={()=>sessionStorage.setItem("mart_return_order",JSON.stringify({orderNumber:result.orderNumber,contact}))}>Go to return page <Icon name="arrowRight" size={18}/></Link></div>)}
+        {result.canCancel&&<form onSubmit={cancelOrder} className="trk-return"><h3>Cancel this order</h3><p>You can cancel before the order is shipped.</p><label className="fld"><span>Reason for cancellation</span><select value={cancelReason} onChange={e=>setCancelReason(e.target.value)}><option>Changed my mind</option><option>Ordered by mistake</option><option>Delivery takes too long</option><option>Found a better price</option><option>Other</option></select></label><button className="pg-btn" type="submit" disabled={cancelBusy}>{cancelBusy?"Cancelling…":"Cancel order"}</button>{cancelMsg&&<small role="status">{cancelMsg}</small>}</form>}
       </section>}
     </div>
   );
