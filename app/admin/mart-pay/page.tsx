@@ -65,6 +65,12 @@ export default function MartPayAdminPage() {
 
   return <div className="admin-shell martpay-shell">
     <style>{`
+      /* Desktop-only layout fix: the old admin-shell wrapper had no two-column layout. Keep mobile styling untouched. */
+      @media(min-width:761px){
+        .martpay-shell{display:grid!important;grid-template-columns:250px minmax(0,1fr)!important;width:100%;height:100dvh;min-height:0;overflow:hidden;overscroll-behavior:none}
+        .martpay-shell>.admin-sidebar{position:relative!important;inset:auto!important;width:auto;min-width:0;max-width:none;height:100dvh;min-height:0;max-height:100dvh;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+        .martpay-shell>main.admin-main{width:auto;min-width:0;height:100dvh;min-height:0;max-height:100dvh;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch}
+      }
       .martpay-shell .admin-main{background:#f5f7fb;flex:1 1 0%;min-width:0;width:auto;max-width:none;box-sizing:border-box;overflow-x:clip;padding:clamp(18px,2.4vw,38px)!important}
       .martpay-content{width:100%;max-width:1680px;margin:0 auto;min-width:0}
       .martpay-content>*{min-width:0}
