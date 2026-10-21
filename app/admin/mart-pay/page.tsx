@@ -65,7 +65,7 @@ export default function MartPayAdminPage() {
 
   return <div className="admin-shell martpay-shell">
     <style>{`
-      .martpay-shell .admin-main{background:#f5f7fb;min-width:0;width:100%;max-width:none;overflow-x:clip;padding:clamp(18px,2.4vw,38px)!important}
+      .martpay-shell .admin-main{background:#f5f7fb;flex:1 1 0%;min-width:0;width:auto;max-width:none;box-sizing:border-box;overflow-x:clip;padding:clamp(18px,2.4vw,38px)!important}
       .martpay-content{width:100%;max-width:1680px;margin:0 auto;min-width:0}
       .martpay-content>*{min-width:0}
       .martpay-hero{position:relative;overflow:hidden;border-radius:24px;padding:clamp(24px,2.2vw,38px);background:linear-gradient(125deg,#111c32 0%,#172c4c 62%,#263e63 100%);color:white;display:flex;align-items:center;justify-content:space-between;gap:22px;box-shadow:0 16px 36px rgba(18,35,62,.16)}
