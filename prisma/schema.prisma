@@ -56,11 +56,32 @@ model User {
   passwordHash String?
   role Role @default(CUSTOMER)
   orders Order[]
+  addresses CustomerAddress[]
+  phone String?
   wishlist WishlistItem[]
   reviews Review[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+model CustomerAddress {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label String @default("Home")
+  recipientName String
+  phone String
+  email String?
+  division String @default("")
+  district String
+  upazila String @default("")
+  postalCode String @default("")
+  locationDescription String
+  isDefault Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([userId, isDefault])
+}
+
 model Category {
   id String @id @default(cuid())
   name String
