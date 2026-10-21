@@ -16,7 +16,9 @@ export async function POST(req:NextRequest){
     if(!rl.ok)return NextResponse.json({error:"Too many attempts. Please wait a minute."},{status:429,headers:{"Retry-After":String(rl.retryAfter)}});
     const p=schema.safeParse(await req.json().catch(()=>null));
     if(!p.success)return NextResponse.json({error:"Please choose a reason and fill in your order details."},{status:400});
-    const o:any=await db.order.findUnique({where:{orderNumber:normalizeOrderNumber(p.data.orderNumber)}});
+    const normalizedOrderNumber=normalizeOrderNumber(p.data.orderNumber);
+    let o:any=await db.order.findFirst({where:{orderNumber:normalizedOrderNumber}});
+    if(!o){const recent:any[]=await db.order.findMany({take:500,orderBy:{createdAt:"desc"}});o=recent.find(row=>normalizeOrderNumber(row.orderNumber)===normalizedOrderNumber)||null;}
     // Older/imported orders may keep contact details under legacy aliases, and an empty
     // canonical field must not hide a valid legacy phone/email value.
     const phoneCandidates=o?[o.customerPhone,o.phone,o.mobile,o.contactPhone].filter((v:any)=>String(v??"").trim()):[];
