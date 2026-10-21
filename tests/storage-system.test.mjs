@@ -36,3 +36,15 @@ test("storage registry collections are available in Firestore adapter",async()=>
 });
 
 test("scheduled backup retry endpoint requires CRON_SECRET and disables caching",async()=>{ const route=await read("../app/api/cron/storage-backups/route.ts"); assert.match(route,/process\.env\.CRON_SECRET/); assert.match(route,/authorization/); assert.match(route,/status:401/); assert.match(route,/processStorageBackupQueue/); assert.match(route,/Cache-Control/); });
+
+test("Google Drive mirror supports OAuth refresh tokens for personal My Drive quota",async()=>{
+ const source=await read("../lib/google-drive/file-storage.ts");
+ const docs=await read("../docs/telegram-file-storage.md");
+ assert.match(source,/GOOGLE_DRIVE_CLIENT_ID/);
+ assert.match(source,/GOOGLE_DRIVE_CLIENT_SECRET/);
+ assert.match(source,/GOOGLE_DRIVE_REFRESH_TOKEN/);
+ assert.match(source,/grant_type: "refresh_token"/);
+ assert.match(source,/mode: "oauth"/);
+ assert.match(docs,/personal Gmail \/ My Drive folder: OAuth refresh-token credentials/);
+ assert.match(docs,/Shared Drive/);
+});
