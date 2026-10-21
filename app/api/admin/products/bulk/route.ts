@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {db} from "@/lib/prisma";
 import {recordAdminAudit} from "@/lib/auth/audit";
+import {readAdminSession} from "@/lib/auth/admin";
 
 export const runtime = "nodejs";
 const rowSchema = z.object({
@@ -26,6 +27,8 @@ const rowSchema = z.object({
 const slugify=(s:string)=>s.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 function boolValue(v:unknown){return typeof v==="boolean"?v:["true","1","yes","y","published"].includes(String(v??"").trim().toLowerCase());}
 export async function POST(req:NextRequest){
+  const session=await readAdminSession(req.cookies.get("admin_session")?.value||"");
+  if(!session)return NextResponse.json({error:"Admin authentication required."},{status:401});
   try{
     const body=await req.json();
     if(!Array.isArray(body?.rows)||body.rows.length===0)return NextResponse.json({error:"No product rows supplied."},{status:400});
@@ -62,7 +65,6 @@ export async function POST(req:NextRequest){
           const extra:any={};
           if(p.optionsJson)extra.options=parseJsonCell(p.optionsJson,[]);
           if(p.variantsJson)extra.variants=parseJsonCell(p.variantsJson,[]);
-          if(p.imagesJson)extra.imagesJson=parseJsonCell(p.imagesJson,[]);
           if(p.freeShipping!==undefined&&p.freeShipping!=="")extra.freeShipping=boolValue(p.freeShipping);
           if(p.shippingFee!==undefined&&p.shippingFee!=="")extra.shippingFee=p.shippingFee===""?null:p.shippingFee;
           const imageRows= p.imagesJson ? parseJsonCell(p.imagesJson,[]) : [];
