@@ -76,3 +76,20 @@ export async function mirrorImageToGoogleDrive(bytes: Uint8Array, filename: stri
   }
   return { configured: true as const, fileId: data.id };
 }
+
+
+/** Retry transient Drive failures with bounded exponential backoff. Never log credentials or file bytes. */
+export async function mirrorImageToGoogleDriveWithRetry(bytes: Uint8Array, filename: string, mime: string, attempts = 3) {
+  let lastError: unknown;
+  const maxAttempts = Math.max(1, Math.min(3, attempts));
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await mirrorImageToGoogleDrive(bytes, filename, mime);
+    } catch (error) {
+      lastError = error;
+      console.error("Google Drive backup attempt " + (attempt + 1) + " failed:", error instanceof Error ? error.message : String(error));
+      if (attempt + 1 < maxAttempts) await new Promise(resolve => setTimeout(resolve, 250 * (2 ** attempt)));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Google Drive backup failed after retries.");
+}
