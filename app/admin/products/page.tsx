@@ -12,7 +12,7 @@ const template=[columns.join(","),[
  JSON.stringify([{sku:"SKU-001-BLACK",options:{Color:"Black"},price:1000,stock:10,lowStockThreshold:2},{sku:"SKU-001-WHITE",options:{Color:"White"},price:1000,stock:15,lowStockThreshold:2}]),
  JSON.stringify([{url:"https://example.com/product-image.jpg",alt:"Sample Product",sortOrder:0}]),
  false,""
-].map(csvCell).join(",")].join("\\r\\n");
+].map(csvCell).join(",")].join("\r\n");
 function csvCell(v:unknown){const s=v==null?"":String(v);return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
 function parseCSV(text:string):string[][]{
  const rows:string[][]=[];let row:string[]=[],cell="",quoted=false;
