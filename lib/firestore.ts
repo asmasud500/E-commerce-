@@ -93,7 +93,7 @@ async function include(obj:any,inc:any,select?:any){if(!obj)return obj;const out
  * account reads do not download entire collections before filtering locally.
  * Complex relation/logical filters deliberately retain the compatibility fallback.
  */
-function firestoreStructuredQuery(model:string,where:any,orderBy:any,take:any,skip:any){
+export function firestoreStructuredQuery(model:string,where:any,orderBy:any,take:any,skip:any){
   if(skip)return null;
   const filters:any[]=[];
   let inequalityField="";
