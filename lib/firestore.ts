@@ -88,28 +88,70 @@ function applySelect(obj:any,sel:any){if(!sel)return obj;const o:any={};for(cons
 function sortRows(rows:any[],order:any){if(!order)return rows;const arr=Array.isArray(order)?order:[order];return [...rows].sort((a,b)=>{for(const spec of arr){const [k,v]=Object.entries(spec)[0] as any;const c=cmp(get(a,k),get(b,k));if(c)return v==="desc"?-c:c;}return 0;});}
 function withModel(row:any,m:string){return row?Object.assign(row,{__model:m}):row;}
 async function include(obj:any,inc:any,select?:any){if(!obj)return obj;const out={...obj};for(const [rel,opt] of Object.entries(inc||{})){const cfg:any=opt||{};const map=relationMap[modelFor(obj)]?.[rel];if(!map)continue;const [m,f]=map as any;const one=["user","category","product","paymentGateway","order"].includes(rel);if(one){const rid=obj[f];const raw=rid?await rawGet(m,rid):null;out[rel]=raw?await include(withModel(raw,m),cfg.include,cfg.select):null;continue;}let matches=(await all(m)).filter((r:any)=>r[f]===obj.id);matches=sortRows(matches,cfg.orderBy);if(cfg.take)matches=matches.slice(0,cfg.take);out[rel]=await Promise.all(matches.map((x:any)=>include(withModel(x,m),cfg.include,cfg.select)));}return applySelect(out,select);}
-/** Plain equality filters ({a:"x",b:true}) can be answered by Firestore itself instead of reading the whole collection. */
-export function equalityFilters(where:any):{field:string;value:string|number|boolean}[]|null{
-  if(!where||typeof where!=="object"||Array.isArray(where))return null;
-  const out:{field:string;value:string|number|boolean}[]=[];
-  for(const [k,v] of Object.entries(where)){
-    if(k==="id"||k==="AND"||k==="OR"||k==="NOT"||k.includes(".")||!/^[A-Za-z_][A-Za-z0-9_]*$/.test(k))return null;
-    if(typeof v==="string"||typeof v==="boolean"||(typeof v==="number"&&Number.isFinite(v)))out.push({field:k,value:v});else return null;
+/**
+ * Push supported scalar filters into Firestore so common catalogue, admin and
+ * account reads do not download entire collections before filtering locally.
+ * Complex relation/logical filters deliberately retain the compatibility fallback.
+ */
+function firestoreStructuredQuery(model:string,where:any,orderBy:any,take:any,skip:any){
+  if(skip)return null;
+  const filters:any[]=[];
+  let inequalityField="";
+  if(where!==undefined&&where!==null){
+    if(typeof where!=="object"||Array.isArray(where))return null;
+    for(const [field,condition] of Object.entries(where)){
+      if(field==="id"||field==="AND"||field==="OR"||field==="NOT"||field.includes(".")||!/^[A-Za-z_][A-Za-z0-9_]*$/.test(field))return null;
+      const add=(op:string,value:any)=>{
+        filters.push({fieldFilter:{field:{fieldPath:field},op,value:enc(value)}});
+        if(["GREATER_THAN","GREATER_THAN_OR_EQUAL","LESS_THAN","LESS_THAN_OR_EQUAL"].includes(op))inequalityField=field;
+      };
+      if(typeof condition==="string"||typeof condition==="boolean"||(typeof condition==="number"&&Number.isFinite(condition))||condition instanceof Date){
+        add("EQUAL",condition);continue;
+      }
+      if(!condition||typeof condition!=="object"||Array.isArray(condition))return null;
+      const entries=Object.entries(condition);
+      if(!entries.length)return null;
+      for(const [operator,value] of entries){
+        if(operator==="equals")add("EQUAL",value);
+        else if(operator==="in"&&Array.isArray(value)&&value.length>0&&value.length<=30){
+          filters.push({fieldFilter:{field:{fieldPath:field},op:"IN",value:{arrayValue:{values:value.map(enc)}}}});
+        }else if(operator==="gt")add("GREATER_THAN",value);
+        else if(operator==="gte")add("GREATER_THAN_OR_EQUAL",value);
+        else if(operator==="lt")add("LESS_THAN",value);
+        else if(operator==="lte")add("LESS_THAN_OR_EQUAL",value);
+        else return null;
+      }
+    }
   }
-  return out.length&&out.length<=5?out:null;
+  const structured:any={from:[{collectionId:collections[model]}]};
+  if(filters.length)structured.where=filters.length===1?filters[0]:{compositeFilter:{op:"AND",filters}};
+  const orderSpecs=orderBy?(Array.isArray(orderBy)?orderBy:[orderBy]):[];
+  const parsedOrder:any[]=[];
+  for(const spec of orderSpecs){
+    if(!spec||typeof spec!=="object")return null;
+    for(const [field,direction] of Object.entries(spec)){
+      if(!/^[A-Za-z_][A-Za-z0-9_]*$/.test(field)||(direction!=="asc"&&direction!=="desc"))return null;
+      parsedOrder.push({field:{fieldPath:field},direction:direction==="desc"?"DESCENDING":"ASCENDING"});
+    }
+  }
+  // Firestore requires the inequality field to lead explicit ordering. When the
+  // caller wants a different sort, fetch the filtered set and sort it locally.
+  const canUseOrder=!inequalityField||!parsedOrder.length||parsedOrder[0].field.fieldPath===inequalityField;
+  if(canUseOrder&&parsedOrder.length)structured.orderBy=parsedOrder;
+  if(canUseOrder&&Number.isInteger(take)&&take>0)structured.limit=take;
+  return structured;
 }
-async function fetchRows(model:string,where:any){
-  const eq=equalityFilters(where);
-  if(eq){
+async function fetchRows(model:string,where:any,orderBy:any,take:any,skip:any){
+  const structured=firestoreStructuredQuery(model,where,orderBy,take,skip);
+  if(structured){
     try{
-      const filters=eq.map(f=>({fieldFilter:{field:{fieldPath:f.field},op:"EQUAL",value:enc(f.value)}}));
-      const response:any=await req(":runQuery",{method:"POST",body:JSON.stringify({structuredQuery:{from:[{collectionId:collections[model]}],where:filters.length===1?filters[0]:{compositeFilter:{op:"AND",filters}}}})});
+      const response:any=await req(":runQuery",{method:"POST",body:JSON.stringify({structuredQuery:structured})});
       return (Array.isArray(response)?response:[]).filter((r:any)=>r.document).map((r:any)=>docToObj(r.document));
-    }catch(e){console.error("Firestore equality query failed, falling back to a full read:",e instanceof Error?e.message:String(e))}
+    }catch(e){console.error("Firestore structured query failed, falling back to a full read:",e instanceof Error?e.message:String(e))}
   }
   return all(model);
 }
-async function query(model:string,args:any={}){let rows=(await fetchRows(model,args.where)).map(r=>withModel(r,model));rows=rows.filter(r=>match(r,args.where));rows=sortRows(rows,args.orderBy);if(args.skip)rows=rows.slice(args.skip);if(args.take!=null)rows=rows.slice(0,args.take);const result:any[]=[];for(const r of rows)result.push(await include(r,args.include,args.select));return result.map(r=>{if(r)delete r.__model;return r;});}
+async function query(model:string,args:any={}){let rows=(await fetchRows(model,args.where,args.orderBy,args.take,args.skip)).map(r=>withModel(r,model));rows=rows.filter(r=>match(r,args.where));rows=sortRows(rows,args.orderBy);if(args.skip)rows=rows.slice(args.skip);if(args.take!=null)rows=rows.slice(0,args.take);const result:any[]=[];for(const r of rows)result.push(await include(r,args.include,args.select));return result.map(r=>{if(r)delete r.__model;return r;});}
 function compoundId(where:any){const vals=Object.values(where).flatMap((v:any)=>v&&typeof v==="object"&&!Array.isArray(v)?Object.values(v):[v]);return vals.map(v=>String(v)).join("__");}
 async function resolve(model:string,where:any){if(where?.id)return rawGet(model,where.id);return (await query(model,{where,take:1}))[0]||null;}
 function modelApi(model:string){return {findUnique:async(a:any={})=>resolve(model,a.where||{}).then((r:any)=>r?include(withModel(r,model),a.include,a.select):null),findFirst:async(a:any={})=>(await query(model,{...a,take:1}))[0]||null,findMany:async(a:any={})=>query(model,a),count:async(a:any={})=>(await query(model,{where:a.where})).length,aggregate:async(a:any={})=>{const rows=await query(model,{where:a.where});const out:any={};if(a._sum)for(const k of Object.keys(a._sum))out._sum={[k]:rows.reduce((s,r)=>s+Number(r[k]||0),0)};return out;},create:async(a:any={})=>{const i=a.data.id||id();const nested:AnyObj={};const plain:AnyObj={};for(const [k,v] of Object.entries(a.data)){const rel=relationMap[model]?.[k];if(rel&&v&&typeof v==="object"&&!Array.isArray(v)&&"create"in(v as any)&&!["user","category","product","paymentGateway","order"].includes(k))nested[k]={rel,rows:Array.isArray((v as any).create)?(v as any).create:[(v as any).create]};else plain[k]=v;}const d={...withDefaults(model,plain),id:i,createdAt:a.data.createdAt||new Date(),updatedAt:a.data.updatedAt||new Date()};const r=await write(model,i,d);for(const {rel,rows} of Object.values(nested) as any[]){const [cm,fk]=rel;for(const row of rows){const ci=row.id||id();await write(cm,ci,{...withDefaults(cm,row),id:ci,[fk]:i,createdAt:row.createdAt||new Date(),updatedAt:row.updatedAt||new Date()});}}return include(withModel(r,model),a.include,a.select);},createMany:async(a:any={})=>{for(const original of a.data||[]){const i=original.id||id();await write(model,i,{...withDefaults(model,original),id:i,createdAt:original.createdAt||new Date(),updatedAt:original.updatedAt||new Date()});}return {count:(a.data||[]).length};},update:async(a:any={})=>{const existing=await resolve(model,a.where||{});if(!existing)throw new Error("Not found");const r=await applyData(model,existing.id,{...a.data,updatedAt:new Date()});return include(withModel(r,model),a.include,a.select);},updateMany:async(a:any={})=>{const rows=await query(model,{where:a.where});for(const r of rows)await applyData(model,r.id,a.data);return {count:rows.length};},delete:async(a:any={})=>{const r=await resolve(model,a.where||{});if(!r)throw new Error("Not found");await remove(model,r.id);return r;},deleteMany:async(a:any={})=>{const rows=await query(model,{where:a.where});for(const r of rows)await remove(model,r.id);return {count:rows.length};},upsert:async(a:any={})=>{const r=await resolve(model,a.where||{});return r?modelApi(model).update({where:{id:r.id},data:a.update}):modelApi(model).create({data:{...a.create,id:compoundId(a.where||{})}});}};}
