@@ -11,7 +11,7 @@ const iso=(v:any)=>{const raw=v&&typeof v==="object"&&"toDate" in v?v.toDate():v
 export async function POST(req:NextRequest){
   try{
     const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-real-ip")||"unknown";
-    const rl=rateLimit("track:"+ip,12,60_000);
+    const rl=rateLimit("track:"+ip,15,60_000);
     if(!rl.ok)return NextResponse.json({error:"Too many attempts. Please wait a minute and try again."},{status:429,headers:{"Retry-After":String(rl.retryAfter)}});
     const parsed=schema.safeParse(await req.json().catch(()=>null));
     if(!parsed.success)return NextResponse.json({error:"Enter your order number and the phone number or email used at checkout."},{status:400});
