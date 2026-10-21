@@ -1,9 +1,12 @@
 import {NextRequest,NextResponse} from "next/server";
 import {db} from "@/lib/prisma";
+import {readAdminSession} from "@/lib/auth/admin";
 import {recordAdminAudit} from "@/lib/auth/audit";
 import {parseDataUrl,saveProductImage} from "@/lib/store/images";
 
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
+  const session=await readAdminSession(req.cookies.get("admin_session")?.value||"");
+  if(!session)return NextResponse.json({error:"Admin authentication required."},{status:401});
   const {id}=await params;
   try{
     const b=await req.json();
