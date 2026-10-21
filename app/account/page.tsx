@@ -11,7 +11,30 @@ const money=(n:any)=>Number(n||0).toLocaleString("en-BD",{maximumFractionDigits:
 export default function Account(){
  const [user,setUser]=useState<any>(null),[isAdmin,setIsAdmin]=useState(false),[orders,setOrders]=useState<any[]>([]),[loading,setLoading]=useState(true);
  const [query,setQuery]=useState(""),[filter,setFilter]=useState("ALL"),[busy,setBusy]=useState(""),[notice,setNotice]=useState(""),[loadError,setLoadError]=useState("");
- const load=useCallback(async()=>{setLoading(true);setLoadError("");try{const request=async(url:string)=>{const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);try{return await fetch(url,{cache:"no-store",signal:controller.signal})}finally{clearTimeout(timer)}};const [u,o]=await Promise.all([request("/api/customer/auth/me"),request("/api/account/orders")]);if(!u.ok)throw new Error("Could not verify your account session. Please sign in again.");const ud=await u.json();if(!o.ok&&o.status!==401)throw new Error("Your account loaded, but orders could not be retrieved. Please retry.");const od=o.ok?await o.json():[];setUser(ud?.user||null);setIsAdmin(!!ud?.isAdmin);setOrders(Array.isArray(od)?od:[]);if(o.status===401)setUser(null)}catch(e){setLoadError(e instanceof Error&&e.name==="AbortError"?"The account request took too long. Check your connection and retry.":e instanceof Error?e.message:"Could not load your account. Please retry.");}finally{setLoading(false)}},[]);
+ const load=useCallback(async()=>{
+  setLoading(true);setLoadError("");setNotice("");
+  const timedFetch=async(url:string,ms:number)=>{const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ms);try{return await fetch(url,{cache:"no-store",signal:controller.signal})}finally{clearTimeout(timer)}};
+  try{
+   const response=await timedFetch("/api/customer/auth/me",8000);
+   if(!response.ok)throw new Error("Could not verify your account session. Please sign in again.");
+   const data=await response.json();
+   setUser(data?.user||null);setIsAdmin(!!data?.isAdmin);
+   if(!data?.user){setOrders([]);setLoading(false);return}
+   // Do not block the account page on the slower orders query.
+   setLoading(false);
+   try{
+    const orderResponse=await timedFetch("/api/account/orders",8000);
+    if(orderResponse.status===401){setUser(null);setOrders([]);return}
+    if(!orderResponse.ok)throw new Error("Orders could not be loaded.");
+    const orderData=await orderResponse.json();
+    setOrders(Array.isArray(orderData)?orderData:[]);
+   }catch(e){
+    setNotice(e instanceof Error&&e.name==="AbortError"?"Your account loaded, but orders are taking too long. Please retry.":e instanceof Error?e.message:"Orders could not be loaded.");
+   }
+  }catch(e){
+   setLoadError(e instanceof Error&&e.name==="AbortError"?"Account verification timed out. Check your connection and try again.":e instanceof Error?e.message:"Could not load your account. Please retry.");
+  }finally{setLoading(false)}
+ },[]);
  useEffect(()=>{void load()},[load]);
  async function logout(){try{await fetch("/api/customer/auth/logout",{method:"POST"})}finally{location.href="/account/login"}}
  async function cancelOrder(orderNumber:string){if(!confirm("Cancel order "+orderNumber+"? This cannot be undone."))return;setBusy(orderNumber);setNotice("");try{const r=await fetch("/api/account/orders/cancel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderNumber})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||"Could not cancel this order.");setNotice("Order "+orderNumber+" was cancelled.");await load()}catch(e){setNotice(e instanceof Error?e.message:"Could not cancel this order.")}finally{setBusy("")}}
