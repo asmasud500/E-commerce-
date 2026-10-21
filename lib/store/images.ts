@@ -20,7 +20,7 @@ async function mirrorOrLog(bytes:Uint8Array,filename:string,mime:string){
 }
 
 async function checksumOf(bytes:Uint8Array){
-  const digest=await crypto.subtle.digest("SHA-256",bytes);
+  const digest=await crypto.subtle.digest("SHA-256",Uint8Array.from(bytes).buffer as ArrayBuffer);
   return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 function validImageBytes(bytes:Uint8Array,mime:string){
