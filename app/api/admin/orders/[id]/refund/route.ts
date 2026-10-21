@@ -10,7 +10,7 @@ const schema = z.object({reference:z.string().trim().min(2).max(100),reason:z.st
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}) {
   const session=await readAdminSession(req.cookies.get("admin_session")?.value||"");
   if(!session)return NextResponse.json({error:"Admin authentication required."},{status: 401});
-  if(!["SUPER_ADMIN","MANAGER"].includes(session.role))return NextResponse.json({error:"Only a manager or super admin can issue refunds."},{status: 403});
+  if(session.role!=="SUPER_ADMIN")return NextResponse.json({error:"Only a super admin can issue refunds."},{status: 403});
   const {id}=await params;
   try {
     const parsed=schema.safeParse(await req.json().catch(()=>null));
