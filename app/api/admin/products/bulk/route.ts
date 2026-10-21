@@ -25,6 +25,7 @@ const rowSchema = z.object({
   shippingFee: z.union([z.literal(""),z.coerce.number().nonnegative()]).optional()
 });
 const slugify=(s:string)=>s.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+function isHttpUrl(value:unknown){if(typeof value!=="string")return false;try{const url=new URL(value);return url.protocol==="http:"||url.protocol==="https:";}catch{return false;}}
 function boolValue(v:unknown){return typeof v==="boolean"?v:["true","1","yes","y","published"].includes(String(v??"").trim().toLowerCase());}
 export async function POST(req:NextRequest){
   const session=await readAdminSession(req.cookies.get("admin_session")?.value||"");
