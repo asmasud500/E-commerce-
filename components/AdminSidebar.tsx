@@ -30,6 +30,7 @@ const groups = [
   { title: "Store configuration", items: [
     ["/admin/delivery-zones", "Delivery zones", "⌁"],
     ["/admin/banners", "Store banners", "▧"],
+    ["/admin/storage", "Storage Health", "☁"],
     ["/admin/settings", "Store settings", "⚙"],
     ["/admin/integrations", "Integrations & API", "⌘"],
     ["/admin/staff", "Staff & permissions", "♧"],
