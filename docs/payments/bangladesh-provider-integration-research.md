@@ -60,3 +60,24 @@ Before implementation, inspect the current repository for actual callback routes
 8. Confirm secrets never appear in client bundles, logs, API responses or publicConfig.
 9. Verify refund/reconciliation behaviour if the provider supports it.
 10. Enable Live mode only after provider approval and a real low-value end-to-end test.
+
+
+## Official source review update — 2026-10-21
+
+This review used the official bKash demo merchant portal and official Nagad merchant page:
+
+- bKash demo portal: https://merchantdemo.sandbox.bka.sh/
+- bKash developer documentation linked from the portal: https://developer.bka.sh/docs
+- bKash SI/Aggregator guide (official-hosted PDF): https://s3-ap-southeast-1.amazonaws.com/developer.pay.bka.sh/bKash_SI_Aggregator_Guide.pdf
+- Nagad merchant payment page: https://nagad.com.bd/services/?service=merchant-payment
+
+The bKash demo portal currently lists Checkout v1.2.0-beta and Tokenized Checkout v2 as available product versions. The exact product, API version and endpoints must match the merchant's approved onboarding package. Do not assume an older v1.2.0-beta endpoint pattern is correct for a merchant account approved for v2 or another product.
+
+Nagad's public merchant page confirms merchant-payment onboarding but does not publish enough account-specific API information to safely populate all production fields. Community code and third-party copies of integration guides are reference material only, not authorization to use a guessed production URL.
+
+### Safe configuration decision
+
+- Do not automatically fill or enable Live endpoints based on third-party examples.
+- Use only provider-issued Sandbox endpoints and credentials for a sandbox test.
+- Keep bKash and Nagad disabled until the repository has a matching server-side adapter, verifies payment status server-to-server, checks exact BDT amount/order reference, and passes success/failure/cancel/duplicate-callback tests.
+- Admin API endpoint fields are configuration storage; they do not dynamically generate a provider adapter. Do not enter credentials into Additional public configuration (JSON).
