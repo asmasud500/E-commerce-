@@ -43,8 +43,9 @@ export function buildTimeline(o:{status?:string;paymentStatus?:string;createdAt?
   const paid=pay==="PAID"||pay==="REFUNDED"||r>=1||cod;
 
   const steps:TimelineStep[]=[
-    {key:"placed",label:"Order placed",detail:"We received your order.",state:"done",at:iso(o.createdAt)},
-    {key:"payment",label:"Payment",detail:cod&&pay!=="PAID"?"Cash on delivery — pay when your parcel arrives.":paid?"Payment verified.":o.paymentProofSubmittedAt?"Payment details received. We are verifying them.":"Waiting for your payment details.",state:paid?"done":"current",at:paid?null:iso(o.paymentProofSubmittedAt)},
+    {key:"placed",label:"Order placed",detail:"Your order request was created.",state:"done",at:iso(o.createdAt)},
+    {key:"received",label:"Order received",detail:"We received your order.",state:"done",at:iso(o.createdAt)},
+    {key:"payment",label:"Payment",detail:cod&&pay!=="PAID"?"Cash on delivery — pay when your parcel arrives.":paid?"Payment confirmed.":o.paymentProofSubmittedAt?"Payment details received. We are verifying them.":"Waiting for your payment details.",state:paid?"done":"current",at:paid?null:iso(o.paymentProofSubmittedAt)},
     {key:"confirmed",label:"Confirmed",detail:"Your order is confirmed.",state:r>=1?"done":"todo",at:null},
     {key:"processing",label:"Packing",detail:"We are preparing your items.",state:r>=2?"done":"todo",at:null},
     {key:"shipped",label:"On the way",detail:[o.courierName,o.trackingNumber].filter(Boolean).join(" · ")||"Handed to the courier.",state:r>=3?"done":"todo",at:iso(o.shippedAt)},
