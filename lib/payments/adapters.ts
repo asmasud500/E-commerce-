@@ -54,6 +54,6 @@ export const paymentAdapters:Record<string,PaymentAdapter>={
  NAGAD:unavailable("Nagad"),
  ROCKET:unavailable("Rocket"),
  UPAY:unavailable("Upay"),
- CUSTOM:unavailable("Custom"),
+ CUSTOM:{async init(_ctx,config){if(String(config.mode||"").toUpperCase()!=="SANDBOX"||config.demo!==true)return {ok:false,status:"ERROR",message:"Custom provider has no verified adapter. Demo mode requires SANDBOX and demo=true."};return {ok:true,status:"DEMO",message:"Demo session ready. No money was charged and the order remains unpaid."};},async verify(){return {ok:false}}},
  BANGLA_QR:unavailable("Bangla QR")
 };
