@@ -123,3 +123,22 @@ export async function mirrorImageToGoogleDriveWithRetry(bytes: Uint8Array, filen
   }
   throw lastError instanceof Error ? lastError : new Error("Google Drive backup failed after retries.");
 }
+
+
+/** Read a private backup copy from Drive when the primary Telegram copy is unavailable. */
+export async function readGoogleDriveImage(fileId: string): Promise<{ bytes: Uint8Array; mime: string } | null> {
+  if (!fileId || fileId.length > 256 || !/^[A-Za-z0-9_-]+$/.test(fileId)) return null;
+  const config = driveConfig();
+  if (!config) return null;
+  const token = await createAccessToken(config);
+  const response = await fetch("https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(fileId) + "?alt=media", {
+    headers: { Authorization: "Bearer " + token },
+    cache: "no-store"
+  });
+  if (response.status === 404 || response.status === 410) return null;
+  if (!response.ok) throw new Error("Google Drive backup read failed (" + response.status + ").");
+  const mime = response.headers.get("content-type")?.split(";")[0]?.trim() || "application/octet-stream";
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (!bytes.length) throw new Error("Google Drive backup returned an empty file.");
+  return { bytes, mime };
+}

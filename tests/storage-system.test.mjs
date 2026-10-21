@@ -48,3 +48,14 @@ test("Google Drive mirror supports OAuth refresh tokens for personal My Drive qu
  assert.match(docs,/personal Gmail \/ My Drive folder: OAuth refresh-token credentials/);
  assert.match(docs,/Shared Drive/);
 });
+
+test("public product images fail over to checksum-verified Google Drive backups",async()=>{
+ const route=await read("../app/api/telegram/files/[fileId]/route.ts");
+ const drive=await read("../lib/google-drive/file-storage.ts");
+ assert.match(route,/readGoogleDriveImage/);
+ assert.match(route,/publicImage\?\.driveFileId/);
+ assert.match(route,/checksumMatches\(backup\.bytes,publicImage\.checksum\)/);
+ assert.match(route,/imageResponse\(backup\.bytes,backup\.mime,true,"google-drive"\)/);
+ assert.match(drive,/drive\/v3\/files\//);
+ assert.match(drive,/cache: "no-store"/);
+});
