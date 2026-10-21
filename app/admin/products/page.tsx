@@ -5,8 +5,14 @@ import Link from "next/link";
 
 type P={id:string;name:string;sku:string;slug?:string;description?:string;price:number;compareAtPrice?:number|null;salePrice?:number|null;stock:number;lowStockThreshold?:number;featured?:boolean;published:boolean;categoryId?:string|null;category?:{name:string}|null;images?:{url:string;alt?:string|null;sortOrder?:number}[];options?:{name:string;values:string[]}[];variants?:{id?:string;sku?:string;options:Record<string,string>;price:number;salePrice?:number|null;compareAtPrice?:number|null;stock:number;lowStockThreshold?:number}[];freeShipping?:boolean;shippingFee?:number|null};
 type ImportResult={row:number;sku:string;status:"created"|"updated"|"error";message:string};
-const columns=["sku","name","slug","description","price","compareAtPrice","salePrice","stock","lowStockThreshold","featured","published","categoryId"];
-const template="sku,name,slug,description,price,compareAtPrice,salePrice,stock,lowStockThreshold,featured,published,categoryId\nSKU-001,Sample Product,sample-product,Product description,1000,1200,,25,5,false,true,";
+const columns=["sku","name","slug","description","price","compareAtPrice","salePrice","stock","lowStockThreshold","featured","published","categoryId","optionsJson","variantsJson","imagesJson","freeShipping","shippingFee"];
+const template=[columns.join(","),[
+ "SKU-001","Sample Product","sample-product","Product description",1000,1200,"",25,5,false,true,"",
+ JSON.stringify([{name:"Color",values:["Black","White"]}]),
+ JSON.stringify([{sku:"SKU-001-BLACK",options:{Color:"Black"},price:1000,stock:10,lowStockThreshold:2},{sku:"SKU-001-WHITE",options:{Color:"White"},price:1000,stock:15,lowStockThreshold:2}]),
+ JSON.stringify([{url:"https://example.com/product-image.jpg",alt:"Sample Product",sortOrder:0}]),
+ false,""
+].map(csvCell).join(",")].join("\\r\\n");
 function csvCell(v:unknown){const s=v==null?"":String(v);return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
 function parseCSV(text:string):string[][]{
  const rows:string[][]=[];let row:string[]=[],cell="",quoted=false;
@@ -21,7 +27,7 @@ export default function AdminProducts(){
  useEffect(()=>{load()},[]);
  async function toggle(p:P){setActionBusy(p.id);setNotice("");try{const r=await fetch("/api/admin/products/"+p.id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({published:!p.published})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||"Could not update product status.");setNotice(p.published?"Product moved to drafts.":"Product published successfully.");await load();}catch(e){setNotice(e instanceof Error?e.message:"Product status update failed.");}finally{setActionBusy("");}}
  async function remove(id:string){const product=products.find(p=>p.id===id);if(!confirm("Delete "+(product?.name||"this product")+"? This action cannot be undone."))return;setActionBusy(id);setNotice("");try{const r=await fetch("/api/admin/products/"+id,{method:"DELETE"});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||"Could not delete product.");setNotice("Product deleted.");await load();}catch(e){setNotice(e instanceof Error?e.message:"Product deletion failed.");}finally{setActionBusy("");}}
- function exportProducts(){const lines=[columns.join(","),...products.map(p=>columns.map(k=>csvCell((p as any)[k])).join(","))];downloadCSV("mart-products-export.csv",lines.join("\r\n"));setNotice("Product export downloaded.");}
+ function exportProducts(){const lines=[columns.join(","),...products.map(p=>columns.map(k=>{const value=(p as any)[k];if(k==="optionsJson")return csvCell(JSON.stringify(p.options??[]));if(k==="variantsJson")return csvCell(JSON.stringify(p.variants??[]));if(k==="imagesJson")return csvCell(JSON.stringify((p.images||[]).map(i=>({url:i.url,alt:i.alt||"",sortOrder:i.sortOrder??0}))));return csvCell(value);}).join(","))];downloadCSV("mart-products-export.csv",lines.join("\r\n"));setNotice("Product export downloaded with variants and image URLs.");}
  const filteredProducts=products.filter(p=>[p.name,p.sku,p.category?.name||p.categoryId||"",p.slug||""].some(v=>v.toLowerCase().includes(query.toLowerCase().trim()))&&(visibility==="ALL"||(visibility==="PUBLISHED"?p.published:!p.published))&&(stockFilter==="ALL"||(stockFilter==="OUT"?p.stock<=0:stockFilter==="LOW"?p.stock>0&&p.stock<=(p.lowStockThreshold??5):p.stock>(p.lowStockThreshold??5))));
  async function importFile(file?:File){
   if(!file)return;setBusy(true);setNotice("");setResults([]);setSummary(null);
