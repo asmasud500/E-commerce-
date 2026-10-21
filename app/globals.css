@@ -2976,3 +2976,45 @@ img,video,svg,canvas{max-width:100%}
 .loading-skeleton{min-width:0}
 @keyframes skeleton{0%{background-position:200% 0}100%{background-position:-200% 0}}
 @media(prefers-reduced-motion:reduce){.loading-skeleton *{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* Checkout journey: keep all five stages in one horizontal timeline.
+   Narrow screens scroll horizontally instead of wrapping into a vertical list. */
+.pg .checkout-progress{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:stretch;
+  width:100%;
+  max-width:none;
+  gap:10px;
+  margin:0 0 22px;
+  padding:4px 2px 10px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type:x proximity;
+  scrollbar-width:thin;
+  -webkit-overflow-scrolling:touch;
+}
+.pg .checkout-progress li{
+  display:flex;
+  flex:1 0 0;
+  width:auto;
+  min-width:0;
+  align-items:center;
+  gap:9px;
+  padding:12px 11px;
+  scroll-snap-align:start;
+}
+.pg .checkout-progress li>i{flex:0 0 28px;width:28px;height:28px}
+.pg .checkout-progress li>span{min-width:0;overflow-wrap:anywhere;font-size:12px}
+.pg .checkout-progress li>span small{display:block;font-size:10px}
+@media(max-width:1000px){
+  .pg .checkout-progress li{flex:0 0 176px}
+}
+@media(max-width:600px){
+  .pg .checkout-progress{gap:8px;margin-bottom:16px;padding-bottom:8px}
+  .pg .checkout-progress li{flex:0 0 158px;padding:10px;border-radius:12px;gap:8px}
+  .pg .checkout-progress li>i{flex-basis:25px;width:25px;height:25px}
+  .pg .checkout-progress li>span{font-size:11px}
+  .pg .checkout-progress li>span small{font-size:9px}
+}
+
