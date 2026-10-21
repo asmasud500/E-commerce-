@@ -43,3 +43,14 @@ New product images and general website image uploads are still sent to the priva
 4. Run the Cloudflare deployment workflow again so it copies the secrets to Worker runtime secrets.
 
 The Drive mirror is inactive if none of these three secrets is set. If only some are set, uploads report a configuration error. Never commit service-account JSON or private keys. Existing images are not retroactively copied; only new uploads are mirrored.
+
+## Storage reliability improvements
+
+- Image uploads accept JPEG, PNG, and WebP only when the file signature matches the declared MIME type; images over 650 KB are rejected.
+- New uploads calculate a SHA-256 checksum and reuse a matching Telegram file reference when an identical asset is already registered.
+- Firestore collections `storageAssets` and `storageBackupJobs` track file metadata and durable Google Drive retry jobs. The image bytes are not placed in the queue.
+- The admin-only `/admin/storage` dashboard reads `/api/admin/storage` for approximate tracked bytes, backup queue state, recent assets, and legacy Base64 counts. Use **Retry due backups** to process due jobs in a bounded batch.
+- Backup retries are bounded: each job is retried with increasing delays and marked failed after eight attempts. A Drive upload response is recorded with its file ID; this is not a full restore verification. Periodically test that a copied Drive object can actually be retrieved and matches its SHA-256 checksum.
+- Legacy Base64 records remain readable. Do not bulk-delete them until they have been migrated and verified. The dashboard reports only the legacy Base64 records within its current capped query, not a guaranteed whole-database count.
+- Public product image responses use CDN caching; private payment proof and invoice responses must remain authenticated and `private, no-store`.
+- Cloudflare R2 has not been switched on by this change. Add it only after choosing an R2 bucket, setting runtime credentials, and testing upload/read/rollback paths; Telegram remains the serving store in the current architecture.
