@@ -40,7 +40,7 @@ test("generic Telegram file route does not expose private files to unauthenticat
   assert.match(source, /readAdminSession/);
   assert.match(source, /canAccessAdminPath/);
   assert.match(source, /Authentication required/);
-  assert.match(source, /isPublicProductImage\?"public, max-age=3600/);
+  assert.match(source, /isPublicProductImage\?"public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000/);
   assert.match(source, /"private, no-store, max-age=0"/);
 });
 
