@@ -2970,3 +2970,9 @@ img,video,svg,canvas{max-width:100%}
 @keyframes route-shimmer{to{background-position:-220% 0}}
 @media(max-width:760px){.route-skeleton{padding:20px 14px 40px}.rs-products{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rs-card .rs-image{height:130px}.rs-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.rs-steps{grid-template-columns:1fr 1fr}.rs-admin-grid,.rs-content-grid{grid-template-columns:1fr}.rs-hero{height:130px}.rs-hero i{width:75%}}
 @media(prefers-reduced-motion:reduce){.rs-crumb i,.rs-title i,.rs-profile i,.rs-steps i,.rs-stats i,.rs-card i,.rs-hero i{animation:none}}
+
+
+/* Backward-compatible loading skeleton hooks used by route regressions */
+.loading-skeleton{min-width:0}
+@keyframes skeleton{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@media(prefers-reduced-motion:reduce){.loading-skeleton *{animation-duration:.01ms!important;animation-iteration-count:1!important}}
