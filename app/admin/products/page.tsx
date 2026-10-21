@@ -3,7 +3,7 @@ import AdminSidebar from "@/components/AdminSidebar";
 import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
 
-type P={id:string;name:string;sku:string;slug?:string;description?:string;price:number;compareAtPrice?:number|null;salePrice?:number|null;stock:number;lowStockThreshold?:number;featured?:boolean;published:boolean;categoryId?:string|null;category?:{name:string}|null};
+type P={id:string;name:string;sku:string;slug?:string;description?:string;price:number;compareAtPrice?:number|null;salePrice?:number|null;stock:number;lowStockThreshold?:number;featured?:boolean;published:boolean;categoryId?:string|null;category?:{name:string}|null;images?:{url:string;alt?:string|null;sortOrder?:number}[];options?:{name:string;values:string[]}[];variants?:{id?:string;sku?:string;options:Record<string,string>;price:number;salePrice?:number|null;compareAtPrice?:number|null;stock:number;lowStockThreshold?:number}[];freeShipping?:boolean;shippingFee?:number|null};
 type ImportResult={row:number;sku:string;status:"created"|"updated"|"error";message:string};
 const columns=["sku","name","slug","description","price","compareAtPrice","salePrice","stock","lowStockThreshold","featured","published","categoryId"];
 const template="sku,name,slug,description,price,compareAtPrice,salePrice,stock,lowStockThreshold,featured,published,categoryId\nSKU-001,Sample Product,sample-product,Product description,1000,1200,,25,5,false,true,";
@@ -41,14 +41,14 @@ export default function AdminProducts(){
  <header className="admin-heading-row catalog-page-heading"><div><div className="admin-kicker">MART · CATALOGUE MANAGEMENT</div><Link href="/admin" className="catalog-back-link">← Dashboard</Link><h1>Products &amp; Catalogue</h1><p>Manage product listings, pricing, publishing and stock visibility from one workspace.</p></div><div className="catalog-header-actions"><Link href="/admin/categories">Categories</Link><Link href="/admin/inventory">Inventory</Link><Link href="/admin/products/new" className="catalog-add-product">＋ Add product</Link></div></header>
  <section className="catalog-import-panel">
   <div className="catalog-import-heading"><span className="catalog-import-icon">⇅</span><div><h2>Bulk import &amp; export</h2><p>Update products in batches using Excel or Google Sheets.</p></div></div>
-  <p className="catalog-import-description">Download a CSV template, edit product data in your spreadsheet, then import it back. CSV files work with Microsoft Excel and Google Sheets.</p>
+  <p className="catalog-import-description">Download the complete CSV template, fill product data plus options, variants and image URLs, then import it back. CSV works with Microsoft Excel and Google Sheets.</p>
   <div className="catalog-import-actions">
    <button type="button" onClick={()=>downloadCSV("product-import-template.csv",template)} className="catalog-secondary-action">Download Template</button>
    <button type="button" onClick={exportProducts} className="catalog-secondary-action">Export Current Products</button>
    <button type="button" disabled={busy} onClick={()=>fileRef.current?.click()} className="catalog-import-action">{busy?"Importing…":"Choose CSV and Import"}</button>
    <input ref={fileRef} type="file" accept=".csv,text/csv" style={{display:"none"}} onChange={e=>importFile(e.target.files?.[0])}/>
   </div>
-  <p className="catalog-import-help">Products are matched by SKU. Blank fields on existing products are left unchanged. New products require a name and price. Maximum 500 rows per import.</p>
+  <p className="catalog-import-help">Products match by SKU. Use JSON arrays in optionsJson, variantsJson and imagesJson cells; images must be reachable URLs. Blank fields on existing products stay unchanged. New products require name and price. Maximum 500 rows per import.</p>
   {notice&&<p className="catalog-notice" role="status">{notice}</p>}
   {summary&&<div style={{display:"flex",gap:18,flexWrap:"wrap",marginTop:12}}><span>Created: <b>{summary.created}</b></span><span>Updated: <b>{summary.updated}</b></span><span>Failed: <b>{summary.failed}</b></span></div>}
   {results.length>0&&<div className="catalog-import-results"><strong>Import row details</strong><div className="catalog-import-results-table"><table><thead><tr><th>CSV row</th><th>SKU</th><th>Result</th><th>Details</th></tr></thead><tbody>{results.map((r,i)=><tr key={r.row+"-"+i}><td>{r.row}</td><td>{r.sku||"—"}</td><td><span className={"catalog-import-status "+r.status}>{r.status}</span></td><td>{r.message}</td></tr>)}</tbody></table></div></div>}
