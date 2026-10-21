@@ -55,7 +55,7 @@ export async function POST(req:NextRequest){
         if(existing){
           if(!Object.keys(data).length){results.push({row:i+2,sku,status:"error",message:"No fields to update"});continue;}
           const imageRows=p.imagesJson?parseJsonCell(p.imagesJson,[]):undefined;
-          if(imageRows!==undefined&&(!Array.isArray(imageRows)||imageRows.some((image:any)=>!image||typeof image.url!=="string"||!/^https?:\\/\\//i.test(image.url))))throw new Error("Invalid imagesJson: use an array of image URL objects");
+          if(imageRows!==undefined&&(!Array.isArray(imageRows)||imageRows.some((image:any)=>!image||!isHttpUrl(image.url))))throw new Error("Invalid imagesJson: use an array of image URL objects");
           if(imageRows!==undefined)delete data.imagesJson;
           const row=await db.product.update({where:{id:existing.id},data});
           if(imageRows!==undefined){await db.productImage.deleteMany({where:{productId:row.id}});for(const [imageIndex,image] of imageRows.entries())await db.productImage.create({data:{productId:row.id,url:image.url,alt:typeof image.alt==="string"?image.alt:null,sortOrder:Number.isInteger(image.sortOrder)?image.sortOrder:imageIndex}});}
@@ -69,7 +69,7 @@ export async function POST(req:NextRequest){
           if(p.freeShipping!==undefined&&p.freeShipping!=="")extra.freeShipping=boolValue(p.freeShipping);
           if(p.shippingFee!==undefined&&p.shippingFee!=="")extra.shippingFee=p.shippingFee===""?null:p.shippingFee;
           const imageRows= p.imagesJson ? parseJsonCell(p.imagesJson,[]) : [];
-          if(!Array.isArray(imageRows)||imageRows.some((image:any)=>!image||typeof image.url!=="string"||!/^https?:\\/\\//i.test(image.url)))throw new Error("Invalid imagesJson: use an array of image URL objects");
+          if(!Array.isArray(imageRows)||imageRows.some((image:any)=>!image||!isHttpUrl(image.url)))throw new Error("Invalid imagesJson: use an array of image URL objects");
           if(extra.variants!==undefined&&!Array.isArray(extra.variants))throw new Error("variantsJson must be a JSON array");
           if(extra.options!==undefined&&!Array.isArray(extra.options))throw new Error("optionsJson must be a JSON array");
           const row=await db.product.create({data:{name:p.name,slug:slugify(p.slug||p.name),sku,description:p.description||null,price:p.price,compareAtPrice:p.compareAtPrice===""||p.compareAtPrice===undefined?null:p.compareAtPrice,salePrice:p.salePrice===""||p.salePrice===undefined?null:p.salePrice,stock:p.stock===""||p.stock===undefined?0:p.stock,lowStockThreshold:p.lowStockThreshold===""||p.lowStockThreshold===undefined?5:p.lowStockThreshold,featured:boolValue(p.featured),published:boolValue(p.published),categoryId:p.categoryId||null,...extra}});
