@@ -19,6 +19,7 @@ export async function POST(req:NextRequest){
   const ip=req.headers.get("cf-connecting-ip")||"unknown";
   const rl=rateLimit("order:"+ip,10,60_000);if(!rl.ok)return NextResponse.json({error:"Too many order attempts. Try again later."},{status:429,headers:{"Retry-After":String(rl.retryAfter)}});
   const input=schema.parse(await req.json());
+  if(input.isGift&&(!input.giftRecipientName||!input.giftRecipientPhone))return NextResponse.json({error:"Gift orders need the recipient name and phone number."},{status:400});
   const idempotencyKey=req.headers.get("idempotency-key")?.trim();
   if(idempotencyKey&&!/^[A-Za-z0-9._:-]{8,120}$/.test(idempotencyKey))return NextResponse.json({error:"Invalid idempotency key."},{status:400});
   const sessionToken=req.cookies.get("customer_session")?.value;const session=sessionToken?await verifyCustomerToken(sessionToken):null;
