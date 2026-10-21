@@ -19,14 +19,23 @@ async function loadHome(){
   let categories:any[]=[],products:any[]=[],images:any[]=[],banners:any[]=[],flashSales:any[]=[];
   let reviews:any[]=[],paidOrders:any[]=[],orderItems:any[]=[];
   try{
-    [categories,products,images,flashSales]=await Promise.all([
+    [categories,products,flashSales]=await Promise.all([
       db.category.findMany({orderBy:{name:"asc"}}),
-      db.product.findMany({where:{published:true,stock:{gt:0}},orderBy:[{featured:"desc"},{createdAt:"desc"}]}),
-      db.productImage.findMany({orderBy:{sortOrder:"asc"}}),
+      db.product.findMany({where:{published:true,stock:{gt:0}},orderBy:[{featured:"desc"},{createdAt:"desc"}],take:120}),
       db.flashSale.findMany({where:{active:true}})
     ]);
   }catch(error){
     console.error("Home catalog error:",error instanceof Error?error.message:String(error));
+  }
+  // Only hydrate images for the products that can appear on the homepage. Chunk
+  // Firestore IN filters to its supported limit rather than scanning every image.
+  const productIds=products.map((p:any)=>String(p.id)).filter(Boolean);
+  const productBatches=Array.from({length:Math.ceil(productIds.length/30)},(_,i)=>productIds.slice(i*30,(i+1)*30));
+  try{
+    images=(await Promise.all(productBatches.map(ids=>db.productImage.findMany({where:{productId:{in:ids}}})))).flat();
+    images.sort((a:any,b:any)=>Number(a.sortOrder||0)-Number(b.sortOrder||0));
+  }catch(error){
+    console.error("Home product images error:",error instanceof Error?error.message:String(error));
   }
   // Store banners are optional merchandising content; a failure must not break the catalog.
   try{
@@ -38,9 +47,9 @@ async function loadHome(){
   // Ratings and sales only decorate the cards, so a failure here must not break the page.
   try{
     [reviews,paidOrders,orderItems]=await Promise.all([
-      db.review.findMany({where:{approved:true}}),
+      Promise.all(productBatches.map(ids=>db.review.findMany({where:{approved:true,productId:{in:ids}}}))).then(rows=>rows.flat()),
       db.order.findMany({where:{paymentStatus:"PAID"},select:{id:true}}),
-      db.orderItem.findMany()
+      Promise.all(productBatches.map(ids=>db.orderItem.findMany({where:{productId:{in:ids}}}))).then(rows=>rows.flat())
     ]);
   }catch(error){
     console.error("Home stats error:",error instanceof Error?error.message:String(error));
