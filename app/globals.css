@@ -3241,3 +3241,34 @@ img,video,svg,canvas{max-width:100%}
 @media(max-width:760px){.mart-auth-page{padding-top:20px!important;padding-bottom:28px!important}.mart-auth-shell{grid-template-columns:minmax(0,1fr);max-width:500px;min-height:0;border-radius:21px}.mart-auth-story{display:none}.mart-auth-panel{padding:clamp(22px,6vw,34px)}.mart-auth-mobile-brand{display:flex;align-items:center;gap:10px;margin-bottom:30px;color:#172337;font-size:21px;letter-spacing:-1px}.mart-auth-mobile-brand .mart-auth-brand-mark{width:34px;height:34px;border-radius:10px;font-size:18px}.mart-auth-heading{margin-bottom:23px}.mart-auth-heading-icon{margin-bottom:15px}.mart-auth-form{gap:16px}.mart-auth-field>input,.mart-auth-password-wrap input{min-height:48px}.mart-auth-secure{margin-top:20px}}
 @media(max-width:360px){.mart-auth-panel{padding:20px 16px}.mart-auth-heading h2{font-size:25px}.mart-auth-switch{font-size:11px}.mart-auth-switch button{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.mart-auth-submit,.mart-auth-field>input,.mart-auth-password-wrap input{transition:none}}
+
+
+/* Consistent, compact button system — storefront + admin */
+:root{--control-height:36px;--control-radius:10px;--control-font:13px}
+button,input[type="button"],input[type="submit"],input[type="reset"]{
+  min-height:var(--control-height);padding:8px 13px;border-radius:var(--control-radius);font-size:var(--control-font);line-height:1.25;font-weight:650;letter-spacing:0;box-shadow:none;transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease
+}
+button:hover,input[type="button"]:hover,input[type="submit"]:hover,input[type="reset"]:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(19,25,33,.09)}
+button:active,input[type="button"]:active,input[type="submit"]:active,input[type="reset"]:active{transform:translateY(0);box-shadow:none}
+button:disabled,input[type="button"]:disabled,input[type="submit"]:disabled,input[type="reset"]:disabled{cursor:not-allowed;opacity:.55;transform:none;box-shadow:none}
+/* Keep branded actions visually consistent without changing the navy/orange palette. */
+.primary-cta,.secondary-cta,.hp-btn,.hp-btn-line,.filter-button,.hp-atc{
+  min-height:38px;padding:9px 15px;border-radius:10px;font-size:13.5px;line-height:1.25;font-weight:750;letter-spacing:0
+}
+.hp-arrow{min-height:40px;padding:0;border-radius:50%;box-shadow:none}
+.hp-arrow:hover{box-shadow:none}
+.hp-dots button{min-height:0;min-width:8px;padding:0;box-shadow:none}
+.hp-dots button:hover{box-shadow:none}
+.hp-atc{min-height:36px;padding:8px 12px}
+/* Admin actions: compact controls, predictable heights, and aligned labels. */
+.admin-content button,.admin-card button,.table-wrap button{
+  min-height:34px;padding:7px 11px;border-radius:9px;font-size:12.5px;line-height:1.25;white-space:normal
+}
+.admin-content button:hover,.admin-card button:hover,.table-wrap button:hover{box-shadow:0 4px 12px rgba(19,25,33,.08)}
+/* Search and other compact header controls should not inherit oversized button spacing. */
+.sh button,.sh-search button{min-height:36px;padding:8px 12px;border-radius:9px;font-size:13px}
+@media(max-width:600px){
+  button,input[type="button"],input[type="submit"],input[type="reset"]{min-height:34px;padding:7px 10px;font-size:12.5px}
+  .primary-cta,.secondary-cta,.hp-btn,.hp-btn-line,.filter-button{min-height:36px;padding:8px 12px;font-size:13px}
+  .admin-content button,.admin-card button,.table-wrap button{min-height:33px;padding:7px 9px;font-size:12px}
+}
