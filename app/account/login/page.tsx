@@ -7,7 +7,7 @@ import StoreFooter from "@/components/StoreFooter";
 
 export default function Login() {
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -25,6 +25,7 @@ export default function Login() {
           name: form.name.trim(),
           email: form.email.trim(),
           password: form.password,
+          phone: form.phone.trim(),
         }),
         cache: "no-store",
       });
@@ -101,6 +102,12 @@ export default function Login() {
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                   />
+                </label>
+              )}
+              {mode === "register" && (
+                <label className="mart-auth-field">
+                  <span>Mobile number (optional)</span>
+                  <input autoComplete="tel" inputMode="tel" maxLength={30} placeholder="01XXXXXXXXX" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                 </label>
               )}
               <label className="mart-auth-field">
