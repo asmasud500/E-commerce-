@@ -13,7 +13,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
     const {id}=await params;
     const p=schema.safeParse(await req.json().catch(()=>null));
     if(!p.success)return NextResponse.json({error:"Invalid update.",details:p.error.flatten()},{status:400});
-    if(p.data.status==="REFUNDED"&&!["SUPER_ADMIN","MANAGER"].includes(session.role))return NextResponse.json({error:"Only a manager or super admin can record refunds."},{status:403});
+    if(p.data.status==="REFUNDED"&&session.role!=="SUPER_ADMIN")return NextResponse.json({error:"Only a super admin can record refunds."},{status:403});
     const r:any=await db.returnRequest.findUnique({where:{id}});
     if(!r)return NextResponse.json({error:"Return request not found."},{status:404});
     if(!flow[r.status]?.includes(p.data.status))return NextResponse.json({error:"Cannot change "+r.status+" → "+p.data.status},{status:409});
