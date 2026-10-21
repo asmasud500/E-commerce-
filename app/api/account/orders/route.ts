@@ -3,7 +3,6 @@ import {verifyCustomerToken} from "@/lib/auth/customer";
 import {getCustomerOrders} from "@/lib/customer-orders";
 
 export const dynamic = "force-dynamic";
-export const runtime = "edge";
 
 export async function GET(req:NextRequest){
   const token=req.cookies.get("customer_session")?.value;
