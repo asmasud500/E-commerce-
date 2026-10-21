@@ -2,8 +2,9 @@
 
 import AdminSidebar from "@/components/AdminSidebar";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+type Transaction = { id: string; orderNumber: string; gateway: string; amount: number; status: string; reference: string | null; providerTransactionId: string | null; verifiedAt: string | null; createdAt: string };
 type Gateway = {
   id: string; name: string; type: string; mode: string; enabled: boolean;
   credentialsConfigured?: boolean; apiBaseUrl?: string | null;
@@ -23,6 +24,11 @@ export default function MartPayAdminPage() {
   const [busyId, setBusyId] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [transactionError, setTransactionError] = useState("");
+  const [transactionQuery, setTransactionQuery] = useState("");
+  const [transactionStatus, setTransactionStatus] = useState("ALL");
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -39,7 +45,35 @@ export default function MartPayAdminPage() {
     } finally { clearTimeout(timer); setLoading(false); }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  const loadTransactions = useCallback(async () => {
+    setTransactionsLoading(true); setTransactionError("");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const response = await fetch("/api/admin/payment-transactions", { cache: "no-store", signal: controller.signal });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "Payment transactions could not be loaded.");
+      if (!Array.isArray(data)) throw new Error("The transactions response was invalid.");
+      setTransactions(data);
+    } catch (e) {
+      setTransactionError(e instanceof Error && e.name === "AbortError" ? "Transaction loading timed out. Try refreshing." : e instanceof Error ? e.message : "Could not load transactions.");
+    } finally { clearTimeout(timer); setTransactionsLoading(false); }
+  }, []);
+
+  useEffect(() => { void load(); void loadTransactions(); }, [load, loadTransactions]);
+
+  const filteredTransactions = useMemo(() => transactions.filter(t =>
+    (transactionStatus === "ALL" || String(t.status || "UNKNOWN").toUpperCase() === transactionStatus) &&
+    [t.orderNumber, t.gateway, t.status, t.reference, t.providerTransactionId].some(v => String(v || "").toLowerCase().includes(transactionQuery.trim().toLowerCase()))
+  ), [transactions, transactionStatus, transactionQuery]);
+  const transactionAmount = filteredTransactions.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const formatMoney = (n: number) => "৳" + Number(n || 0).toLocaleString("en-BD", { maximumFractionDigits: 2 });
+  function exportTransactions() {
+    const rows = [["Order", "Gateway", "Amount BDT", "Status", "Reference", "Provider transaction ID", "Created", "Verified"], ...filteredTransactions.map(t => [t.orderNumber, t.gateway, String(t.amount), t.status, t.reference || "", t.providerTransactionId || "", t.createdAt, t.verifiedAt || ""])];
+    const csv = "\\uFEFF" + rows.map(row => row.map(v => `"${String(v ?? "").replaceAll('"', '""')}"`).join(",")).join("\\r\\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a"); a.href = url; a.download = "mart-pay-transactions.csv"; a.click(); URL.revokeObjectURL(url);
+  }
 
   async function toggle(gateway: Gateway) {
     setBusyId(gateway.id); setNotice(""); setError("");
@@ -116,6 +150,22 @@ export default function MartPayAdminPage() {
       .martpay-alert{padding:12px 15px;border-radius:12px;font-size:13px;margin:15px 0}
       .martpay-alert.success{background:#e9f9ef;color:#167445;border:1px solid #c7eed5}.martpay-alert.error{background:#fff0ef;color:#a53229;border:1px solid #f6d1ce}
       .martpay-empty{padding:35px 20px;text-align:center;color:#748197;border:1px dashed #d7dee8;border-radius:14px}
+      .martpay-ledger-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px}
+      .martpay-ledger-metric{border:1px solid #e8edf4;border-radius:12px;padding:10px 13px;background:#fbfcfe;min-width:130px;flex:1}
+      .martpay-ledger-metric span{display:block;font-size:10px;color:#7b8798;font-weight:750;text-transform:uppercase;letter-spacing:.07em}
+      .martpay-ledger-metric strong{display:block;color:#17243a;font-size:18px;margin-top:4px;overflow-wrap:anywhere}
+      .martpay-ledger-tools{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:13px}
+      .martpay-ledger-tools input,.martpay-ledger-tools select{box-sizing:border-box;min-width:0;min-height:40px;border:1px solid #dce3ed;border-radius:10px;background:#fff;padding:9px 11px;color:#253249;font:inherit;font-size:12px}
+      .martpay-ledger-tools input{flex:1 1 280px;width:100%}.martpay-ledger-tools select{flex:0 1 180px}
+      .martpay-ledger-wrap{width:100%;max-width:100%;overflow:auto;border:1px solid #e8edf4;border-radius:13px;-webkit-overflow-scrolling:touch}
+      .martpay-ledger{width:100%;min-width:850px;border-collapse:separate;border-spacing:0;background:#fff;font-size:12px}
+      .martpay-ledger th{position:sticky;top:0;background:#f7f9fc;color:#6c788b;font-size:10px;text-align:left;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+      .martpay-ledger th,.martpay-ledger td{padding:12px 13px;border-bottom:1px solid #edf0f5;vertical-align:middle}
+      .martpay-ledger td{color:#364359;overflow-wrap:anywhere}.martpay-ledger tr:last-child td{border-bottom:0}
+      .martpay-ledger-status{display:inline-flex;border-radius:999px;padding:5px 8px;background:#eef2f7;color:#536176;font-size:10px;font-weight:850;white-space:nowrap}
+      .martpay-ledger-status[data-status="SUCCESS"],.martpay-ledger-status[data-status="PAID"],.martpay-ledger-status[data-status="VERIFIED"]{background:#e5f8ed;color:#147848}
+      .martpay-ledger-status[data-status="FAILED"],.martpay-ledger-status[data-status="REJECTED"]{background:#fff0ef;color:#ad342b}
+      .martpay-ledger-status[data-status="PENDING"],.martpay-ledger-status[data-status="INITIATED"]{background:#fff5df;color:#996000}
       .martpay-skeleton{border:1px solid #e8edf4;border-radius:16px;padding:16px;display:flex;gap:13px;min-width:0}
       .martpay-skeleton-line{height:12px;border-radius:7px;background:linear-gradient(90deg,#edf0f4 25%,#f7f8fa 37%,#edf0f4 63%);background-size:400% 100%;animation:martpay-shimmer 1.35s ease infinite}
       @keyframes martpay-shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
@@ -123,7 +173,7 @@ export default function MartPayAdminPage() {
       @media(min-width:1600px){.martpay-gateway-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.martpay-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.martpay-section-head h2{font-size:19px}.martpay-hero p{font-size:15px}}
       @media(max-width:1180px){.martpay-shell .admin-main{padding:24px!important}.martpay-hero{align-items:flex-start}.martpay-hero-actions{flex-shrink:0}.martpay-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.martpay-quick{padding:15px}}
       @media(max-width:1000px){.martpay-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.martpay-quick-grid{grid-template-columns:1fr}}
-      @media(max-width:680px){.martpay-shell .admin-main{padding:14px!important}.martpay-hero{padding:23px 19px;border-radius:19px;align-items:flex-start;flex-direction:column}.martpay-hero-actions{width:100%}.martpay-hero-actions .admin-button{flex:1;text-align:center;justify-content:center}.martpay-stats{gap:10px;margin:14px 0}.martpay-stat{padding:14px;border-radius:15px}.martpay-stat strong{font-size:25px}.martpay-section{padding:16px;border-radius:17px}.martpay-section-head{align-items:flex-start;flex-direction:column}.martpay-gateway-grid{grid-template-columns:1fr}.martpay-gateway{padding:13px}.martpay-quick-grid{grid-template-columns:1fr}.martpay-stat-top{font-size:11px}}
+      @media(max-width:680px){.martpay-shell .admin-main{padding:14px!important}.martpay-hero{padding:23px 19px;border-radius:19px;align-items:flex-start;flex-direction:column}.martpay-hero-actions{width:100%}.martpay-hero-actions .admin-button{flex:1;text-align:center;justify-content:center}.martpay-stats{gap:10px;margin:14px 0}.martpay-stat{padding:14px;border-radius:15px}.martpay-stat strong{font-size:25px}.martpay-section{padding:16px;border-radius:17px}.martpay-section-head{align-items:flex-start;flex-direction:column}.martpay-gateway-grid{grid-template-columns:1fr}.martpay-gateway{padding:13px}.martpay-quick-grid{grid-template-columns:1fr}.martpay-stat-top{font-size:11px}.martpay-ledger-metric{min-width:calc(50% - 8px)}.martpay-ledger-tools input,.martpay-ledger-tools select{flex:1 1 100%;width:100%}}
     `}</style>
     <AdminSidebar />
     <main className="admin-main">
@@ -160,6 +210,14 @@ export default function MartPayAdminPage() {
               {!g.enabled && !canActivate(g) && <div className="martpay-meta" style={{marginTop:8,color:"#9a5b17"}}>Activation unavailable: provider integration or required credentials are not verified yet.</div>}
             </div>
           </article>)}</div>}
+      </section>
+
+      <section className="martpay-section">
+        <div className="martpay-section-head"><div><h2>Transaction monitor</h2><p>Recent gateway records, payment status and provider verification timestamps.</p></div><div className="martpay-hero-actions"><button className="admin-button" type="button" onClick={() => void loadTransactions()} disabled={transactionsLoading}>{transactionsLoading ? "Refreshing…" : "↻ Refresh ledger"}</button><button className="admin-button" type="button" onClick={exportTransactions} disabled={!filteredTransactions.length}>Export CSV</button><Link className="admin-button admin-button-primary" href="/admin/payment-transactions">Full ledger ↗</Link></div></div>
+        <div className="martpay-ledger-summary"><div className="martpay-ledger-metric"><span>Loaded records</span><strong>{transactionsLoading ? "—" : transactions.length.toLocaleString("en-BD")}</strong></div><div className="martpay-ledger-metric"><span>Matched records</span><strong>{transactionsLoading ? "—" : filteredTransactions.length.toLocaleString("en-BD")}</strong></div><div className="martpay-ledger-metric"><span>Visible amount</span><strong>{transactionsLoading ? "—" : formatMoney(transactionAmount)}</strong></div><div className="martpay-ledger-metric"><span>Verified records</span><strong>{transactionsLoading ? "—" : filteredTransactions.filter(t => !!t.verifiedAt).length.toLocaleString("en-BD")}</strong></div></div>
+        <div className="martpay-ledger-tools"><input aria-label="Search payment transactions" placeholder="Search order, gateway, reference or provider transaction ID…" value={transactionQuery} onChange={e => setTransactionQuery(e.target.value)} /><select aria-label="Filter transaction status" value={transactionStatus} onChange={e => setTransactionStatus(e.target.value)}><option value="ALL">All statuses</option>{Array.from(new Set(transactions.map(t => String(t.status || "UNKNOWN").toUpperCase()))).sort().map(s => <option key={s} value={s}>{s.replaceAll("_", " ")}</option>)}</select></div>
+        {transactionError && <div role="alert" className="martpay-alert error">{transactionError} <button className="admin-button" type="button" onClick={() => void loadTransactions()}>Try again</button></div>}
+        <div className="martpay-ledger-wrap"><table className="martpay-ledger"><thead><tr><th>Order</th><th>Gateway</th><th>Amount</th><th>Status</th><th>Reference</th><th>Provider transaction ID</th><th>Created</th><th>Verified</th></tr></thead><tbody>{filteredTransactions.map(t => <tr key={t.id}><td><strong>{t.orderNumber || "—"}</strong></td><td>{t.gateway || "—"}</td><td>{formatMoney(t.amount)}</td><td><span className="martpay-ledger-status" data-status={String(t.status || "UNKNOWN").toUpperCase()}>{String(t.status || "UNKNOWN").replaceAll("_", " ")}</span></td><td>{t.reference || "—"}</td><td>{t.providerTransactionId || "—"}</td><td>{t.createdAt ? new Date(t.createdAt).toLocaleString("en-BD") : "—"}</td><td>{t.verifiedAt ? new Date(t.verifiedAt).toLocaleString("en-BD") : "—"}</td></tr>)}</tbody></table>{transactionsLoading && <div className="martpay-empty" aria-live="polite">Loading transaction ledger…</div>}{!transactionsLoading && !transactionError && !filteredTransactions.length && <div className="martpay-empty">No transactions match these filters.</div>}</div>
       </section>
 
       <section className="martpay-section">
