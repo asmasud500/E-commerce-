@@ -1,44 +1,23 @@
 import {NextRequest,NextResponse} from "next/server";
-import {db} from "@/lib/prisma";
 import {verifyCustomerToken} from "@/lib/auth/customer";
+import {getCustomerOrders} from "@/lib/customer-orders";
 
-type OrderItemRow = {
-  unitPrice: number | string;
-  lineTotal: number | string;
-  [key: string]: unknown;
-};
-
-type OrderRow = {
-  subtotal: number | string;
-  shippingFee: number | string;
-  discount: number | string;
-  total: number | string;
-  items: OrderItemRow[];
-  [key: string]: unknown;
-};
+export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export async function GET(req:NextRequest){
   const token=req.cookies.get("customer_session")?.value;
-  const s=token?await verifyCustomerToken(token):null;
-  if(!s)return NextResponse.json({error:"Unauthorized"},{status:401});
+  const session=token?await verifyCustomerToken(token):null;
+  if(!session)return NextResponse.json({error:"Unauthorized"},{status:401,headers:{"Cache-Control":"no-store"}});
 
-  const orders=await db.order.findMany({
-    where:{userId:s.userId},
-    include:{items:true,paymentGateway:{select:{name:true,type:true}}},
-    orderBy:{createdAt:"desc"},
-    take:50
-  }) as OrderRow[];
-
-  return NextResponse.json(orders.map((o:OrderRow)=>({
-    ...o,
-    subtotal:Number(o.subtotal),
-    shippingFee:Number(o.shippingFee),
-    discount:Number(o.discount),
-    total:Number(o.total),
-    items:o.items.map((i:OrderItemRow)=>({
-      ...i,
-      unitPrice:Number(i.unitPrice),
-      lineTotal:Number(i.lineTotal)
-    }))
-  })));
+  try {
+    const orders=await getCustomerOrders(session.userId);
+    return NextResponse.json(orders,{headers:{"Cache-Control":"private, no-store"}});
+  } catch (error) {
+    console.error("Customer orders lookup failed:", error);
+    return NextResponse.json(
+      {error:"Orders are temporarily unavailable. Please try again."},
+      {status:503,headers:{"Cache-Control":"no-store","Retry-After":"3"}}
+    );
+  }
 }
