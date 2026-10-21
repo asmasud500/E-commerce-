@@ -14,6 +14,7 @@ export async function GET(_:NextRequest,{params}:{params:Promise<{id:string}>}){
       if(!file)return NextResponse.json({error:"Image not found"},{status:404});
       const path=file.filePath.toLowerCase();
       const mime=path.endsWith(".png")?"image/png":path.endsWith(".webp")?"image/webp":"image/jpeg";
+      if(row.checksum){const digest=await crypto.subtle.digest("SHA-256",Uint8Array.from(file.bytes).buffer as ArrayBuffer);const actual=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");if(actual!==String(row.checksum))return NextResponse.json({error:"Image integrity check failed."},{status:502,headers:{"Cache-Control":"no-store"}});}
       return new Response(file.bytes.buffer.slice(file.bytes.byteOffset,file.bytes.byteOffset+file.bytes.byteLength) as ArrayBuffer,{headers:{
         "Content-Type":mime,
         "Content-Length":String(file.bytes.byteLength),
