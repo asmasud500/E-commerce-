@@ -6,7 +6,7 @@ const now=()=>new Date();
 
 /** Retry due backup jobs from durable Firestore records. Image bytes are re-read from Telegram, never stored in the queue. */
 export async function processStorageBackupQueue(limit=10){
-  const jobs=await db.storageBackupJob.findMany({where:{status:{in:["PENDING","FAILED"]}},orderBy:{nextAttemptAt:"asc"},take:Math.max(1,Math.min(25,limit))});
+  const jobs=await db.storageBackupJob.findMany({where:{OR:[{status:"PENDING"},{status:"FAILED",attempts:{lt:8}}]},orderBy:{nextAttemptAt:"asc"},take:Math.max(1,Math.min(25,limit))});
   const results={processed:0,succeeded:0,failed:0,skipped:0};
   for(const job of jobs){
     if(job.nextAttemptAt&&new Date(job.nextAttemptAt).getTime()>Date.now()){results.skipped++;continue;}
