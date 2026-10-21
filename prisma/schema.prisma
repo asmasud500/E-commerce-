@@ -177,6 +177,10 @@ model Order {
   customerName String
   customerPhone String
   customerEmail String?
+  isGift Boolean @default(false)
+  giftRecipientName String?
+  giftRecipientPhone String?
+  giftMessage String?
   shippingAddress String
   courierName String?
   trackingNumber String?
