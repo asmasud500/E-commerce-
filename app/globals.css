@@ -3101,3 +3101,26 @@ img,video,svg,canvas{max-width:100%}
  .point-1{left:0;bottom:1%}.point-2{left:4%;top:34%}.point-3{left:24%;bottom:3%}.point-4{left:39%;top:25%}.point-5{left:48%;bottom:17%}.point-6{right:2%;top:18%}.point-7{right:0;top:0}
  .trk-map-legend{padding:12px 15px;gap:10px}.trk-map-note{padding:0 15px 15px}.trk-steps{grid-template-columns:1fr}
 }
+/* Premium tracking map motion: animated route, active milestone and courier beacon */
+.trk-live-map{isolation:isolate}
+.trk-map-canvas.trk-map-seven{overflow:hidden;animation:trk-map-atmosphere 18s ease-in-out infinite alternate}
+.trk-map-seven .trk-map-grid{animation:trk-map-grid-drift 32s linear infinite}
+.trk-map-route{stroke-dasharray:3 11;animation:trk-route-flow 1.2s linear infinite;filter:drop-shadow(0 0 3px rgba(255,104,1,.2))}
+.trk-map-stop.is-current .trk-map-stop-halo{transform-box:fill-box;transform-origin:center;animation:trk-stop-pulse 1.8s ease-out infinite}
+.trk-map-label-point{animation:trk-label-enter .55s both;transition:transform .25s ease,box-shadow .25s ease}
+.trk-map-label-point:nth-child(2){animation-delay:.05s}.trk-map-label-point:nth-child(3){animation-delay:.1s}.trk-map-label-point:nth-child(4){animation-delay:.15s}.trk-map-label-point:nth-child(5){animation-delay:.2s}.trk-map-label-point:nth-child(6){animation-delay:.25s}.trk-map-label-point:nth-child(7){animation-delay:.3s}
+.trk-map-label-point.is-current{animation:trk-label-enter .55s both,trk-label-glow 2.4s ease-in-out infinite}
+.trk-courier-marker{filter:drop-shadow(0 3px 5px rgba(19,25,33,.28))}
+.trk-courier-glow{fill:rgba(255,104,1,.18);stroke:rgba(255,104,1,.5);stroke-width:2}
+.trk-courier-disc{fill:#ff6801;stroke:#fff;stroke-width:2.5}
+.trk-courier-glyph{fill:#fff;font-size:11px;font-weight:900}
+.trk-map-live.moving{animation:trk-live-breathe 1.8s ease-in-out infinite}
+@keyframes trk-route-flow{to{stroke-dashoffset:-28}}
+@keyframes trk-stop-pulse{0%{opacity:.95;transform:scale(.72)}75%,100%{opacity:0;transform:scale(1.75)}}
+@keyframes trk-map-atmosphere{0%{background-position:0 0,0 0,0 0,0 0}100%{background-position:60px 35px,-45px 55px,0 0,0 0}}
+@keyframes trk-map-grid-drift{to{background-position:34px 34px}}
+@keyframes trk-label-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@keyframes trk-label-glow{0%,100%{box-shadow:0 0 0 2px rgba(255,104,1,.04),0 5px 18px #18223512}50%{box-shadow:0 0 0 5px rgba(255,104,1,.09),0 8px 24px #1822351c}}
+@keyframes trk-live-breathe{0%,100%{box-shadow:0 0 0 0 rgba(255,104,1,0)}50%{box-shadow:0 0 0 4px rgba(255,104,1,.09)}}
+@media(prefers-reduced-motion:reduce){.trk-map-canvas.trk-map-seven,.trk-map-seven .trk-map-grid,.trk-map-route,.trk-map-stop.is-current .trk-map-stop-halo,.trk-map-label-point,.trk-map-label-point.is-current,.trk-map-live.moving{animation:none!important}.trk-courier-marker{display:none}}
+@media(max-width:620px){.trk-map-route{stroke-width:3.5}.trk-map-label-point{backdrop-filter:blur(10px);box-shadow:0 6px 18px rgba(24,34,53,.1)}}
