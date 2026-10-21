@@ -16,7 +16,12 @@ const rowSchema = z.object({
   lowStockThreshold: z.union([z.coerce.number().int().nonnegative(),z.literal("")]).optional(),
   featured: z.union([z.boolean(),z.string()]).optional(),
   published: z.union([z.boolean(),z.string()]).optional(),
-  categoryId: z.string().optional()
+  categoryId: z.string().optional(),
+  optionsJson: z.string().optional(),
+  variantsJson: z.string().optional(),
+  imagesJson: z.string().optional(),
+  freeShipping: z.union([z.boolean(),z.string()]).optional(),
+  shippingFee: z.union([z.literal(""),z.coerce.number().nonnegative()]).optional()
 });
 const slugify=(s:string)=>s.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 function boolValue(v:unknown){return typeof v==="boolean"?v:["true","1","yes","y","published"].includes(String(v??"").trim().toLowerCase());}
@@ -32,20 +37,40 @@ export async function POST(req:NextRequest){
         const p=rowSchema.parse(raw);
         const existing=await db.product.findFirst({where:{sku:p.sku}});
         const data:any={};
+        const parseJsonCell=(value:string|undefined,fallback:any)=>{if(value===undefined||value==="")return undefined;const parsed=JSON.parse(value);return parsed;};
         for(const key of ["name","description","price","stock","lowStockThreshold","categoryId"] as const) if(p[key]!==undefined&&p[key]!=="")data[key]=p[key];
         if(p.slug!==undefined&&p.slug!=="")data.slug=slugify(p.slug); else if(p.name)data.slug=slugify(p.name);
         if(p.compareAtPrice!==undefined)data.compareAtPrice=p.compareAtPrice===""?null:p.compareAtPrice;
         if(p.salePrice!==undefined)data.salePrice=p.salePrice===""?null:p.salePrice;
         if(p.featured!==undefined&&p.featured!=="")data.featured=boolValue(p.featured);
         if(p.published!==undefined&&p.published!=="")data.published=boolValue(p.published);
+        if(p.optionsJson!==undefined&&p.optionsJson!=="")data.options=parseJsonCell(p.optionsJson,[]);
+        if(p.variantsJson!==undefined&&p.variantsJson!=="")data.variants=parseJsonCell(p.variantsJson,[]);
+        if(p.freeShipping!==undefined&&p.freeShipping!=="")data.freeShipping=boolValue(p.freeShipping);
+        if(p.shippingFee!==undefined&&p.shippingFee!=="")data.shippingFee=p.shippingFee===""?null:p.shippingFee;
         if(existing){
           if(!Object.keys(data).length){results.push({row:i+2,sku,status:"error",message:"No fields to update"});continue;}
+          const imageRows=p.imagesJson?parseJsonCell(p.imagesJson,[]):undefined;
+          if(imageRows!==undefined&&(!Array.isArray(imageRows)||imageRows.some((image:any)=>!image||typeof image.url!=="string"||!/^https?:\\/\\//i.test(image.url))))throw new Error("Invalid imagesJson: use an array of image URL objects");
+          if(imageRows!==undefined)delete data.imagesJson;
           const row=await db.product.update({where:{id:existing.id},data});
+          if(imageRows!==undefined){await db.productImage.deleteMany({where:{productId:row.id}});for(const [imageIndex,image] of imageRows.entries())await db.productImage.create({data:{productId:row.id,url:image.url,alt:typeof image.alt==="string"?image.alt:null,sortOrder:Number.isInteger(image.sortOrder)?image.sortOrder:imageIndex}});}
           await recordAdminAudit(req,{action:"PRODUCT_BULK_UPDATED",entity:"Product",entityId:row.id,metadata:{sku,changedFields:Object.keys(data),source:"spreadsheet"}});
           results.push({row:i+2,sku,status:"updated",message:"Product updated"});
         }else{
           if(!p.name||p.price===undefined||p.price===""){results.push({row:i+2,sku,status:"error",message:"New SKU requires name and price"});continue;}
-          const row=await db.product.create({data:{name:p.name,slug:slugify(p.slug||p.name),sku,description:p.description||null,price:p.price,compareAtPrice:p.compareAtPrice===""||p.compareAtPrice===undefined?null:p.compareAtPrice,salePrice:p.salePrice===""||p.salePrice===undefined?null:p.salePrice,stock:p.stock===""||p.stock===undefined?0:p.stock,lowStockThreshold:p.lowStockThreshold===""||p.lowStockThreshold===undefined?5:p.lowStockThreshold,featured:boolValue(p.featured),published:boolValue(p.published),categoryId:p.categoryId||null}});
+          const extra:any={};
+          if(p.optionsJson)extra.options=parseJsonCell(p.optionsJson,[]);
+          if(p.variantsJson)extra.variants=parseJsonCell(p.variantsJson,[]);
+          if(p.imagesJson)extra.imagesJson=parseJsonCell(p.imagesJson,[]);
+          if(p.freeShipping!==undefined&&p.freeShipping!=="")extra.freeShipping=boolValue(p.freeShipping);
+          if(p.shippingFee!==undefined&&p.shippingFee!=="")extra.shippingFee=p.shippingFee===""?null:p.shippingFee;
+          const imageRows= p.imagesJson ? parseJsonCell(p.imagesJson,[]) : [];
+          if(!Array.isArray(imageRows)||imageRows.some((image:any)=>!image||typeof image.url!=="string"||!/^https?:\\/\\//i.test(image.url)))throw new Error("Invalid imagesJson: use an array of image URL objects");
+          if(extra.variants!==undefined&&!Array.isArray(extra.variants))throw new Error("variantsJson must be a JSON array");
+          if(extra.options!==undefined&&!Array.isArray(extra.options))throw new Error("optionsJson must be a JSON array");
+          const row=await db.product.create({data:{name:p.name,slug:slugify(p.slug||p.name),sku,description:p.description||null,price:p.price,compareAtPrice:p.compareAtPrice===""||p.compareAtPrice===undefined?null:p.compareAtPrice,salePrice:p.salePrice===""||p.salePrice===undefined?null:p.salePrice,stock:p.stock===""||p.stock===undefined?0:p.stock,lowStockThreshold:p.lowStockThreshold===""||p.lowStockThreshold===undefined?5:p.lowStockThreshold,featured:boolValue(p.featured),published:boolValue(p.published),categoryId:p.categoryId||null,...extra}});
+          for(const [imageIndex,image] of imageRows.entries())await db.productImage.create({data:{productId:row.id,url:image.url,alt:typeof image.alt==="string"?image.alt:null,sortOrder:Number.isInteger(image.sortOrder)?image.sortOrder:imageIndex}});
           await recordAdminAudit(req,{action:"PRODUCT_BULK_CREATED",entity:"Product",entityId:row.id,metadata:{sku,name:p.name,source:"spreadsheet"}});
           results.push({row:i+2,sku,status:"created",message:"Product created"});
         }
