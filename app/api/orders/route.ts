@@ -45,8 +45,10 @@ export async function POST(req:NextRequest){
   const total=Math.max(0,quote.total-giftCardDiscount);
   const giftCardOnly=giftCardDiscount>0&&total===0;
   const gateway=giftCardOnly?null:await db.paymentGateway.findFirst({where:{id:input.paymentGatewayId,enabled:true}});if(!giftCardOnly&&!gateway)return NextResponse.json({error:"Selected payment gateway is unavailable."},{status:400});
-  const isCod=!!gateway&&(gateway.publicConfig as Record<string,unknown>|null)?.cod===true;
-  if(gateway&&!isCod&&gateway.type!=="SSLCOMMERZ")return NextResponse.json({error:"Only verified automatic merchant checkout or Cash on Delivery is available. Manual send-money methods are disabled."},{status:409});
+  const gatewayConfig=(gateway?.publicConfig||{}) as Record<string,unknown>;
+  const isCod=!!gateway&&gatewayConfig.cod===true;
+  const isDemoGateway=!!gateway&&gateway.type==="CUSTOM"&&gateway.mode==="SANDBOX"&&gatewayConfig.demo===true;
+  if(gateway&&!isCod&&gateway.type!=="SSLCOMMERZ"&&!isDemoGateway)return NextResponse.json({error:"Only verified automatic merchant checkout, sandbox demo, or Cash on Delivery is available. Manual send-money methods are disabled."},{status:409});
   if(quote.couponId&&quote.perCustomerLimit!=null){
    const customerOrders=await db.order.count({where:{couponCode:quote.couponCode,OR:[{customerPhone:input.customerPhone},...(session?.userId?[{userId:session.userId}]:[])]}});
    if(customerOrders>=quote.perCustomerLimit)throw new QuoteError("This voucher has reached its per-customer usage limit.");
