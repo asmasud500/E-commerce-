@@ -181,7 +181,7 @@ export default function MartPayAdminPage() {
       <section className="martpay-hero">
         <div><div className="martpay-kicker">MART STORE · FINANCIAL OPERATIONS</div><h1>Mart Pay</h1><p>Your payment control center. Manage merchant methods, review configuration status and jump into transaction operations from one workspace.</p></div>
         <div className="martpay-hero-actions">
-          <button className="admin-button" type="button" onClick={() => void load()} disabled={loading}>{loading ? "Refreshing…" : "↻ Refresh"}</button>
+          <button className="admin-button" type="button" onClick={() => { void load(); void loadTransactions(); }} disabled={loading || transactionsLoading}>{loading || transactionsLoading ? "Refreshing…" : "↻ Refresh all"}</button>
           <Link className="admin-button admin-button-primary" href="/admin/payment-gateways">＋ Configure gateway</Link>
         </div>
       </section>
