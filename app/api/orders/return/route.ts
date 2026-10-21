@@ -17,7 +17,12 @@ export async function POST(req:NextRequest){
     const p=schema.safeParse(await req.json().catch(()=>null));
     if(!p.success)return NextResponse.json({error:"Please choose a reason and fill in your order details."},{status:400});
     const o:any=await db.order.findUnique({where:{orderNumber:normalizeOrderNumber(p.data.orderNumber)}});
-    if(!o||!contactMatches({customerPhone:o.customerPhone??o.phone??o.mobile??o.contactPhone,customerEmail:o.customerEmail??o.email??o.contactEmail},p.data.contact))return NextResponse.json({error:"We could not find an order with those details."},{status:404});
+    // Older/imported orders may keep contact details under legacy aliases, and an empty
+    // canonical field must not hide a valid legacy phone/email value.
+    const phoneCandidates=o?[o.customerPhone,o.phone,o.mobile,o.contactPhone].filter((v:any)=>String(v??"").trim()):[];
+    const emailCandidates=o?[o.customerEmail,o.email,o.contactEmail].filter((v:any)=>String(v??"").trim()):[];
+    const contactIsValid=phoneCandidates.some((phone:any)=>contactMatches({customerPhone:phone},p.data.contact))||emailCandidates.some((email:any)=>contactMatches({customerEmail:email},p.data.contact));
+    if(!o||!contactIsValid)return NextResponse.json({error:"We could not find an order with those details. Please use the phone number or email saved with the order."},{status:404});
     if(o.status!=="DELIVERED")return NextResponse.json({error:"Return requests can be made after the order is delivered."},{status:409});
     const raw=o.deliveredAt&&typeof o.deliveredAt==="object"&&"toDate" in o.deliveredAt?o.deliveredAt.toDate():o.deliveredAt;
     const d=raw?new Date(raw):null;
