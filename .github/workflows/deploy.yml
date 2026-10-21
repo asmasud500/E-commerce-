@@ -8,7 +8,7 @@ on:
 # Prevent overlapping Worker deployments and secret updates.
 concurrency:
   group: cloudflare-production-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
