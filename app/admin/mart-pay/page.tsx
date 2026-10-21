@@ -70,7 +70,7 @@ export default function MartPayAdminPage() {
   const formatMoney = (n: number) => "৳" + Number(n || 0).toLocaleString("en-BD", { maximumFractionDigits: 2 });
   function exportTransactions() {
     const rows = [["Order", "Gateway", "Amount BDT", "Status", "Reference", "Provider transaction ID", "Created", "Verified"], ...filteredTransactions.map(t => [t.orderNumber, t.gateway, String(t.amount), t.status, t.reference || "", t.providerTransactionId || "", t.createdAt, t.verifiedAt || ""])];
-    const csv = "\\uFEFF" + rows.map(row => row.map(v => `"${String(v ?? "").replaceAll('"', '""')}"`).join(",")).join("\\r\\n");
+    const csv = "\uFEFF" + rows.map(row => row.map(v => `"${String(v ?? "").replaceAll('"', '""')}"`).join(",")).join("\r\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a"); a.href = url; a.download = "mart-pay-transactions.csv"; a.click(); URL.revokeObjectURL(url);
   }
