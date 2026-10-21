@@ -1,6 +1,6 @@
 "use client";
 import{useEffect,useState}from"react";import{useSearchParams}from"next/navigation";
-type PaymentResult={ok:boolean;status?:string;paymentUrl?:string;amount?:number;gatewayName?:string;reference?:string;message?:string;error?:string};
+type PaymentResult={ok:boolean;status?:string;demo?:boolean;paymentUrl?:string;amount?:number;gatewayName?:string;reference?:string;message?:string;error?:string};
 export default function PaymentClient(){
  const search=useSearchParams();const[orderId,setOrderId]=useState(""),[loading,setLoading]=useState(false),[result,setResult]=useState<PaymentResult|null>(null),[message,setMessage]=useState("");
  useEffect(()=>{const id=search.get("order")||sessionStorage.getItem("lastOrderId")||"";setOrderId(id)},[search]);
@@ -31,6 +31,7 @@ export default function PaymentClient(){
    <p style={{fontSize:13,lineHeight:1.7,color:"var(--muted,#64748b)",margin:0}}>Continue to the secure merchant checkout. Only payment channels enabled on the store's approved merchant account will appear there. No personal-number Send Money transfer, screenshot upload, sender digits, or manual transaction-ID verification is required.</p>
   </div>
   {loading&&<div role="status" style={{marginTop:20,padding:14,borderRadius:12,background:"var(--surface-secondary,#f8fafc)"}}>Preparing your secure payment session…</div>}
+  {result?.ok&&result.status==="DEMO"&&result.demo===true&&<div role="status" style={{marginTop:22,border:"1px solid #fcd34d",background:"#fffbeb",borderRadius:14,padding:16}}><b style={{color:"#92400e"}}>DEMO MODE — No real payment</b><p style={{fontSize:13,lineHeight:1.7,color:"#92400e",margin:"8px 0 0"}}>The test payment session is working. No money was charged, and this test does not mark the order as paid. Disable this demo gateway before accepting real customer payments.</p></div>}
   {result?.ok&&result.paymentUrl&&<div style={{marginTop:22,border:"1px solid #bbf7d0",background:"#f0fdf4",borderRadius:14,padding:16}}>
    <b style={{color:"#166534"}}>Your secure payment session is ready</b>
    <p style={{fontSize:13,lineHeight:1.6,color:"#166534",margin:"6px 0 14px"}}>Continue to the payment partner to choose your preferred enabled method and complete payment.</p>
