@@ -10,10 +10,10 @@ export async function GET(){
  });
  const available=gateways.filter(g=>{
   const config=(g.publicConfig||{}) as Record<string,unknown>;
-  return g.type==="SSLCOMMERZ"||config.cod===true;
+  return g.type==="SSLCOMMERZ"||config.cod===true||(g.type==="CUSTOM"&&g.mode==="SANDBOX"&&config.demo===true);
  }).map(g=>{
   const config=(g.publicConfig||{}) as Record<string,unknown>;
-  return {id:g.id,name:g.name,type:g.type,mode:g.mode,qrImageUrl:null,qrMerchantName:null,...(config.cod===true?{cod:true}:{})};
+  return {id:g.id,name:g.name,type:g.type,mode:g.mode,qrImageUrl:null,qrMerchantName:null,...(config.cod===true?{cod:true}:{}),...(g.type==="CUSTOM"&&g.mode==="SANDBOX"&&config.demo===true?{demo:true}:{})};
  });
  return NextResponse.json(available,{headers:{"Cache-Control":"no-store"}});
 }
