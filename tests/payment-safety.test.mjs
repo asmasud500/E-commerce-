@@ -152,5 +152,5 @@ test("order creation validates checkout totals server-side through the shared qu
 
 test("customer order listing is scoped to the authenticated customer's own orders", () => {
   assert.match(customerOrdersRoute, /verifyCustomerToken/);
-  assert.match(customerOrdersRoute, /userId:s\.userId/);
+  assert.match(customerOrdersRoute, /getCustomerOrders\(session\.userId\)/);
 });
