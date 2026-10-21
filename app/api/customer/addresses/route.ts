@@ -31,10 +31,12 @@ export async function POST(req:NextRequest){
   if(!parsed.success)return NextResponse.json({error:"Please check the delivery information and try again."},{status:400});
   const data=parsed.data;
   const created=await db.$transaction(async tx=>{
+    const existing=await tx.customerAddress.findFirst({where:{userId,phone:data.phone,division:data.division,district:data.district,upazila:data.upazila,postalCode:data.postalCode,locationDescription:data.locationDescription}});
     const count=await tx.customerAddress.count({where:{userId}});
-    if(count>=20)throw new Error("ADDRESS_LIMIT");
+    if(!existing&&count>=20)throw new Error("ADDRESS_LIMIT");
     if(data.isDefault||count===0)await tx.customerAddress.updateMany({where:{userId,isDefault:true},data:{isDefault:false}});
-    return tx.customerAddress.create({data:{...data,email:data.email||null,userId,isDefault:data.isDefault||count===0}});
+    const payload={...data,email:data.email||null,userId,isDefault:data.isDefault||count===0};
+    return existing?tx.customerAddress.update({where:{id:existing.id},data:payload}):tx.customerAddress.create({data:payload});
   }).catch(e=>{if(e instanceof Error&&e.message==="ADDRESS_LIMIT")return null;throw e});
   if(!created)return NextResponse.json({error:"You can save up to 20 delivery addresses."},{status:409});
   return NextResponse.json({address:created},{status:201});
