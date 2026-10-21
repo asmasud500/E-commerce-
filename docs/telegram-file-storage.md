@@ -59,3 +59,12 @@ The Drive mirror is inactive if no Drive credentials and folder ID are configure
 - Legacy Base64 records remain readable. Do not bulk-delete them until they have been migrated and verified. The dashboard reports only the legacy Base64 records within its current capped query, not a guaranteed whole-database count.
 - Public product image responses use CDN caching; private payment proof and invoice responses must remain authenticated and `private, no-store`.
 - Cloudflare R2 has not been switched on by this change. Add it only after choosing an R2 bucket, setting runtime credentials, and testing upload/read/rollback paths; Telegram remains the serving store in the current architecture.
+
+
+## Public product image failover
+
+- The image endpoint attempts Telegram first and falls back to the private Google Drive mirror only for images attached to published products.
+- A Drive fallback is served only when its bytes match the product image's stored SHA-256 checksum. The response includes `X-Image-Storage-Source: telegram` or `google-drive` to help diagnose the source.
+- Private payment proofs and invoice files never use the public image fallback.
+- Existing images need a populated `driveFileId` and a verified mirror before failover can work. The deployment/build checks do not prove every Drive file is readable; validate with a known mirrored product image after deployment.
+- Verification checklist: confirm a normal product image returns HTTP 200 with source `telegram`; for a test image with a valid Drive mirror, simulate primary Telegram failure and confirm HTTP 200 with source `google-drive`; confirm a mismatched Drive checksum is rejected and private file requests remain authenticated.
