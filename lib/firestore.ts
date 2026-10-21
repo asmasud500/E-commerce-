@@ -94,7 +94,11 @@ async function include(obj:any,inc:any,select?:any){if(!obj)return obj;const out
  * Complex relation/logical filters deliberately retain the compatibility fallback.
  */
 export function firestoreStructuredQuery(model:string,where:any,orderBy:any,take:any,skip:any){
+  // Empty or absent filters should use the compatibility read path rather than
+  // issuing an unfiltered Firestore runQuery. This also preserves the contract
+  // that unsupported/in-memory-only filters return null.
   if(skip)return null;
+  if(!where||typeof where!=="object"||Array.isArray(where)||Object.keys(where).length===0)return null;
   const filters:any[]=[];
   let inequalityField="";
   if(where!==undefined&&where!==null){
