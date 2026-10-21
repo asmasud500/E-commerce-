@@ -1,5 +1,6 @@
 import {db} from "@/lib/prisma";
 import {storeTelegramFile} from "@/lib/telegram/file-storage";
+import {mirrorImageToGoogleDrive} from "@/lib/google-drive/file-storage";
 
 /** Firestore documents are capped at 1 MiB and base64 adds a third, so keep the raw bytes well below that. */
 export const MAX_IMAGE_BYTES=650_000;
@@ -10,7 +11,10 @@ export async function saveProductImage(productId:string,bytes:Uint8Array,mime:st
   if(!bytes.length||bytes.length>MAX_IMAGE_BYTES)throw new Error("Image is too large. Please use one under 650 KB.");
   const product=await db.product.findUnique({where:{id:productId},select:{sku:true,name:true}});
   if(!product)throw new Error("Product not found.");
-  const stored=await storeTelegramFile(bytes,"product-"+product.sku+"-"+crypto.randomUUID().slice(0,8)+"."+({ "image/jpeg":"jpg","image/png":"png","image/webp":"webp"} as Record<string,string>)[mime],mime,"Product image · "+product.name+" · SKU "+product.sku);
+  const filename="product-"+product.sku+"-"+crypto.randomUUID().slice(0,8)+"."+({ "image/jpeg":"jpg","image/png":"png","image/webp":"webp"} as Record<string,string>)[mime];
+  const stored=await storeTelegramFile(bytes,filename,mime,"Product image · "+product.name+" · SKU "+product.sku);
+  const driveCopy=await mirrorImageToGoogleDrive(bytes,filename,mime);
+  if(!driveCopy.configured)console.warn("Google Drive image mirror is disabled; set GOOGLE_DRIVE_CLIENT_EMAIL, GOOGLE_DRIVE_PRIVATE_KEY and GOOGLE_DRIVE_FOLDER_ID.");
   const existing=await db.productImage.findMany({where:{productId}});
   return db.productImage.create({data:{productId,url:"/api/telegram/files/"+encodeURIComponent(stored.fileId),alt:alt||null,sortOrder:existing.length}});
 }
@@ -41,6 +45,10 @@ export async function saveBlobImage(bytes:Uint8Array,mime:string){
   if(!MIME.has(mime))throw new Error("Only JPEG, PNG or WebP images are supported.");
   if(!bytes.length||bytes.length>MAX_IMAGE_BYTES)throw new Error("Image is too large. Please use one under 650 KB.");
   const blobId=crypto.randomUUID().replace(/-/g,"").slice(0,24);
+  const filename="uploaded-image-"+blobId+"."+({"image/jpeg":"jpg","image/png":"png","image/webp":"webp"} as Record<string,string>)[mime];
+  await storeTelegramFile(bytes,filename,mime,"Uploaded website image");
+  const driveCopy=await mirrorImageToGoogleDrive(bytes,filename,mime);
+  if(!driveCopy.configured)console.warn("Google Drive image mirror is disabled; set GOOGLE_DRIVE_CLIENT_EMAIL, GOOGLE_DRIVE_PRIVATE_KEY and GOOGLE_DRIVE_FOLDER_ID.");
   await db.imageBlob.create({data:{id:blobId,mime,data:Buffer.from(bytes).toString("base64")}});
   return "/api/img/"+blobId;
 }
