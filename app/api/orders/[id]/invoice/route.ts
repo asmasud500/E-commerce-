@@ -27,10 +27,6 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{id:string}>}
   const supportPhone=esc(settings?.supportPhone||"");
   const supportEmail=esc(settings?.supportEmail||"");
   const orderNumber=esc(order.orderNumber);
-  const trackingUrl=new URL("/track",req.url);
-  trackingUrl.searchParams.set("order",String(order.orderNumber));
-  const trackingHref=esc(trackingUrl.toString());
-  const trackingQr="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=4&data="+encodeURIComponent(trackingUrl.toString());
   const isPaid=String(order.paymentStatus||"").toUpperCase()==="PAID";
   const paymentStatus=String(order.paymentStatus||"PENDING").toUpperCase();
   const orderStatus=String(order.status||"PENDING").replace(/_/g," ");
