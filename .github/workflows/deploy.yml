@@ -130,6 +130,7 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
       - name: Register store Telegram webhook and commands
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+        continue-on-error: true
         run: |
           set -euo pipefail
           if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_WEBHOOK_SECRET:-}" ]; then
