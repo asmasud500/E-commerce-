@@ -53,7 +53,7 @@ export async function saveProductImage(productId:string,bytes:Uint8Array,mime:st
   const matches=await db.storageAsset.findMany({where:{checksum},take:1});
   const stored=matches[0]?.telegramFileId?{fileId:String(matches[0].telegramFileId)}:await storeTelegramFile(bytes,filename,mime,"Product image · "+product.name+" · SKU "+product.sku);
   let backup:{configured:boolean;fileId:string|null;backupFailed?:boolean}={configured:false,fileId:null};
-  try{backup=await mirrorOrLog(bytes,filename,mime) as typeof backup;}catch{}
+  try{backup=matches[0]?.driveFileId?{configured:true,fileId:String(matches[0].driveFileId)}:await mirrorOrLog(bytes,filename,mime) as typeof backup;}catch{}
   const backupStatus=backup.fileId?"COMPLETE":backup.configured?"PENDING":"DISABLED";
   await registerStorageAsset({checksum,mime,size:bytes.byteLength,filename,telegramFileId:stored.fileId,driveFileId:backup.fileId,backupStatus});
   if(backup.configured&&!backup.fileId)await enqueueBackup({checksum,telegramFileId:stored.fileId,filename,mime,size:bytes.byteLength});
@@ -76,8 +76,9 @@ export async function saveProductImageFromTelegramFileId(productId:string,fileId
       if(!validImageBytes(file.bytes,mime))throw new Error("Telegram image content is invalid.");
       const checksum=await checksumOf(file.bytes);
       const filename="product-"+product.sku+"-"+checksum.slice(0,12)+"."+EXT[mime];
+      const matches=await db.storageAsset.findMany({where:{checksum},take:1});
       let backup:{configured:boolean;fileId:string|null;backupFailed?:boolean}={configured:false,fileId:null};
-      try{backup=await mirrorOrLog(file.bytes,filename,mime) as typeof backup;}catch{}
+      try{backup=matches[0]?.driveFileId?{configured:true,fileId:String(matches[0].driveFileId)}:await mirrorOrLog(file.bytes,filename,mime) as typeof backup;}catch{}
       const backupStatus=backup.fileId?"COMPLETE":backup.configured?"PENDING":"DISABLED";
       await registerStorageAsset({checksum,mime,size:file.bytes.byteLength,filename,telegramFileId:fileId,driveFileId:backup.fileId,backupStatus});
       if(backup.configured&&!backup.fileId)await enqueueBackup({checksum,telegramFileId:fileId,filename,mime,size:file.bytes.byteLength});
