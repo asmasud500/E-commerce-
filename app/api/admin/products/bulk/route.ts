@@ -51,7 +51,7 @@ export async function POST(req:NextRequest){
         if(p.optionsJson!==undefined&&p.optionsJson!=="")data.options=parseJsonCell(p.optionsJson,[]);
         if(p.variantsJson!==undefined&&p.variantsJson!=="")data.variants=parseJsonCell(p.variantsJson,[]);
         if(p.freeShipping!==undefined&&p.freeShipping!=="")data.freeShipping=boolValue(p.freeShipping);
-        if(p.shippingFee!==undefined&&p.shippingFee!=="")data.shippingFee=p.shippingFee===""?null:p.shippingFee;
+        if(p.shippingFee!==undefined&&p.shippingFee!==null)data.shippingFee=p.shippingFee;
         if(existing){
           if(!Object.keys(data).length){results.push({row:i+2,sku,status:"error",message:"No fields to update"});continue;}
           const imageRows=p.imagesJson?parseJsonCell(p.imagesJson,[]):undefined;
@@ -67,7 +67,7 @@ export async function POST(req:NextRequest){
           if(p.optionsJson)extra.options=parseJsonCell(p.optionsJson,[]);
           if(p.variantsJson)extra.variants=parseJsonCell(p.variantsJson,[]);
           if(p.freeShipping!==undefined&&p.freeShipping!=="")extra.freeShipping=boolValue(p.freeShipping);
-          if(p.shippingFee!==undefined&&p.shippingFee!=="")extra.shippingFee=p.shippingFee===""?null:p.shippingFee;
+          if(p.shippingFee!==undefined&&p.shippingFee!==null)extra.shippingFee=p.shippingFee;
           const imageRows= p.imagesJson ? parseJsonCell(p.imagesJson,[]) : [];
           if(!Array.isArray(imageRows)||imageRows.some((image:any)=>!image||!isHttpUrl(image.url)))throw new Error("Invalid imagesJson: use an array of image URL objects");
           if(extra.variants!==undefined&&!Array.isArray(extra.variants))throw new Error("variantsJson must be a JSON array");
