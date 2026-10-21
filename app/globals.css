@@ -3124,3 +3124,39 @@ img,video,svg,canvas{max-width:100%}
 @keyframes trk-live-breathe{0%,100%{box-shadow:0 0 0 0 rgba(255,104,1,0)}50%{box-shadow:0 0 0 4px rgba(255,104,1,.09)}}
 @media(prefers-reduced-motion:reduce){.trk-map-canvas.trk-map-seven,.trk-map-seven .trk-map-grid,.trk-map-route,.trk-map-stop.is-current .trk-map-stop-halo,.trk-map-label-point,.trk-map-label-point.is-current,.trk-map-live.moving{animation:none!important}.trk-courier-marker{display:none}}
 @media(max-width:620px){.trk-map-route{stroke-width:3.5}.trk-map-label-point{backdrop-filter:blur(10px);box-shadow:0 6px 18px rgba(24,34,53,.1)}}
+
+
+/* Order tracking: compact, readable map layout on phones */
+@media(max-width:620px){
+  .trk{width:100%;max-width:100%;min-width:0}
+  .trk-live-map{margin:16px 0;border-radius:17px}
+  .trk-map-top{padding:15px 14px;gap:10px}
+  .trk-map-top h3{font-size:21px;line-height:1.15;margin:7px 0}
+  .trk-map-top p{font-size:12px;line-height:1.45}
+  .trk-map-live{padding:6px 9px;font-size:9px}
+  .trk-map-canvas.trk-map-seven{min-height:370px;height:370px;padding:6px}
+  .trk-map-seven .trk-map-art{inset:8px;width:calc(100% - 16px);height:calc(100% - 16px)}
+  .trk-map-stop-labels{inset:7px}
+  .trk-map-label-point{max-width:94px;gap:2px;padding:6px 7px;border-radius:9px;backdrop-filter:blur(8px)}
+  .trk-map-label-point span{font-size:8px}
+  .trk-map-label-point b{font-size:9px;line-height:1.2;overflow-wrap:anywhere}
+  .trk-map-label-point small{display:none}
+  .point-1{left:0;bottom:1%}
+  .point-2{left:2%;top:31%}
+  .point-3{left:23%;bottom:2%}
+  .point-4{left:37%;top:23%}
+  .point-5{left:47%;bottom:15%}
+  .point-6{right:2%;top:17%}
+  .point-7{right:0;top:0}
+  .trk-map-legend{padding:10px 13px;gap:8px 12px;font-size:10px}
+  .trk-map-note{padding:0 13px 13px;font-size:10px;line-height:1.5}
+  .trk-steps{grid-template-columns:1fr;gap:0}
+}
+@media(max-width:380px){
+  .trk-map-canvas.trk-map-seven{min-height:340px;height:340px}
+  .trk-map-label-point{max-width:84px;padding:5px 6px}
+  .trk-map-label-point b{font-size:8.5px}
+  .point-3{left:21%}
+  .point-4{left:35%}
+  .point-5{left:44%}
+}
