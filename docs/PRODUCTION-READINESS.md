@@ -71,3 +71,21 @@ Complete a staging test with non-production payment credentials first:
 - Firestore indexes, backups/restore, least-privilege service account, alerting, and rollback procedure.
 
 Do not mark payment integrations production-ready until provider credentials, callbacks, and actual transaction flows have been tested end-to-end.
+
+## 7. Features added after the first runbook — test before real orders
+
+Run each of these once with a test order:
+
+- **Cash on Delivery:** create a gateway of type Custom with "This is Cash on Delivery" ticked (or Telegram `/addcod`). Place an order, confirm it, mark it Processing → Shipped → Delivered, then use "Cash collected" (or `/cash ORDER-NO`). Also cancel one confirmed COD order and check the product stock returns. COD stock reservations do not expire, so unconfirmed fake orders must be cancelled by an admin.
+- **Integrations & API keys (super admin):** keys are encrypted with `PAYMENT_ENCRYPTION_KEY` and cannot be viewed again. Send a test SMS, book one Steadfast/Pathao parcel in the courier's sandbox first. The Pathao and BulkSMSBD request formats were written from public documentation and have not been exercised against live accounts.
+- **Returns:** deliver a test order, submit a return from `/track`, approve it in Admin → Returns or with `/return`. Refund money through the existing refund action; the return status is only a record.
+- **Telegram control:** `/help` lists stock, product, delivery, voucher, flash-sale, payment-number and courier commands. Payment number and instruction changes are written to the audit log and echoed back in the chat.
+- **Abandoned carts:** a cart is stored once a phone number is typed at checkout. This is mentioned in the privacy policy; review the policy pages (`/privacy`, `/terms`, `/return-policy`, `/shipping-policy`) so they match your real rules.
+
+## 8. Performance and operations notes
+
+- Simple equality lookups (for example by order number, status or phone) are now answered by Firestore itself. Queries that use `OR`, `contains`, `NOT` or dotted fields still read the whole collection, so keep an eye on read costs as orders grow and add indexed queries for any slow admin list.
+- Uploaded product and review pictures are stored in Firestore (max 650 KB each). For a large catalogue move them to object storage (R2/Firebase Storage).
+- Set `NEXT_PUBLIC_SITE_URL` to your real domain. If it is missing, the sitemap and robots file use the host the visitor came from.
+- Security headers now include HSTS and `frame-ancestors 'none'`. A full Content-Security-Policy with nonces has not been added.
+- Take regular Firestore exports (backups) and test a restore; the app does not do this itself.
