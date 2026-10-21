@@ -4,7 +4,7 @@ import {readFile} from "node:fs/promises";
 const read=(path)=>readFile(new URL(path,import.meta.url),"utf8");
 test("image uploads validate actual signatures and track checksum metadata without Base64 payloads",async()=>{
  const source=await read("../lib/store/images.ts");
- assert.match(source,/crypto\.subtle\.digest\("SHA-256",bytes\)/);
+ assert.match(source,/crypto\.subtle\.digest\("SHA-256",Uint8Array\.from\(bytes\)\.buffer as ArrayBuffer\)/);
  assert.match(source,/function validImageBytes/);
  assert.match(source,/Image content does not match its declared file type/);
  assert.match(source,/storageAsset\.findMany\(\{where:\{checksum\}/);
