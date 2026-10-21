@@ -22,7 +22,7 @@ export async function POST(req:NextRequest){
     if(!matches)return NextResponse.json({error:"We could not find an order with those details."},{status:404});
     const status=String(o.status||"PENDING").toUpperCase();
     if(["SHIPPED","DELIVERED","CANCELLED","REFUNDED"].includes(status))return NextResponse.json({error:status==="SHIPPED"?"This order has already shipped and can no longer be cancelled online.":"This order can no longer be cancelled."},{status:409});
-    const updated:any=await db.order.update({where:{id:o.id},data:{status:"CANCELLED"}});
+    const updated:any=await db.order.update({where:{id:o.id},data:{status:"CANCELLED",cancellationReason:p.data.reason}});
     return NextResponse.json({ok:true,status:"CANCELLED",timeline:buildTimeline(updated)},{headers:{"Cache-Control":"no-store"}});
   }catch(error){console.error("Order cancellation error:",error instanceof Error?error.message:String(error));return NextResponse.json({error:"Could not cancel the order. Please try again."},{status:500});}
 }
