@@ -32,18 +32,23 @@ Do not paste these secrets into source code or commit them. Keep the storage cha
 
 ## Optional Google Drive image mirror
 
-New product images and general website image uploads are still sent to the private Telegram storage chat and are also copied to a private Google Drive folder when the Drive mirror is configured. Telegram remains the image-serving URL; the Drive copy is an additional backup. Payment proofs and invoices are not mirrored by this feature.
+New product images and general website image uploads are stored in the private Telegram storage chat and copied to a private Google Drive folder when the Drive mirror is configured. Telegram remains the image-serving URL; the Drive copy is an additional backup. Payment proofs and invoices are not mirrored by this feature.
 
-1. In Google Cloud Console, enable the Google Drive API and create a service account.
-2. Create a folder in Google Drive and share that folder with the service account's email as an Editor.
-3. Add these as GitHub Actions repository secrets (Settings → Secrets and variables → Actions):
-   - `GOOGLE_DRIVE_CLIENT_EMAIL`: service-account email
-   - `GOOGLE_DRIVE_PRIVATE_KEY`: complete private key from the service-account JSON; keep it secret
-   - `GOOGLE_DRIVE_FOLDER_ID`: ID of the target Drive folder from its URL
-4. Run the Cloudflare deployment workflow again so it copies the secrets to Worker runtime secrets.
+**Recommended for a personal Gmail / My Drive folder: OAuth refresh-token credentials.** Google service accounts do not have personal Drive storage quota; sharing a normal My Drive folder with a service account does not grant it quota. Service-account uploads should be used only when targeting a Google Workspace Shared Drive where the service account has appropriate membership/permissions.
 
-The Drive mirror is inactive if none of these three secrets is set. If only some are set, uploads report a configuration error. Never commit service-account JSON or private keys. Existing images are not retroactively copied; only new uploads are mirrored.
+Set these as GitHub Actions repository secrets (Settings → Secrets and variables → Actions), then rerun the Cloudflare deployment workflow so it copies them to Worker runtime secrets:
 
+- `GOOGLE_DRIVE_CLIENT_ID`: OAuth 2.0 client ID
+- `GOOGLE_DRIVE_CLIENT_SECRET`: OAuth 2.0 client secret
+- `GOOGLE_DRIVE_REFRESH_TOKEN`: refresh token authorized by the Google account that owns/has edit access to the destination folder
+- `GOOGLE_DRIVE_FOLDER_ID`: ID of the destination folder from its URL
+
+In Google Cloud Console, enable the Google Drive API and create an OAuth client. Generate a refresh token with offline access and the Drive file scope (`https://www.googleapis.com/auth/drive.file`) while signed in as the Google account that should own the mirror files. Keep all credentials private; never commit them. OAuth credentials take precedence if both OAuth and service-account variables are configured.
+
+**Alternative for Google Workspace:** configure `GOOGLE_DRIVE_CLIENT_EMAIL` and `GOOGLE_DRIVE_PRIVATE_KEY`, add the service account to a Shared Drive with permission to create files, and set `GOOGLE_DRIVE_FOLDER_ID` to a folder inside that Shared Drive. A regular personal My Drive folder is not sufficient to solve the service-account quota error.
+
+The Drive mirror is inactive if no Drive credentials and folder ID are configured. If only some credentials are set, uploads report a configuration error. Existing images are not retroactively copied; only new uploads and queued retries are mirrored. Once credentials are updated, use **Admin → Storage Health → Retry due backups** to retry previously failed jobs.
+ 
 ## Storage reliability improvements
 
 - Image uploads accept JPEG, PNG, and WebP only when the file signature matches the declared MIME type; images over 650 KB are rejected.
