@@ -149,3 +149,21 @@ test("MART Pay admin can submit provider credentials securely without exposing s
   assert.match(listApi, /credentialsConfigured/);
   assert.match(itemApi, /finalType!==\"SSLCOMMERZ\"/);
 });
+
+
+test("all admin image upload and product image mutation endpoints require a valid admin session", async () => {
+  const paths = [
+    "../app/api/admin/image-upload/route.ts",
+    "../app/api/admin/products/[id]/images/upload/route.ts",
+    "../app/api/admin/products/[id]/images/route.ts"
+  ];
+  for (const path of paths) {
+    const source = await read(path);
+    assert.match(source, /readAdminSession/);
+    assert.match(source, /Admin authentication required/);
+  }
+  const productImages = await read("../app/api/admin/products/[id]/images/route.ts");
+  assert.match(productImages, /export async function GET\(req:NextRequest/);
+  assert.match(productImages, /export async function POST\(req:NextRequest/);
+  assert.match(productImages, /export async function DELETE\(req:NextRequest/);
+});
