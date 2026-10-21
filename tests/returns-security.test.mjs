@@ -19,14 +19,14 @@ test("return workflow requires item receipt and a completed refund reference", a
   assert.match(update, /RECEIVED:\["REFUNDED"\]/);
   assert.match(update, /refundReference:z\.string\(\)\.trim\(\)\.min\(2\)\.max\(100\)/);
   assert.match(update, /recordRefundAtomically/);
-  assert.match(update, /Only a manager or super admin can record refunds/);
+  assert.match(update, /Only a super admin can record refunds/);
   assert.match(update, /This refund reference has already been processed/);
 });
 
 test("standalone order refund endpoint requires manager-level admin authorization", async () => {
   const refund = await read("../app/api/admin/orders/[id]/refund/route.ts");
   assert.match(refund, /readAdminSession/);
-  assert.match(refund, /Only a manager or super admin can issue refunds/);
+  assert.match(refund, /Only a super admin can issue refunds/);
   assert.match(refund, /recordRefundAtomically/);
 });
 
