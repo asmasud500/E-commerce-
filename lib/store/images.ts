@@ -70,9 +70,17 @@ export async function saveProductImageFromTelegramFileId(productId:string,fileId
   try{
     const file=await readTelegramFile(fileId);
     if(file?.bytes?.length){
+      if(file.bytes.length>MAX_IMAGE_BYTES)throw new Error("Telegram image exceeds the 650 KB image limit.");
       const path=file.filePath.toLowerCase();
       const mime=path.endsWith(".png")?"image/png":path.endsWith(".webp")?"image/webp":"image/jpeg";
-      await mirrorOrLog(file.bytes,"product-"+product.sku+"-telegram-"+crypto.randomUUID().slice(0,8)+"."+EXT[mime],mime);
+      if(!validImageBytes(file.bytes,mime))throw new Error("Telegram image content is invalid.");
+      const checksum=await checksumOf(file.bytes);
+      const filename="product-"+product.sku+"-"+checksum.slice(0,12)+"."+EXT[mime];
+      let backup:{configured:boolean;fileId:string|null;backupFailed?:boolean}={configured:false,fileId:null};
+      try{backup=await mirrorOrLog(file.bytes,filename,mime) as typeof backup;}catch{}
+      const backupStatus=backup.fileId?"COMPLETE":backup.configured?"PENDING":"DISABLED";
+      await registerStorageAsset({checksum,mime,size:file.bytes.byteLength,filename,telegramFileId:fileId,driveFileId:backup.fileId,backupStatus});
+      if(backup.configured&&!backup.fileId)await enqueueBackup({checksum,telegramFileId:fileId,filename,mime,size:file.bytes.byteLength});
     }else{
       console.warn("Drive backup skipped: Telegram file could not be read for existing file_id.");
     }
