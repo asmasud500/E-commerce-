@@ -20,7 +20,7 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{fileId:strin
     const imageUrls=["/api/telegram/files/"+fileId,"/api/telegram/files/"+encodeURIComponent(fileId)];
     const publicImage=await db.productImage.findFirst({
       where:{url:{in:imageUrls},product:{is:{published:true}}},
-      select:{id:true}
+      select:{id:true,checksum:true}
     });
     const isPublicProductImage=!!publicImage;
     if(!isPublicProductImage){
@@ -33,6 +33,7 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{fileId:strin
     if(!file)return NextResponse.json({error:"Image not found."},{status:404});
     const mime=mimeFor(file.filePath);
     if(!mime.startsWith("image/"))return NextResponse.json({error:"Unsupported image file."},{status:415});
+    if(isPublicProductImage&&publicImage?.checksum){const digest=await crypto.subtle.digest("SHA-256",Uint8Array.from(file.bytes).buffer as ArrayBuffer);const actual=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");if(actual!==String(publicImage.checksum))return NextResponse.json({error:"Image integrity check failed."},{status:502,headers:{"Cache-Control":"no-store"}});}
     return new Response(file.bytes.buffer.slice(file.bytes.byteOffset,file.bytes.byteOffset+file.bytes.byteLength) as ArrayBuffer,{headers:{
       "Content-Type":mime,
       "Content-Length":String(file.bytes.byteLength),
