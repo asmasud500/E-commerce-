@@ -1,4 +1,4 @@
-import {NextRequest,NextResponse} from "next/server";import {db} from "@/lib/prisma";import {verifyCustomerToken} from "@/lib/auth/customer";const profileSchema=(await import("zod")).z.object({name:(await import("zod")).z.string().trim().min(2).max(100).optional(),phone:(await import("zod")).z.string().trim().min(6).max(30).optional(),email:(await import("zod")).z.string().trim().email().max(254).optional()});
+import {NextRequest,NextResponse} from "next/server";import {db} from "@/lib/prisma";import {verifyCustomerToken} from "@/lib/auth/customer";import {z} from "zod";const profileSchema=z.object({name:z.string().trim().min(2).max(100).optional(),phone:z.string().trim().min(6).max(30).optional(),email:z.string().trim().email().max(254).optional()});
 export async function PATCH(req:NextRequest){
  const token=req.cookies.get("customer_session")?.value;const session=token?await verifyCustomerToken(token):null;
  if(!session)return NextResponse.json({error:"Please sign in to update your profile."},{status:401});
