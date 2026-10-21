@@ -14,7 +14,7 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
  const {id}=await params;
  try{
   const b=input.parse(await req.json());
-  const existing=await db.paymentGateway.findUnique({where:{id},select:{id:true,type:true,enabled:true,encryptedSecrets:true,publicConfig:true}});
+  const existing=await db.paymentGateway.findUnique({where:{id},select:{id:true,type:true,mode:true,enabled:true,encryptedSecrets:true,publicConfig:true}});
   if(!existing)return NextResponse.json({error:"Gateway not found"},{status:404});
   const finalType=b.type||existing.type;
   const storedSecrets=existing.encryptedSecrets?decryptSecrets(existing.encryptedSecrets):{};
@@ -22,7 +22,8 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
   const hasCredentials=!!(String(candidateSecrets.storeId||"").trim()&&String(candidateSecrets.storePassword||"").trim());
   const finalPublicConfig=(b.publicConfig??existing.publicConfig) as Record<string,unknown>|null;
   const isCashOnDelivery=finalType==="CUSTOM"&&finalPublicConfig?.cod===true;
-  const isDemoGateway=finalType==="CUSTOM"&&b.mode!== "LIVE"&&(b.mode||"SANDBOX")==="SANDBOX"&&finalPublicConfig?.demo===true;
+  const finalMode=b.mode||existing.mode;
+  const isDemoGateway=finalType==="CUSTOM"&&finalMode==="SANDBOX"&&finalPublicConfig?.demo===true;
   if(b.enabled===true&&finalType!=="SSLCOMMERZ"&&!isCashOnDelivery&&!isDemoGateway)return NextResponse.json({error:"This provider has no verified automatic adapter yet. For UI testing only, configure CUSTOM with mode SANDBOX and publicConfig.demo=true."},{status:409});
   if(b.enabled===true&&finalType==="SSLCOMMERZ"&&!hasCredentials)return NextResponse.json({error:"Store ID and Store Password are required before enabling SSLCOMMERZ."},{status:409});
   if(b.secrets&&finalType==="SSLCOMMERZ"&&(!String(b.secrets.storeId||"").trim()||!String(b.secrets.storePassword||"").trim()))return NextResponse.json({error:"Save both SSLCOMMERZ Store ID and Store Password together."},{status:400});
