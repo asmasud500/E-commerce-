@@ -36,6 +36,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GOOGLE_DRIVE_CLIENT_EMAIL: ${{ secrets.GOOGLE_DRIVE_CLIENT_EMAIL }}
+          GOOGLE_DRIVE_PRIVATE_KEY: ${{ secrets.GOOGLE_DRIVE_PRIVATE_KEY }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         run: |
           set -euo pipefail
           missing=0
@@ -93,6 +96,9 @@ jobs:
           put_optional_secret TELEGRAM_CHAT_ID "$TELEGRAM_CHAT_ID"
           put_optional_secret TELEGRAM_ADMIN_USER_IDS "$TELEGRAM_ADMIN_USER_IDS"
           put_optional_secret TELEGRAM_WEBHOOK_SECRET "$TELEGRAM_WEBHOOK_SECRET"
+          put_optional_secret GOOGLE_DRIVE_CLIENT_EMAIL "$GOOGLE_DRIVE_CLIENT_EMAIL"
+          put_optional_secret GOOGLE_DRIVE_PRIVATE_KEY "$GOOGLE_DRIVE_PRIVATE_KEY"
+          put_optional_secret GOOGLE_DRIVE_FOLDER_ID "$GOOGLE_DRIVE_FOLDER_ID"
           printf '%s' "$PAYMENT_WEBHOOK_SECRET" | npx wrangler secret put PAYMENT_WEBHOOK_SECRET
           put_optional_secret MOBILE_MONEY_SMS_WEBHOOK_SECRET "$MOBILE_MONEY_SMS_WEBHOOK_SECRET"
           printf '%s' "$CRON_SECRET" | npx wrangler secret put CRON_SECRET
@@ -107,6 +113,9 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_ADMIN_USER_IDS: ${{ secrets.TELEGRAM_ADMIN_USER_IDS }}
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+          GOOGLE_DRIVE_CLIENT_EMAIL: ${{ secrets.GOOGLE_DRIVE_CLIENT_EMAIL }}
+          GOOGLE_DRIVE_PRIVATE_KEY: ${{ secrets.GOOGLE_DRIVE_PRIVATE_KEY }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
           PAYMENT_WEBHOOK_SECRET: ${{ secrets.PAYMENT_WEBHOOK_SECRET }}
           MOBILE_MONEY_SMS_WEBHOOK_SECRET: ${{ secrets.MOBILE_MONEY_SMS_WEBHOOK_SECRET }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
