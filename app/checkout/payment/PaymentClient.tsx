@@ -9,8 +9,8 @@ export default function PaymentClient(){
  function continuePayment(){if(result?.paymentUrl){window.location.assign(result.paymentUrl)}else setMessage("Secure payment link is unavailable. Please retry.")}
  async function confirmDemoOrder(){if(!orderId||confirmingDemo)return;setConfirmingDemo(true);setMessage("");try{const r=await fetch("/api/payments/demo-confirm",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId,accessToken:sessionStorage.getItem("orderPaymentToken")||""})});const d=await r.json();if(!r.ok||!d.ok){setMessage(d.error||"Could not confirm demo order. Please try again.");return}window.location.href="/order-success?demo=true&order="+encodeURIComponent(d.orderNumber)}catch{setMessage("Unable to connect. Please retry demo confirmation.")}finally{setConfirmingDemo(false)}}
  const tk=(n:number)=>"৳"+Number(n).toLocaleString("en-BD");
- return <div className="pay" style={{maxWidth:720,margin:"0 auto",paddingBottom:32}}>
- <ol className="steps" aria-label="Checkout progress"><li className="done"><i>✓</i>Information</li><li className="on"><i>2</i>Payment</li><li><i>3</i>Confirmation</li></ol>
+ return <div className="pay pay-premium" style={{maxWidth:900,margin:"0 auto",paddingBottom:40}}>
+ <ol className="steps checkout-progress pay-progress" aria-label="Checkout progress"><li className="done"><i>✓</i><span>Order Summary<small>Items reviewed</small></span></li><li className="done"><i>✓</i><span>Customer<small>Contact details</small></span></li><li className="done"><i>✓</i><span>Delivery<small>Shipping address</small></span></li><li className="on" aria-current="step"><i>4</i><span>Payment<small>Secure checkout</small></span></li><li><i>5</i><span>Confirmation<small>Order status</small></span></li></ol>
  <section className="pg-card pay-card" style={{overflow:"hidden",padding:0}}>
  <header style={{background:"linear-gradient(135deg,#101d35,#172b4d)",color:"#fff",padding:"clamp(22px,5vw,36px)",position:"relative"}}>
   <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -21,7 +21,7 @@ export default function PaymentClient(){
   <h1 style={{fontSize:"clamp(24px,4vw,32px)",lineHeight:1.15,margin:"26px 0 8px",color:"#fff"}}>Complete your payment</h1>
   <p style={{margin:0,color:"#d7dfec",fontSize:14,lineHeight:1.6}}>Pay safely through the enabled payment partners. Your payment details are handled by the payment provider.</p>
  </header>
- <div style={{padding:"clamp(20px,5vw,32px)"}}>
+ <div className="pay-content" style={{padding:"clamp(20px,5vw,32px)"}}>
  {!orderId?<div role="alert"><h2>Order not found</h2><p>Return to checkout and open your order payment link again.</p><a className="pg-btn pg-btn-line" href="/checkout">Back to checkout</a></div>:<>
   <div style={{border:"1px solid var(--border, #e5e7eb)",borderRadius:14,padding:16,display:"flex",gap:12,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}}>
    <div><div style={{fontSize:12,color:"var(--muted,#64748b)",marginBottom:5}}>ORDER REFERENCE</div><b style={{overflowWrap:"anywhere"}}>{orderId}</b></div>
