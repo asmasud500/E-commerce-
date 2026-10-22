@@ -9,7 +9,8 @@ type Cat={name:string;slug:string};
 export default function StoreHeader({categories}:{categories?:Cat[]}){
   const [count,setCount]=useState(0);
   const [cats,setCats]=useState<Cat[]>(categories||[]);
-  const [storeName,setStoreName]=useState("MART Store");\n  const [logoUrl,setLogoUrl]=useState("");\n  const [searchPlaceholder,setSearchPlaceholder]=useState("Search for products, brands and more");\n  const [featuredLabel,setFeaturedLabel]=useState("Featured");\n  const [arrivalsLabel,setArrivalsLabel]=useState("New Arrivals");\n  const [dealsLabel,setDealsLabel]=useState("Deals & Offers");\n  const [deliveryNotice,setDeliveryNotice]=useState("Shopping across Bangladesh");
+  const [storeName,setStoreName]=useState("MART Store");
+  const [logoUrl,setLogoUrl]=useState("");\n  const [searchPlaceholder,setSearchPlaceholder]=useState("Search for products, brands and more");\n  const [featuredLabel,setFeaturedLabel]=useState("Featured");\n  const [arrivalsLabel,setArrivalsLabel]=useState("New Arrivals");\n  const [dealsLabel,setDealsLabel]=useState("Deals & Offers");\n  const [deliveryNotice,setDeliveryNotice]=useState("Shopping across Bangladesh");
   const [logoUrl,setLogoUrl]=useState("");
   const [announcement,setAnnouncement]=useState("");
 
@@ -23,7 +24,7 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
 
   useEffect(()=>{
     let off=false;
-    fetch("/api/storefront/config",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(off||!d?.settings)return;const name=typeof d.settings.storeName==="string"?d.settings.storeName.trim():"";if(name)setStoreName(name);if(typeof d.settings.logoUrl==="string")setLogoUrl(d.settings.logoUrl.trim());if(typeof d.settings.announcement==="string")setAnnouncement(d.settings.announcement.trim())}).catch(()=>{});
+    fetch("/api/storefront/config",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(off||!d?.settings)return;const name=typeof d.settings.storeName==="string"?d.settings.storeName.trim():"";if(name)setStoreName(name);if(typeof d.settings.logoUrl==="string")setLogoUrl(d.settings.logoUrl.trim());if(typeof d.settings.headerSearchPlaceholder==="string"&&d.settings.headerSearchPlaceholder.trim())setSearchPlaceholder(d.settings.headerSearchPlaceholder.trim());if(typeof d.settings.headerFeaturedLabel==="string"&&d.settings.headerFeaturedLabel.trim())setFeaturedLabel(d.settings.headerFeaturedLabel.trim());if(typeof d.settings.headerNewArrivalsLabel==="string"&&d.settings.headerNewArrivalsLabel.trim())setArrivalsLabel(d.settings.headerNewArrivalsLabel.trim());if(typeof d.settings.headerDealsLabel==="string"&&d.settings.headerDealsLabel.trim())setDealsLabel(d.settings.headerDealsLabel.trim());if(typeof d.settings.deliveryNotice==="string")setDeliveryNotice(d.settings.deliveryNotice.trim());if(typeof d.settings.announcement==="string")setAnnouncement(d.settings.announcement.trim())}).catch(()=>{});
     return()=>{off=true};
   },[]);
 
