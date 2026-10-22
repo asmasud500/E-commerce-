@@ -3480,3 +3480,6 @@ input:disabled,select:disabled,textarea:disabled{background:#f1f5f9;color:#64748
 @media(max-width:820px){.ss-logo-section{grid-template-columns:minmax(0,1fr)}.ss-logo-uploader{align-items:flex-start}.ss-logo-preview{width:66px;height:66px;flex-basis:66px}}
 
 .sh-logo-image{display:block;width:34px;height:34px;flex:0 0 34px;object-fit:contain;border-radius:8px;background:#fff;padding:2px;margin-right:5px}
+
+.ss-subsection-title{margin:24px 0 12px;padding-top:16px;border-top:1px solid #edf0f5;color:#182b45;font-size:12px;font-weight:800;letter-spacing:.035em}
+.ss-panel .ss-toggle-card{min-width:0}
