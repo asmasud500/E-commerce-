@@ -10,8 +10,12 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
   const [count,setCount]=useState(0);
   const [cats,setCats]=useState<Cat[]>(categories||[]);
   const [storeName,setStoreName]=useState("MART Store");
-  const [logoUrl,setLogoUrl]=useState("");\n  const [searchPlaceholder,setSearchPlaceholder]=useState("Search for products, brands and more");\n  const [featuredLabel,setFeaturedLabel]=useState("Featured");\n  const [arrivalsLabel,setArrivalsLabel]=useState("New Arrivals");\n  const [dealsLabel,setDealsLabel]=useState("Deals & Offers");\n  const [deliveryNotice,setDeliveryNotice]=useState("Shopping across Bangladesh");
   const [logoUrl,setLogoUrl]=useState("");
+  const [searchPlaceholder,setSearchPlaceholder]=useState("Search for products, brands and more");
+  const [featuredLabel,setFeaturedLabel]=useState("Featured");
+  const [arrivalsLabel,setArrivalsLabel]=useState("New Arrivals");
+  const [dealsLabel,setDealsLabel]=useState("Deals & Offers");
+  const [deliveryNotice,setDeliveryNotice]=useState("Shopping across Bangladesh");
   const [announcement,setAnnouncement]=useState("");
 
   useEffect(()=>{
