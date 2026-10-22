@@ -129,14 +129,16 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
       const since = new Date(Date.now() - rangeDays * 86400000);
       const orders = await db.order.findMany({ where: { createdAt: { gte: since } }, take: 1000 });
       const rows = orders as any[];
+      const totalMatchingOrders = await db.order.count({ where: { createdAt: { gte: since } } }).catch(() => rows.length);
+      const sampled = totalMatchingOrders > rows.length;
       const paid = rows.filter(o => String(o.paymentStatus).toUpperCase() === "PAID");
       const totalRevenue = paid.reduce((s,o)=>s+Number(o.total||0),0);
       const statusCounts: Record<string,number> = {};
       for (const o of rows) statusCounts[String(o.status||"UNKNOWN")] = (statusCounts[String(o.status||"UNKNOWN")]||0)+1;
-      const facts = { rangeDays, generatedAt: new Date().toISOString(), sourceOrderCount: rows.length, paidOrderCount: paid.length, paidRevenueBDT: Math.round(totalRevenue*100)/100, averagePaidOrderValueBDT: paid.length ? Math.round(totalRevenue/paid.length*100)/100 : 0, orderStatuses: statusCounts, note: "Aggregated server-side from order records; no customer names, emails, addresses, payment secrets, or raw transactions included." };
-      prompt = "Analyze this verified aggregate e-commerce data. Explain trends only where data supports them, flag small samples and missing context, provide 3 actionable recommendations and 3 follow-up metrics. Never invent missing values or claim causality. Report window: "+rangeDays+" days. Data: "+JSON.stringify(facts);
+      const facts = { rangeDays, generatedAt: new Date().toISOString(), sourceOrderCount: rows.length, totalMatchingOrders, sampled, paidOrderCount: paid.length, paidRevenueBDT: Math.round(totalRevenue*100)/100, averagePaidOrderValueBDT: paid.length ? Math.round(totalRevenue/paid.length*100)/100 : 0, orderStatuses: statusCounts, note: "Aggregated server-side from order records; no customer names, emails, addresses, payment secrets, or raw transactions included. If sampled is true, metrics cover only the first 1000 matched records and are not complete store totals." };
+      prompt = "Analyze this server-calculated aggregate e-commerce data. Explain trends only where data supports them, flag small samples and missing context, provide 3 actionable recommendations and 3 follow-up metrics. Never invent missing values or claim causality. If sampled is true, explicitly label all figures as a partial sample and do not present them as complete store totals. Report window: "+rangeDays+" days. Data: "+JSON.stringify(facts);
       draftTitle = "Sales analysis — last "+rangeDays+" days";
-      draftMetadata = { rangeDays, sourceOrderCount: rows.length, paidOrderCount: paid.length };
+      draftMetadata = { rangeDays, sourceOrderCount: rows.length, totalMatchingOrders, sampled, paidOrderCount: paid.length };
     }
 
     const generated = await geminiGenerate({ feature: feature as AiFeature, prompt });
