@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   let logs: any[] = [], drafts: any[] = [], counts: any[] = [];
   try {
     [logs, drafts] = await Promise.all([
-      db.aiRequestLog.findMany({ where: { createdAt: { gte: since } }, orderBy: { createdAt: "desc" }, take: 250 }),
+      db.aiRequestLog.findMany({ where: { createdAt: { gte: since } }, orderBy: { createdAt: "desc" }, take: 3000 }),
       db.aiDraft.findMany({ orderBy: { createdAt: "desc" }, take: 30 })
     ]);
     counts = await Promise.all(AI_FEATURES.map(async feature => {
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
   const errors = logs.filter(r=>r.status==="ERROR").length;
   return NextResponse.json({
     settings: { enabled: settings.enabled !== false, model: settings.model || DEFAULT_GEMINI_MODEL, features: settings.features || {}, dailyRequestLimit: settings.dailyRequestLimit || 300, maxOutputTokens: settings.maxOutputTokens || 900, updatedAt: settings.updatedAt || null, updatedBy: settings.updatedBy || null },
-    metrics: { window: "7 days", total: logs.length, successes, errors, successRate: logs.length ? Math.round(successes / logs.length * 100) : null, avgLatencyMs: logs.length ? Math.round(logs.reduce((s:number,r:any)=>s+Number(r.latencyMs||0),0)/logs.length) : null, inputTokens: logs.reduce((s:number,r:any)=>s+Number(r.inputTokens||0),0), outputTokens: logs.reduce((s:number,r:any)=>s+Number(r.outputTokens||0),0), quota: "Provider quota is not exposed by this API; check Google AI Studio." },
+    metrics: { window: "7 days", recordLimit: 3000, sampled: logs.length >= 3000, total: logs.length, successes, errors, successRate: logs.length ? Math.round(successes / logs.length * 100) : null, avgLatencyMs: logs.length ? Math.round(logs.reduce((s:number,r:any)=>s+Number(r.latencyMs||0),0)/logs.length) : null, inputTokens: logs.reduce((s:number,r:any)=>s+Number(r.inputTokens||0),0), outputTokens: logs.reduce((s:number,r:any)=>s+Number(r.outputTokens||0),0), quota: "Provider quota is not exposed by this API; check Google AI Studio." },
     features: counts,
     logs: logs.slice(0,60).map(r=>({id:r.id,feature:r.feature,model:r.model,status:r.status,latencyMs:r.latencyMs,errorCode:r.errorCode,actorType:r.actorType,createdAt:r.createdAt})),
     drafts: drafts.map(d=>({id:d.id,feature:d.feature,title:d.title,status:d.status,createdBy:d.createdBy,createdAt:d.createdAt,updatedAt:d.updatedAt,content:d.content,metadata:d.metadata}))
