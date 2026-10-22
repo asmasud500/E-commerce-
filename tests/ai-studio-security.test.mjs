@@ -34,6 +34,8 @@ test("AI Studio configuration is super-admin-only and the API connection test is
   assert.match(adminRoute, /session\.role !== "SUPER_ADMIN"/);
   assert.match(adminRoute, /AI_SETTINGS_UPDATED/);
   assert.match(adminRoute, /connection-test/);
+  assert.match(adminRoute, /five per five minutes/);
+  assert.match(adminRoute, /daily Gemini request cap/);
 });
 
 test("generated drafts require explicit review and never auto-publish", () => {
