@@ -74,7 +74,21 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
   if (adminOnly && !session) return errorResponse("ADMIN_REQUIRED", "Admin authentication is required for this feature.", 401);
   if (feature === "sales-analyst" && session && !["SUPER_ADMIN", "MANAGER"].includes(session.role)) return errorResponse("FORBIDDEN", "Your role cannot access sales analysis.", 403);
   const settings = await getAiSettings();
-  if (settings.enabled === false || settings.features?.[feature] === false) return errorResponse("AI_FEATURE_DISABLED", "This AI feature is currently disabled by the store administrator.", 503);
+  if (settings.enabled === false || settings.features?.[feature] === false) {
+    if (["smart-search", "shopping-assistant", "customer-support"].includes(feature)) {
+      try {
+        const fallbackCatalog = await getCatalog();
+        const matches = rankProducts(fallbackCatalog, input.input || "");
+        const text = feature === "customer-support"
+          ? "AI is currently disabled. These catalog matches may help, but store policies, delivery timing, and order/payment status cannot be verified here."
+          : feature === "smart-search"
+            ? (matches.length ? "AI search is disabled. Showing keyword-matched products from the live catalog." : "AI search is disabled and no keyword matches were found.")
+            : (matches.length ? "AI recommendations are disabled. Showing the closest keyword matches from the live catalog." : "AI recommendations are disabled. Try a product name or category.");
+        return NextResponse.json({ text, model: null, fallback: true, products: matches }, { headers: { "Cache-Control": "no-store" } });
+      } catch {}
+    }
+    return errorResponse("AI_FEATURE_DISABLED", "This AI feature is currently disabled by the store administrator.", 503);
+  }
   try {
     const today = new Date(); today.setHours(0,0,0,0);
     const usedToday = await db.aiRequestLog.count({ where: { createdAt: { gte: today } } }).catch(() => 0);
