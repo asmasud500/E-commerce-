@@ -1,0 +1,82 @@
+/* Premium Store Settings refinement — scoped to the Store Settings workspace only. */
+.ss-workspace{--ss-ink:#142238;--ss-muted:#6b778b;--ss-line:#e5eaf1;--ss-orange:#ff6801;color:var(--ss-ink);min-width:0}
+.ss-workspace *{min-width:0}
+.ss-workspace-head{align-items:flex-end;margin:0 0 22px;padding:clamp(18px,2.2vw,28px);border:1px solid #e3e9f1;border-radius:18px;background:radial-gradient(ellipse at 100% 0%,rgba(255,104,1,.09),transparent 38%),linear-gradient(135deg,#fff 0%,#fbfcfe 100%);box-shadow:0 8px 28px rgba(18,34,56,.045)}
+.ss-workspace-head h2{font-size:clamp(23px,2vw,30px);letter-spacing:-.045em;margin:8px 0 8px;color:#142238}
+.ss-workspace-head p{font-size:13px;max-width:560px}
+.ss-eyebrow{font-size:10px;letter-spacing:.16em}
+.ss-completion{padding:10px 13px;border-radius:13px;box-shadow:0 3px 12px rgba(18,34,56,.04)}
+.ss-layout{grid-template-columns:minmax(190px,220px) minmax(0,1fr) minmax(185px,210px);gap:18px}
+.ss-nav{padding:9px;border-radius:16px;box-shadow:0 8px 24px rgba(18,34,56,.045);top:18px}
+.ss-nav-item{min-height:60px!important;padding:10px!important;border-radius:11px!important;gap:10px}
+.ss-nav-item.is-active{box-shadow:inset 3px 0 var(--ss-orange)!important}
+.ss-nav-icon{width:34px;height:34px;flex-basis:34px;border-radius:10px}
+.ss-nav-copy strong{font-size:12px}
+.ss-nav-copy small{font-size:10px}
+.ss-form{gap:15px}
+.ss-panel{padding:clamp(16px,1.8vw,24px);border-radius:16px;box-shadow:0 6px 24px rgba(18,34,56,.04)}
+.ss-panel-title{align-items:center;margin-bottom:20px;padding-bottom:17px;gap:12px}
+.ss-panel-icon{width:42px;height:42px;flex-basis:42px;border-radius:12px}
+.ss-panel-title h3{font-size:18px;letter-spacing:-.035em}
+.ss-panel-title p{font-size:12px;max-width:580px}
+.ss-grid{gap:17px 16px}
+.ss-label{font-size:12px;color:#273a54}
+.ss-field input,.ss-field textarea,.ss-colour-row input:not([type=color]){min-height:42px;padding:10px 12px;border-radius:10px;font-size:12.5px}
+.ss-field textarea{min-height:112px}
+.ss-field>small,.ss-field-meta small{font-size:10.5px}
+.ss-colour-section{border-radius:14px;padding:17px;background:linear-gradient(135deg,#fbfcfe,#f7f9fc)}
+.ss-preview-wrap{margin-top:24px}
+.ss-preview-aside{gap:14px}
+.ss-aside-card{padding:15px;border-radius:15px;box-shadow:0 6px 20px rgba(18,34,56,.04)}
+.ss-mini-store-head{padding:11px;border-radius:10px 10px 0 0}
+.ss-mini-store-body{padding:13px;border-radius:0 0 10px 10px}
+.ss-bottom-actions{bottom:12px;padding:12px 15px;border-radius:14px;box-shadow:0 12px 34px rgba(18,34,56,.14)}
+.ss-button-secondary,.ss-button-quiet,.ss-button-primary{min-height:36px!important;padding:8px 13px!important;font-size:11.5px!important;border-radius:9px!important}
+.ss-toast,.ss-inline-state{border-radius:12px}
+.ss-policy-tabs{gap:5px;padding:5px;border-radius:12px}
+.ss-policy-tabs button{min-height:35px!important;padding:8px 12px!important;font-size:11px!important}
+.ss-shortcut-grid{gap:14px}
+.ss-shortcut-card{padding:18px;border-radius:15px;transition:border-color .18s,box-shadow .18s,transform .18s}
+.ss-shortcut-card:hover{border-color:#ffd2b5;box-shadow:0 10px 26px rgba(18,34,56,.07);transform:translateY(-2px)}
+.ss-security-note{border-radius:15px}
+.ss-workspace button:focus-visible,.ss-workspace a:focus-visible{outline:3px solid rgba(255,104,1,.35);outline-offset:3px}
+@media(max-width:1280px){
+ .ss-layout{grid-template-columns:200px minmax(0,1fr)}
+ .ss-preview-aside{grid-column:2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ss-preview-aside>.ss-aside-card:first-child{grid-row:span 2}
+}
+@media(max-width:900px){
+ .ss-layout{grid-template-columns:minmax(0,1fr);gap:14px}
+ .ss-nav{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .ss-nav-item{margin:0!important;min-height:58px!important}
+ .ss-nav-help{grid-column:1/-1;margin-top:8px}
+ .ss-form{grid-row:2}
+ .ss-preview-aside{grid-column:auto;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ss-preview-aside>.ss-aside-card:first-child{grid-row:auto}
+}
+@media(max-width:600px){
+ .ss-workspace-head{align-items:flex-start;flex-direction:column;padding:17px;margin-bottom:14px}
+ .ss-completion{width:100%;box-sizing:border-box}
+ .ss-layout{gap:12px}
+ .ss-nav{grid-template-columns:minmax(0,1fr);padding:7px}
+ .ss-nav-item{min-height:54px!important}
+ .ss-nav-copy strong{font-size:12px}
+ .ss-nav-copy small{font-size:10px}
+ .ss-panel{padding:15px;border-radius:14px}
+ .ss-panel-title{margin-bottom:17px;padding-bottom:14px;gap:10px}
+ .ss-panel-title h3{font-size:16px}
+ .ss-grid,.ss-grid-two{grid-template-columns:minmax(0,1fr);gap:14px}
+ .ss-colour-section{grid-template-columns:minmax(0,1fr);padding:13px}
+ .ss-preview-aside{grid-template-columns:minmax(0,1fr)}
+ .ss-bottom-actions{position:sticky;bottom:6px;align-items:stretch;flex-direction:column;padding:11px;gap:10px}
+ .ss-save-copy{align-items:flex-start}
+ .ss-action-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+ .ss-action-buttons>*{width:100%;min-width:0}
+ .ss-shortcut-grid{grid-template-columns:minmax(0,1fr)}
+ .ss-shortcut-card>p{min-height:0}
+ .ss-inline-state{align-items:flex-start;flex-direction:column}
+ .ss-inline-state button{width:100%}
+ .ss-policy-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ss-policy-tabs button{width:100%;white-space:normal}
+}
+@media(prefers-reduced-motion:reduce){.ss-shortcut-card{transition:none}}
