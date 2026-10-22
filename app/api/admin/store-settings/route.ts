@@ -26,10 +26,14 @@ const schema=z.object({
   aboutIntro:z.string().trim().max(300).optional(),
   aboutBody:z.string().trim().max(5000).optional(),
   footerNote:z.string().trim().max(200).optional(),
-  copyrightText:z.string().trim().max(200).optional()
+  copyrightText:z.string().trim().max(200).optional(),
+  privacyContent:z.string().max(10000).optional(),
+  termsContent:z.string().max(10000).optional(),
+  returnsContent:z.string().max(10000).optional(),
+  shippingContent:z.string().max(10000).optional()
 }).strip();
 
-const defaults={id:"store",storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:"",tagline:"Quality products, simple shopping.",brandColor:"#131921",accentColor:"#ff6801",address:"",whatsapp:"",facebookUrl:"",instagramUrl:"",youtubeUrl:"",openingHours:"",contactIntro:"",aboutIntro:"",aboutBody:"",footerNote:"",copyrightText:""};
+const defaults={id:"store",storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:"",tagline:"Quality products, simple shopping.",brandColor:"#131921",accentColor:"#ff6801",address:"",whatsapp:"",facebookUrl:"",instagramUrl:"",youtubeUrl:"",openingHours:"",contactIntro:"",aboutIntro:"",aboutBody:"",footerNote:"",copyrightText:"",privacyContent:"",termsContent:"",returnsContent:"",shippingContent:""};
 
 export async function GET(){
   try{
