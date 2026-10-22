@@ -94,7 +94,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
     const usedToday = await db.aiRequestLog.count({ where: { createdAt: { gte: today } } }).catch(() => 0);
     if (usedToday >= Number(settings.dailyRequestLimit || 300)) return errorResponse("DAILY_LIMIT_REACHED", "The store's daily AI request limit has been reached. Try again tomorrow.", 429);
 
-    const conversationText = (input.conversation || []).map(m => m.role.toUpperCase()+": "+m.text).join("\\n").slice(0,9000);
+    const conversationText = (input.conversation || []).map(m => m.role.toUpperCase()+": "+m.text).join("\n").slice(0,9000);
     let prompt = "";
     let draftTitle = "";
     let draftMetadata: Record<string, unknown> = {};
