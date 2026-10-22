@@ -10,7 +10,7 @@ const updateSchema = z.object({
   action: z.enum(["save", "test"]),
   enabled: z.boolean().optional(),
   model: z.enum(SUPPORTED_GEMINI_MODELS).optional(),
-  features: z.record(z.string(), z.boolean()).optional(),
+  features: z.record(z.enum(AI_FEATURES), z.boolean()).optional(),
   dailyRequestLimit: z.coerce.number().int().min(1).max(5000).optional(),
   maxOutputTokens: z.coerce.number().int().min(128).max(4096).optional()
 });
