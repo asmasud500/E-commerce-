@@ -22,5 +22,5 @@ export async function generateViewport():Promise<Viewport>{const b=await loadBra
 
 export default async function RootLayout({children}:{children:React.ReactNode}){
   const b=await loadBranding();
-  return <html lang="en-BD" data-store-layout={b.layoutPreset} data-store-width={b.contentWidth}><head><style id="brand-theme" dangerouslySetInnerHTML={{__html:brandCss(b)}}/></head><body>{children}</body></html>
+  return <html lang="en-BD"><head><style id="brand-theme" dangerouslySetInnerHTML={{__html:brandCss(b)}}/></head><body data-store-layout={b.layoutPreset} data-store-width={b.contentWidth}>{children}</body></html>
 }
