@@ -106,7 +106,7 @@ export async function geminiGenerate(args: {
 }
 
 export async function recordAiRequest(input: {
-  feature: string; model?: string; status: "SUCCESS" | "ERROR";
+  feature: string; model?: string; status: "SUCCESS" | "ERROR" | "FALLBACK";
   latencyMs?: number; inputTokens?: number; outputTokens?: number;
   errorCode?: string; actorType?: string; draftId?: string;
 }) {
