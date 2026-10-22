@@ -56,7 +56,7 @@ const schema=z.object({
   openingHours:z.string().trim().max(200).optional(),
   contactIntro:z.string().max(10000).optional(),
   aboutIntro:z.string().trim().max(300).optional(),
-  aboutBody:z.string().trim().max(5000).optional(),
+  aboutBody:z.string().max(10000).optional(),
   footerNote:z.string().trim().max(200).optional(),
   copyrightText:z.string().trim().max(200).optional(),
   privacyContent:z.string().max(10000).optional(),
