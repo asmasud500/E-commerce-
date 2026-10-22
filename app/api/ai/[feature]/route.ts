@@ -4,7 +4,6 @@ import { readAdminSession } from "@/lib/auth/admin";
 import { db } from "@/lib/prisma";
 import { AI_FEATURES, geminiGenerate, getAiSettings, recordAiRequest, safeAiError, type AiFeature } from "@/lib/ai/gemini";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({
