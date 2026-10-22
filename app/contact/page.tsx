@@ -1,10 +1,12 @@
 import type {Metadata} from "next";
 import InfoPage,{loadStoreInfo} from "@/components/InfoPage";
+import PolicyBody from "@/components/PolicyBody";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Contact us",description:"How to reach our support team."};
 export default async function Contact(){
   const s=await loadStoreInfo();
-  return <InfoPage title="Contact us" intro={s.contactIntro||"We are happy to help with orders, payments and deliveries."}>
+  return <InfoPage title="Contact us">
+    {s.contactIntro.trim()&&<PolicyBody text={s.contactIntro}/>}
     {s.supportPhone&&<p><b>Phone:</b> <a href={"tel:"+s.supportPhone}>{s.supportPhone}</a></p>}
     {s.supportEmail&&<p><b>Email:</b> <a href={"mailto:"+s.supportEmail}>{s.supportEmail}</a></p>}
     {s.whatsapp&&<p><b>WhatsApp:</b> <a href={"https://wa.me/"+s.whatsapp} target="_blank" rel="noopener noreferrer">+{s.whatsapp}</a></p>}
