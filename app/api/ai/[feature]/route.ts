@@ -43,7 +43,7 @@ function rankProducts(products: any[], query: string) {
     return { p, score };
   }).filter(x => x.score > 0).sort((a,b) => b.score-a.score).slice(0, 8).map(({p}) => ({
     id:p.id, name:p.name, description:String(p.description||"").slice(0,450),
-    price:Number(p.effectivePrice ?? p.salePrice ?? p.price ?? 0), currency:"BDT", stock:Number(p.stock||0),
+    price:Number(p.effectivePrice ?? p.salePrice ?? p.price ?? 0), currency:"BDT", stock:Array.isArray(p.variants)&&p.variants.length?p.variants.reduce((sum:number,v:any)=>sum+Math.max(0,Number(v.stock||0)),0):Number(p.stock||0),
     category:p.category?.name || null, slug:p.slug || null,
     images:Array.isArray(p.images)?p.images.slice(0,1).map((i:any)=>i.url):[]
   }));
