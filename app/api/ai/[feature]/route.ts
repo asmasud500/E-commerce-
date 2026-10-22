@@ -93,13 +93,14 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
           : feature === "smart-search"
             ? (matches.length ? "AI search is disabled. Showing keyword-matched products from the live catalog." : "AI search is disabled and no keyword matches were found.")
             : (matches.length ? "AI recommendations are disabled. Showing the closest keyword matches from the live catalog." : "AI recommendations are disabled. Try a product name or category.");
+        await recordAiRequest({ feature, status: "FALLBACK", errorCode: "AI_FEATURE_DISABLED", actorType: session ? "admin" : "visitor" });
         return NextResponse.json({ text, model: null, fallback: true, products: matches }, { headers: { "Cache-Control": "no-store" } });
       } catch {}
     }
     return errorResponse("AI_FEATURE_DISABLED", "This AI feature is currently disabled by the store administrator.", 503);
   }
   if (feature === "customer-support" && /\b(order|payment|refund|transaction)\b.{0,45}\b(status|track|tracking|paid|received|where|when|arrived)\b|\b(status|track|tracking|paid|refund|payment)\b.{0,45}\b(order|payment|refund|transaction)\b|\b(where is|track|check)\s+(my\s+)?order\b/i.test(input.input || "")) {
-    await recordAiRequest({ feature, model: "local-policy", status: "SUCCESS", latencyMs: 0, actorType: session ? "admin" : "visitor" });
+    await recordAiRequest({ feature, model: "local-policy", status: "FALLBACK", errorCode: "ORDER_STATUS_REDIRECT", latencyMs: 0, actorType: session ? "admin" : "visitor" });
     return NextResponse.json({ text: "For privacy and accuracy, I can't look up order or payment status in this chat. Please sign in to your account to review your order, or use the official Track Order page. Never share OTPs, passwords, or payment credentials here.", model: null, fallback: true, links: [{ label: "Track an order", href: "/track" }, { label: "Your account", href: "/account" }] }, { headers: { "Cache-Control": "no-store" } });
   }
   try {
@@ -117,6 +118,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
             : feature === "smart-search"
               ? (matches.length ? "The daily AI limit has been reached. Showing keyword-matched products from the live catalog." : "The daily AI limit has been reached and no keyword matches were found.")
               : (matches.length ? "The daily AI limit has been reached. Showing the closest keyword matches from the live catalog." : "The daily AI limit has been reached. Try a product name or category.");
+          await recordAiRequest({ feature, status: "FALLBACK", errorCode: "DAILY_LIMIT_REACHED", actorType: session ? "admin" : "visitor" });
           return NextResponse.json({ text, model: null, fallback: true, products: matches }, { headers: { "Cache-Control": "no-store" } });
         } catch {}
       }
@@ -182,7 +184,6 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
     return NextResponse.json({ text: generated.text, model: generated.model, latencyMs: generated.latencyMs, products: resultProducts, draft: draft ? { id: draft.id, status: draft.status, title: draft.title } : undefined }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const safe = safeAiError(error);
-    await recordAiRequest({ feature, status: "ERROR", errorCode: safe.code, actorType: session ? "admin" : "visitor" });
     // Search and shopping discovery remain useful if Gemini is unavailable; use only live catalog facts.
     if (["smart-search", "shopping-assistant", "customer-support"].includes(feature)) {
       try {
@@ -195,9 +196,11 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
           : feature === "smart-search"
             ? (matches.length ? "AI search is temporarily unavailable. Here are keyword-matched products from the live catalog." : "AI search is temporarily unavailable and no keyword matches were found. Try a product name or category.")
             : (matches.length ? "AI recommendations are temporarily unavailable. Here are the closest keyword matches from the live catalog." : "AI recommendations are temporarily unavailable. Try describing a product name, category, or budget.");
+        await recordAiRequest({ feature, status: "FALLBACK", errorCode: safe.code, actorType: session ? "admin" : "visitor" });
         return NextResponse.json({ text, model: null, fallback: true, products: matches }, { headers: { "Cache-Control": "no-store" } });
       } catch {}
     }
+    await recordAiRequest({ feature, status: "ERROR", errorCode: safe.code, actorType: session ? "admin" : "visitor" });
     const status = safe.code === "AI_NOT_CONFIGURED" ? 503 : safe.code === "AI_FEATURE_DISABLED" ? 503 : safe.code === "AI_QUOTA_EXHAUSTED" ? 429 : 502;
     return errorResponse(safe.code, safe.message, status);
   }
