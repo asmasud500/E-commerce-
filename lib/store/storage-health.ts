@@ -24,7 +24,7 @@ export async function checkStorageProviders() {
       if (!response.ok || !result?.ok) throw new Error("Telegram API probe failed (" + response.status + ")");
     }),
     check("Google Drive", async () => {
-      const sample = await db.storageAsset.findFirst({ where: { driveFileId: { not: null } } });
+      const sample = (await db.storageAsset.findMany({ orderBy: { updatedAt: "desc" }, take: 100 })).find((row: any) => Boolean(row.driveFileId));
       if (!sample?.driveFileId) {
         if (!process.env.GOOGLE_DRIVE_CLIENT_ID && !process.env.GOOGLE_DRIVE_CLIENT_EMAIL) throw new Error("Google Drive credentials are not configured");
         throw new Error("No backed-up file is available for a read probe");
@@ -37,7 +37,7 @@ export async function checkStorageProviders() {
 }
 
 export async function runStorageIntegrityScan(limit = 25) {
-  const rows = await db.imageBlob.findMany({ where: { telegramFileId: { not: null } }, orderBy: { updatedAt: "desc" }, take: Math.max(1, Math.min(100, limit)) });
+  const rows = (await db.imageBlob.findMany({ orderBy: { updatedAt: "desc" }, take: 500 })).filter((row: any) => Boolean(row.telegramFileId)).slice(0, Math.max(1, Math.min(100, limit)));
   const report = { scanned: 0, healthy: 0, missingPrimary: 0, checksumMismatch: 0, missingBackupReference: 0, errors: 0, issues: [] as Array<{ id: string; issue: string }> };
   for (const row of rows) {
     report.scanned++;
@@ -69,7 +69,7 @@ export async function runStorageIntegrityScan(limit = 25) {
 }
 
 export async function verifyStorageRestore(limit = 5) {
-  const rows = await db.storageAsset.findMany({ where: { driveFileId: { not: null } }, orderBy: { updatedAt: "desc" }, take: Math.max(1, Math.min(10, limit)) });
+  const rows = (await db.storageAsset.findMany({ orderBy: { updatedAt: "desc" }, take: 500 })).filter((row: any) => Boolean(row.driveFileId)).slice(0, Math.max(1, Math.min(10, limit)));
   const report = { checked: 0, verified: 0, failed: 0, results: [] as Array<{ id: string; status: string; bytes?: number }> };
   for (const row of rows) {
     report.checked++;
