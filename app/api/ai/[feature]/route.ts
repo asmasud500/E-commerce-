@@ -72,6 +72,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
   const session = await readAdminSession(req.cookies.get("admin_session")?.value || "");
   const adminOnly = ["product-description", "sales-analyst", "marketing-studio"].includes(feature);
   if (adminOnly && !session) return errorResponse("ADMIN_REQUIRED", "Admin authentication is required for this feature.", 401);
+  if (["product-description", "marketing-studio"].includes(feature) && session && !["SUPER_ADMIN", "MANAGER", "PRODUCT_MANAGER"].includes(session.role)) return errorResponse("FORBIDDEN", "Your role cannot create or manage this AI content.", 403);
   if (feature === "sales-analyst" && session && !["SUPER_ADMIN", "MANAGER"].includes(session.role)) return errorResponse("FORBIDDEN", "Your role cannot access sales analysis.", 403);
   const settings = await getAiSettings();
   if (settings.enabled === false || settings.features?.[feature] === false) {
