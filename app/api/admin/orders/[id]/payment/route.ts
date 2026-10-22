@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { confirmPaymentAtomically, rejectPendingOrderAtomically } from "@/lib/firestore";
+import { readAdminSession } from "@/lib/auth/admin";
 import { notifyStatus, sendPaidOrderTelegram } from "@/lib/notifications/telegram-admin";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await readAdminSession(req.cookies.get("admin_session")?.value || "");
+  if (!session) return NextResponse.json({ error: "Admin authentication required." }, { status: 401 });
   const { id } = await params;
   try {
     const body = await req.json().catch(() => ({}));
