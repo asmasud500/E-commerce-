@@ -4,6 +4,12 @@ import {db} from "@/lib/prisma";
 import {recordAdminAudit} from "@/lib/auth/audit";
 
 const schema=z.object({
+  fontFamily:z.enum(["Inter","Arial","Georgia","system"]).optional(),
+  headingFont:z.enum(["Inter","Arial","Georgia","system"]).optional(),
+  layoutPreset:z.enum(["marketplace","modern","editorial","compact"]).optional(),
+  contentWidth:z.enum(["wide","standard","full"]).optional(),
+  buttonStyle:z.enum(["rounded","pill","square"]).optional(),
+  cornerStyle:z.enum(["soft","medium","sharp"]).optional(),
   storeName:z.string().trim().min(1).max(120).optional(),
   logoUrl:z.string().trim().max(1000).refine(v=>v===""||/^https:\/\/[^\s]+$/.test(v),"Logo URL must be HTTPS.").optional(),
   heroBadge:z.string().trim().max(80).optional(),
@@ -65,7 +71,7 @@ const schema=z.object({
   shippingContent:z.string().max(10000).optional()
 }).strip();
 
-const defaults={id:"store",storeName:"MART Store",logoUrl:"",heroBadge:"Limited-time deals",heroTitle:"Mega Flash Sale",heroBigText:"Up to 70% Off",heroDescription:"Selected products at their lowest prices. Grab them before stock runs out.",heroCtaLabel:"Shop flash deals",heroCtaHref:"",offersHeading:"Offers & Highlights",offersDescription:"Discover the latest deals from our store.",flashSaleHeading:"Flash Sale",featuredStoresHeading:"Featured Stores",trendingHeading:"Trending Now",newArrivalsHeading:"New Arrivals",justForYouHeading:"Just For You",showBenefits:true,showPromotions:true,showFlashSale:true,showFeaturedStores:true,showTrending:true,showNewArrivals:true,showRecommendations:true,headerSearchPlaceholder:"Search for products, brands and more",headerFeaturedLabel:"Featured",headerNewArrivalsLabel:"New Arrivals",headerDealsLabel:"Deals & Offers",deliveryNotice:"Shopping across Bangladesh",footerShopHeading:"Shop",footerAccountHeading:"Your account",footerSupportHeading:"Customer support",seoTitle:"",seoDescription:"",seoKeywords:"",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:"",tagline:"Quality products, simple shopping.",brandColor:"#131921",accentColor:"#ff6801",address:"",whatsapp:"",facebookUrl:"",instagramUrl:"",youtubeUrl:"",openingHours:"",contactIntro:"",aboutIntro:"",aboutBody:"",footerNote:"",copyrightText:"",privacyContent:"",termsContent:"",returnsContent:"",shippingContent:""};
+const defaults={id:"store",fontFamily:"Inter",headingFont:"Inter",layoutPreset:"marketplace",contentWidth:"wide",buttonStyle:"rounded",cornerStyle:"medium",storeName:"MART Store",logoUrl:"",heroBadge:"Limited-time deals",heroTitle:"Mega Flash Sale",heroBigText:"Up to 70% Off",heroDescription:"Selected products at their lowest prices. Grab them before stock runs out.",heroCtaLabel:"Shop flash deals",heroCtaHref:"",offersHeading:"Offers & Highlights",offersDescription:"Discover the latest deals from our store.",flashSaleHeading:"Flash Sale",featuredStoresHeading:"Featured Stores",trendingHeading:"Trending Now",newArrivalsHeading:"New Arrivals",justForYouHeading:"Just For You",showBenefits:true,showPromotions:true,showFlashSale:true,showFeaturedStores:true,showTrending:true,showNewArrivals:true,showRecommendations:true,headerSearchPlaceholder:"Search for products, brands and more",headerFeaturedLabel:"Featured",headerNewArrivalsLabel:"New Arrivals",headerDealsLabel:"Deals & Offers",deliveryNotice:"Shopping across Bangladesh",footerShopHeading:"Shop",footerAccountHeading:"Your account",footerSupportHeading:"Customer support",seoTitle:"",seoDescription:"",seoKeywords:"",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:"",tagline:"Quality products, simple shopping.",brandColor:"#131921",accentColor:"#ff6801",address:"",whatsapp:"",facebookUrl:"",instagramUrl:"",youtubeUrl:"",openingHours:"",contactIntro:"",aboutIntro:"",aboutBody:"",footerNote:"",copyrightText:"",privacyContent:"",termsContent:"",returnsContent:"",shippingContent:""};
 
 export async function GET(){
   try{
