@@ -64,7 +64,7 @@ async function saveDraft(feature: string, title: string, content: string, actor:
 export async function POST(req: NextRequest, context: { params: Promise<{ feature: string }> }) {
   const { feature } = await context.params;
   if (!(AI_FEATURES as readonly string[]).includes(feature)) return errorResponse("NOT_FOUND", "Unknown AI feature.", 404);
-  const ip = req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = req.headers.get("cf-connecting-ip") || "unknown";
   if (!allowedRequest(feature + ":" + ip)) return errorResponse("RATE_LIMITED", "Too many AI requests. Please wait a minute and try again.", 429);
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return errorResponse("INVALID_INPUT", "Please check the submitted fields and try again.", 400);
