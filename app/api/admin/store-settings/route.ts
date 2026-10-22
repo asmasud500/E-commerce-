@@ -5,6 +5,7 @@ import {recordAdminAudit} from "@/lib/auth/audit";
 
 const schema=z.object({
   storeName:z.string().trim().min(1).max(120).optional(),
+  logoUrl:z.string().trim().max(1000).refine(v=>v===""||/^https:\/\/[^\s]+$/.test(v),"Logo URL must be HTTPS.").optional(),
   supportEmail:z.string().trim().email().max(160).or(z.literal("")).optional(),
   supportPhone:z.string().trim().max(40).optional(),
   currency:z.enum(["BDT"]).optional(),
@@ -33,7 +34,7 @@ const schema=z.object({
   shippingContent:z.string().max(10000).optional()
 }).strip();
 
-const defaults={id:"store",storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:"",tagline:"Quality products, simple shopping.",brandColor:"#131921",accentColor:"#ff6801",address:"",whatsapp:"",facebookUrl:"",instagramUrl:"",youtubeUrl:"",openingHours:"",contactIntro:"",aboutIntro:"",aboutBody:"",footerNote:"",copyrightText:"",privacyContent:"",termsContent:"",returnsContent:"",shippingContent:""};
+const defaults={id:"store",storeName:"MART Store",logoUrl:"",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:"",tagline:"Quality products, simple shopping.",brandColor:"#131921",accentColor:"#ff6801",address:"",whatsapp:"",facebookUrl:"",instagramUrl:"",youtubeUrl:"",openingHours:"",contactIntro:"",aboutIntro:"",aboutBody:"",footerNote:"",copyrightText:"",privacyContent:"",termsContent:"",returnsContent:"",shippingContent:""};
 
 export async function GET(){
   try{
