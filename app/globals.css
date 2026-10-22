@@ -3743,3 +3743,57 @@ input:disabled,select:disabled,textarea:disabled{background:#f1f5f9;color:#64748
 }
 .ss-accordion-item > .ss-form[hidden] { display: none !important; }
 .ss-accordion-item .ss-panel { width: 100%; max-width: 100%; }
+
+
+/* Desktop Store Settings: keep admin navigation in its own grid column */
+@media (min-width: 1001px) {
+  .admin-layout:has(.ss-workspace) {
+    display: grid !important;
+    grid-template-columns: 232px minmax(0, 1fr) !important;
+    align-items: start;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+  }
+  .admin-layout:has(.ss-workspace) > .admin-sidebar {
+    position: sticky !important;
+    top: 0;
+    left: auto !important;
+    inset-inline: auto !important;
+    grid-column: 1;
+    grid-row: 1;
+    width: 232px;
+    min-width: 0;
+    max-width: 232px;
+    height: 100vh;
+    z-index: 2;
+    transform: none !important;
+    overflow-y: auto;
+  }
+  .admin-layout:has(.ss-workspace) > .admin-content,
+  .admin-layout:has(.ss-workspace) > .admin-content.ss-page,
+  .admin-layout:has(.ss-workspace) > .ss-page {
+    grid-column: 2;
+    grid-row: 1;
+    position: relative !important;
+    inset: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 28px clamp(20px, 2.5vw, 40px) !important;
+    overflow: visible !important;
+    z-index: auto;
+  }
+  .admin-layout:has(.ss-workspace) .ss-workspace,
+  .admin-layout:has(.ss-workspace) .ss-layout,
+  .admin-layout:has(.ss-workspace) .ss-nav,
+  .admin-layout:has(.ss-workspace) .ss-form {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+}
+@media (min-width: 1001px) and (max-width: 1200px) {
+  .admin-layout:has(.ss-workspace) { grid-template-columns: 210px minmax(0, 1fr) !important; }
+  .admin-layout:has(.ss-workspace) > .admin-sidebar { width: 210px; max-width: 210px; }
+}
