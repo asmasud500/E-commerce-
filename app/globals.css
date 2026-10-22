@@ -3483,3 +3483,11 @@ input:disabled,select:disabled,textarea:disabled{background:#f1f5f9;color:#64748
 
 .ss-subsection-title{margin:24px 0 12px;padding-top:16px;border-top:1px solid #edf0f5;color:#182b45;font-size:12px;font-weight:800;letter-spacing:.035em}
 .ss-panel .ss-toggle-card{min-width:0}
+
+:root{--store-brand:#131921;--store-accent:#ff6801}
+.sh,.sh-subnav{background:var(--store-brand,#131921)!important}
+.sh-search button{background:var(--store-accent,#ff6801)!important}
+.hp-btn:not(.hp-btn-line),.hp-quick .hp-q-ic,.hp-promo-badge{background:var(--store-accent,#ff6801)!important}
+.hp-btn-line{border-color:var(--store-accent,#ff6801)!important;color:var(--store-accent,#ff6801)!important}
+.ss-subsection-title{margin:24px 0 12px;padding-top:16px;border-top:1px solid #edf0f5;color:#182b45;font-size:12px;font-weight:800;letter-spacing:.035em}
+.ss-panel .ss-toggle-card{min-width:0}
