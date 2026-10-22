@@ -1,0 +1,33 @@
+name: Temporary Cloudflare smoke test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Smoke test while tailing
+        run: |
+          B=https://ecommerce-platform.masud50003.workers.dev
+          (timeout 150s npx wrangler tail ecommerce-platform --format json > /tmp/tail.jsonl 2>&1 || true) &
+          sleep 25
+          SLUG=$(curl -s "$B/api/products" | jq -r '(.products // .)[0].slug // empty' 2>/dev/null)
+          : > /tmp/res.txt
+          for p in / /products "/products?q=a" "/products?featured=true" "/products/$SLUG" /cart /checkout /checkout/payment /track /wishlist /account /account/login /account/addresses /account/profile /about /contact /privacy /return /return-policy /shipping-policy /terms /order-success /sitemap.xml /robots.txt /manifest.webmanifest /nonexistent-page /api/products /api/categories /api/payment-gateways /api/storefront/config /api/health /api/customer/auth/me /api/wishlist /api/reviews "/api/orders/track?orderNumber=X&phone=1" /api/account/orders /api/img/none; do
+            code=$(curl -s -o /tmp/r.html -w '%{http_code}' --max-time 25 "$B$p"); echo "$p=$code" >> /tmp/res.txt
+          done
+          curl -s -o /dev/null -w "quote=%{http_code}\n" -X POST "$B/api/checkout/quote" -H 'content-type: application/json' -d '{"items":[]}' >> /tmp/res.txt
+          sleep 30; wait || true
+          echo "::error::RESULTS $(tr '\n' ' ' < /tmp/res.txt)"
+          sed -n "/^{/,\$p" /tmp/tail.jsonl | jq -r 'select(.event.request.url!=null)|select((([.logs[]?]|length)>0) or (([.exceptions[]?]|length)>0))|((.event.request.url|sub("https://[^/]*";""))+" -> "+((.event.response.status//0)|tostring)+" | "+([.logs[]?.message|map(tostring)|join(" ")]|join(" ## "))+" | "+([.exceptions[]?.message]|join(" ## ")))' 2>/dev/null | cut -c1-600 | head -c 6000 > /tmp/errs.txt
+          echo "::error::ERRORS $(tr '\n' '|' < /tmp/errs.txt | sed 's/%/%25/g')"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
