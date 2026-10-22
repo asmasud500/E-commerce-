@@ -46,7 +46,7 @@ export default function AiStudioPage() {
   useEffect(()=>{ void load(); },[load]);
 
   const stats = data?.metrics || {};
-  const featureStats = useMemo(()=>new Map((data?.features||[]).map((x:AnyObj)=>[x.feature,x])),[data]);
+  const featureStats = useMemo(()=>new Map<string, AnyObj>((data?.features||[]).map((x:AnyObj)=>[x.feature,x] as [string, AnyObj])),[data]);
   const setFeature = (id:string, enabled:boolean) => setSettings((s:AnyObj)=>({...s,features:{...(s.features||{}),[id]:enabled}}));
 
   async function save() {
