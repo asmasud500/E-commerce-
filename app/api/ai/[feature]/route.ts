@@ -90,6 +90,10 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
     }
     return errorResponse("AI_FEATURE_DISABLED", "This AI feature is currently disabled by the store administrator.", 503);
   }
+  if (feature === "customer-support" && /\\b(order|payment|refund|transaction)\\b.{0,45}\\b(status|track|tracking|paid|received|where|when|arrived)\\b|\\b(where is|track|check)\\s+(my\\s+)?order\\b/i.test(input.input || "")) {
+    await recordAiRequest({ feature, model: "local-policy", status: "SUCCESS", latencyMs: 0, actorType: session ? "admin" : "visitor" });
+    return NextResponse.json({ text: "For privacy and accuracy, I can't look up order or payment status in this chat. Please sign in to your account to review your order, or use the official Track Order page. Never share OTPs, passwords, or payment credentials here.", model: null, fallback: true, links: [{ label: "Track an order", href: "/track" }, { label: "Your account", href: "/account" }] }, { headers: { "Cache-Control": "no-store" } });
+  }
   try {
     const today = new Date(); today.setHours(0,0,0,0);
     const usedToday = await db.aiRequestLog.count({ where: { createdAt: { gte: today } } }).catch(() => 0);
