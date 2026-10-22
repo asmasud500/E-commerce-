@@ -145,13 +145,29 @@ export function firestoreStructuredQuery(model:string,where:any,orderBy:any,take
   if(canUseOrder&&Number.isInteger(take)&&take>0)structured.limit=take;
   return structured;
 }
+const degradedShapes=new Set<string>();
+function structuredFilters(s:any):any[]{return s.where?.compositeFilter?.filters||(s.where?[s.where]:[]);}
+function shapeKey(s:any){return JSON.stringify([s.from,structuredFilters(s).map((f:any)=>[f.fieldFilter?.field?.fieldPath,f.fieldFilter?.op]),(s.orderBy||[]).map((o:any)=>o.field.fieldPath+o.direction)]);}
+function equalityOnly(s:any){const fs=structuredFilters(s).filter((f:any)=>f.fieldFilter?.op==="EQUAL");if(!fs.length)return null;return {from:s.from,where:fs.length===1?fs[0]:{compositeFilter:{op:"AND",filters:fs}}};}
+async function runStructured(s:any){const response:any=await req(":runQuery",{method:"POST",body:JSON.stringify({structuredQuery:s})});return (Array.isArray(response)?response:[]).filter((r:any)=>r.document).map((r:any)=>docToObj(r.document));}
 async function fetchRows(model:string,where:any,orderBy:any,take:any,skip:any){
   const structured=firestoreStructuredQuery(model,where,orderBy,take,skip);
   if(structured){
-    try{
-      const response:any=await req(":runQuery",{method:"POST",body:JSON.stringify({structuredQuery:structured})});
-      return (Array.isArray(response)?response:[]).filter((r:any)=>r.document).map((r:any)=>docToObj(r.document));
-    }catch(e){console.error("Firestore structured query failed, falling back to a full read:",e instanceof Error?e.message:String(e))}
+    const key=shapeKey(structured);
+    if(!degradedShapes.has(key)){
+      try{return await runStructured(structured);}
+      catch(e){
+        const message=e instanceof Error?e.message:String(e);
+        if(/FAILED_PRECONDITION|requires an index/i.test(message)){
+          // No composite index for this query shape. Remember that for this isolate so later
+          // requests skip the failing call, and use the cheaper equality-only query below.
+          degradedShapes.add(key);
+          console.error("Firestore composite index missing for",collections[model],"- using equality-only query. Create the index from the link in the Firestore console if this collection grows large.");
+        }else console.error("Firestore structured query failed, falling back to a full read:",message);
+      }
+    }
+    const eq=equalityOnly(structured);
+    if(eq){try{return await runStructured(eq);}catch(e){console.error("Firestore equality query failed, falling back to a full read:",e instanceof Error?e.message:String(e));}}
   }
   return all(model);
 }
