@@ -55,11 +55,12 @@ export async function geminiGenerate(args: {
   prompt: string;
   model?: string;
   maxOutputTokens?: number;
+  skipFeatureCheck?: boolean;
 }) {
   const key = await envValue("GEMINI_API_KEY");
   if (!key) throw new Error("AI_NOT_CONFIGURED");
   const settings = await getAiSettings();
-  if (settings.enabled === false || settings.features?.[args.feature] === false) throw new Error("AI_FEATURE_DISABLED");
+  if (!args.skipFeatureCheck && (settings.enabled === false || settings.features?.[args.feature] === false)) throw new Error("AI_FEATURE_DISABLED");
   const model = String(args.model || settings.model || DEFAULT_GEMINI_MODEL).trim();
   if (!/^[a-zA-Z0-9._-]{3,100}$/.test(model)) throw new Error("AI_MODEL_INVALID");
   const maxOutputTokens = Math.min(4096, Math.max(128, Number(args.maxOutputTokens || settings.maxOutputTokens || 900)));
