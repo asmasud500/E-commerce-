@@ -3405,3 +3405,31 @@ article:hover{box-shadow:0 12px 28px rgba(16,35,68,.09)}
  .site-header .site-nav a{color:#fff}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+
+/* October 2026 quality pass: consistent controls, accessibility and responsive admin/store surfaces */
+:root{--control-height:38px;--control-radius:9px}
+button,.pg-btn,.orders-view-detail,.continue-link,.hp-atc,.sh-act{transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease}
+button:disabled,button[aria-disabled="true"],.pg-btn[aria-disabled="true"]{opacity:.55;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(255,107,0,.45);outline-offset:2px}
+input:disabled,select:disabled,textarea:disabled{background:#f1f5f9;color:#64748b;cursor:not-allowed}
+.pg-btn,.pg-btn-block{min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;font-size:13px;font-weight:700}
+.cart-item .pd-qty button{width:32px;min-width:32px;height:32px;min-height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.cart-summary .pg-btn-block{width:100%}
+.cart-stock-warning{display:flex;align-items:flex-start;gap:9px;margin:12px 0;padding:12px 13px;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed;color:#9a3412;font-size:13px;line-height:1.45}
+.cart-stock-warning strong{display:block;color:#9a3412}
+.orders-status-control:disabled{opacity:.65;cursor:wait}
+.admin-content .orders-status-control{min-height:34px;padding:6px 9px;font-size:12px}
+.orders-error,.form-error[role="alert"]{overflow-wrap:anywhere}
+@media(max-width:760px){
+ .cart-layout{grid-template-columns:minmax(0,1fr)!important}
+ .cart-item{gap:10px}
+ .cart-item .remove-button{min-height:32px}
+ .cart-summary{position:static!important}
+ .orders-workspace{min-width:0}
+ .orders-table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+ .admin-content{min-width:0}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
