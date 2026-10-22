@@ -106,7 +106,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
   try {
     const today = new Date(); today.setHours(0,0,0,0);
     let usedToday: number;
-    try { usedToday = await db.aiRequestLog.count({ where: { createdAt: { gte: today } } }); }
+    try { usedToday = await db.aiRequestLog.count({ where: { createdAt: { gte: today }, status: { in: ["SUCCESS", "ERROR"] } } }); }
     catch { return errorResponse("AI_USAGE_UNAVAILABLE", "AI usage controls are temporarily unavailable, so new Gemini requests are paused for safety.", 503); }
     if (usedToday >= Number(settings.dailyRequestLimit || 300)) {
       if (["smart-search", "shopping-assistant", "customer-support"].includes(feature)) {
