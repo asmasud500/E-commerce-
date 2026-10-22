@@ -6,6 +6,10 @@ export default function StoreFooter(){
   const [storeName,setStoreName]=useState("MART Store");
   const [supportEmail,setSupportEmail]=useState("");
   const [supportPhone,setSupportPhone]=useState("");
+  const [tagline,setTagline]=useState("Quality products, simple shopping.");
+  const [address,setAddress]=useState("");
+  const [whatsapp,setWhatsapp]=useState("");
+  const [facebookUrl,setFacebookUrl]=useState("");
 
   useEffect(()=>{
     let cancelled=false;
@@ -16,6 +20,10 @@ export default function StoreFooter(){
         if(typeof data.settings.storeName==="string"&&data.settings.storeName.trim())setStoreName(data.settings.storeName.trim());
         if(typeof data.settings.supportEmail==="string")setSupportEmail(data.settings.supportEmail.trim());
         if(typeof data.settings.supportPhone==="string")setSupportPhone(data.settings.supportPhone.trim());
+        if(typeof data.settings.tagline==="string"&&data.settings.tagline.trim())setTagline(data.settings.tagline.trim());
+        if(typeof data.settings.address==="string")setAddress(data.settings.address.trim());
+        if(typeof data.settings.whatsapp==="string")setWhatsapp(data.settings.whatsapp.replace(/[^0-9]/g,""));
+        if(typeof data.settings.facebookUrl==="string"&&/^https:\/\//.test(data.settings.facebookUrl))setFacebookUrl(data.settings.facebookUrl.trim());
       }).catch(()=>{});
     return()=>{cancelled=true};
   },[]);
@@ -25,7 +33,7 @@ export default function StoreFooter(){
       <div className="sf-in">
         <div className="sf-brand">
           <Link href="/" className="sh-logo" aria-label={storeName+" home"}><span className="sh-logo-name">{storeName}</span><span className="sh-logo-dot">.</span></Link>
-          <p>Quality products, simple shopping.</p>
+          <p>{tagline}</p>
           <small className="sf-trust-note">A smoother way to shop online.</small>
         </div>
         <div>
@@ -45,7 +53,10 @@ export default function StoreFooter(){
           <h3>Customer support</h3>
           {supportPhone&&<a href={"tel:"+supportPhone}>Phone: {supportPhone}</a>}
           {supportEmail&&<a href={"mailto:"+supportEmail}>Email: {supportEmail}</a>}
-          {!supportPhone&&!supportEmail&&<p>For order assistance, visit your account or check your order details.</p>}
+          {whatsapp&&<a href={"https://wa.me/"+whatsapp} target="_blank" rel="noopener noreferrer">WhatsApp: +{whatsapp}</a>}
+          {facebookUrl&&<a href={facebookUrl} target="_blank" rel="noopener noreferrer">Facebook page</a>}
+          {address&&<p>{address}</p>}
+          {!supportPhone&&!supportEmail&&!whatsapp&&!facebookUrl&&!address&&<p>For order assistance, visit your account or check your order details.</p>}
         </div>
         <nav className="sf-links" aria-label="Store policies"><Link href="/about">About us</Link><Link href="/contact">Contact</Link><Link href="/shipping-policy">Delivery</Link><Link href="/return-policy">Returns &amp; refunds</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav>
         <small className="sf-copyright">© {new Date().getFullYear()} {storeName}. All rights reserved.</small>

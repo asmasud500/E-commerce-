@@ -12,10 +12,16 @@ const schema=z.object({
   freeShippingThreshold:z.coerce.number().min(0).max(10000000).nullable().optional(),
   taxEnabled:z.boolean().optional(),
   taxRate:z.coerce.number().min(0).max(100).optional(),
-  announcement:z.string().trim().max(500).optional()
+  announcement:z.string().trim().max(500).optional(),
+  tagline:z.string().trim().max(160).optional(),
+  brandColor:z.string().trim().regex(/^#[0-9a-fA-F]{6}$/,"Use a hex colour like #131921").optional(),
+  accentColor:z.string().trim().regex(/^#[0-9a-fA-F]{6}$/,"Use a hex colour like #ff6801").optional(),
+  address:z.string().trim().max(300).optional(),
+  whatsapp:z.string().trim().max(40).optional(),
+  facebookUrl:z.string().trim().max(300).refine(v=>v===""||/^https:\/\/[^\s]+$/.test(v),"Facebook link must start with https://").optional()
 }).strict();
 
-const defaults={id:"store",storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:""};
+const defaults={id:"store",storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:"",tagline:"Quality products, simple shopping.",brandColor:"#131921",accentColor:"#ff6801",address:"",whatsapp:"",facebookUrl:""};
 
 export async function GET(){
   try{
