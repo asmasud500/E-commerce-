@@ -33,14 +33,15 @@ export async function GET(req: NextRequest) {
     ]);
     counts = await Promise.all(AI_FEATURES.map(async feature => {
       const featureLogs = logs.filter((r:any)=>r.feature===feature);
-      return { feature, total: featureLogs.length, success: featureLogs.filter((r:any)=>r.status==="SUCCESS").length, errors: featureLogs.filter((r:any)=>r.status==="ERROR").length, avgLatencyMs: featureLogs.length ? Math.round(featureLogs.reduce((s:number,r:any)=>s+Number(r.latencyMs||0),0)/featureLogs.length) : 0, inputTokens: featureLogs.reduce((s:number,r:any)=>s+Number(r.inputTokens||0),0), outputTokens: featureLogs.reduce((s:number,r:any)=>s+Number(r.outputTokens||0),0) };
+      return { feature, total: featureLogs.length, success: featureLogs.filter((r:any)=>r.status==="SUCCESS").length, fallbacks: featureLogs.filter((r:any)=>r.status==="FALLBACK").length, errors: featureLogs.filter((r:any)=>r.status==="ERROR").length, avgLatencyMs: featureLogs.length ? Math.round(featureLogs.reduce((s:number,r:any)=>s+Number(r.latencyMs||0),0)/featureLogs.length) : 0, inputTokens: featureLogs.reduce((s:number,r:any)=>s+Number(r.inputTokens||0),0), outputTokens: featureLogs.reduce((s:number,r:any)=>s+Number(r.outputTokens||0),0) };
     }));
   } catch (error) { console.error("AI Studio telemetry read failed", error instanceof Error ? error.message : "unknown"); }
   const successes = logs.filter(r=>r.status==="SUCCESS").length;
   const errors = logs.filter(r=>r.status==="ERROR").length;
+  const fallbacks = logs.filter(r=>r.status==="FALLBACK").length;
   return NextResponse.json({
     settings: { enabled: settings.enabled !== false, model: settings.model || DEFAULT_GEMINI_MODEL, features: settings.features || {}, dailyRequestLimit: settings.dailyRequestLimit || 300, maxOutputTokens: settings.maxOutputTokens || 900, updatedAt: settings.updatedAt || null, updatedBy: settings.updatedBy || null },
-    metrics: { window: "7 days", recordLimit: 3000, sampled: logs.length >= 3000, total: logs.length, successes, errors, successRate: logs.length ? Math.round(successes / logs.length * 100) : null, avgLatencyMs: logs.length ? Math.round(logs.reduce((s:number,r:any)=>s+Number(r.latencyMs||0),0)/logs.length) : null, inputTokens: logs.reduce((s:number,r:any)=>s+Number(r.inputTokens||0),0), outputTokens: logs.reduce((s:number,r:any)=>s+Number(r.outputTokens||0),0), quota: "Provider quota is not exposed by this API; check Google AI Studio." },
+    metrics: { window: "7 days", recordLimit: 3000, sampled: logs.length >= 3000, total: logs.length, successes, errors, fallbacks, successRate: logs.length ? Math.round((successes + fallbacks) / logs.length * 100) : null, avgLatencyMs: logs.length ? Math.round(logs.reduce((s:number,r:any)=>s+Number(r.latencyMs||0),0)/logs.length) : null, inputTokens: logs.reduce((s:number,r:any)=>s+Number(r.inputTokens||0),0), outputTokens: logs.reduce((s:number,r:any)=>s+Number(r.outputTokens||0),0), quota: "Provider quota is not exposed by this API; check Google AI Studio." },
     features: counts,
     logs: logs.slice(0,60).map(r=>({id:r.id,feature:r.feature,model:r.model,status:r.status,latencyMs:r.latencyMs,inputTokens:r.inputTokens,outputTokens:r.outputTokens,errorCode:r.errorCode,actorType:r.actorType,createdAt:r.createdAt})),
     drafts: drafts.map(d=>({id:d.id,feature:d.feature,title:d.title,status:d.status,createdBy:d.createdBy,createdAt:d.createdAt,updatedAt:d.updatedAt,content:d.content,metadata:d.metadata}))
