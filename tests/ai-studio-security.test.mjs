@@ -26,6 +26,8 @@ test("personal identifiers are redacted and order/payment status questions are n
   assert.match(featureRoute, /redactSensitive/);
   assert.match(featureRoute, /local-policy/);
   assert.match(featureRoute, /Track an order/);
+  assert.match(featureRoute, /cf-connecting-ip/);
+  assert.doesNotMatch(featureRoute, /x-forwarded-for/);
 });
 
 test("AI Studio configuration is super-admin-only and the API connection test is recorded", () => {
