@@ -3506,3 +3506,14 @@ input:disabled,select:disabled,textarea:disabled{background:#f1f5f9;color:#64748
 .ss-editor-link-panel{margin-top:12px;padding:14px;border:1px solid var(--ss-border,#e4e7ec);border-radius:12px;background:var(--ss-muted-bg,#f8fafc)}.ss-editor-link-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.ss-editor-link-title strong{font-size:13px}.ss-editor-link-title small,.ss-editor-footer small{font-size:11px;color:var(--ss-muted,#667085)}
 .ss-editor-link-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px}.ss-editor-link-fields input,.ss-editor-link-fields select{width:100%;min-width:0;border:1px solid var(--ss-border,#d0d5dd);border-radius:8px;padding:10px;background:var(--ss-surface,#fff);color:inherit;font:inherit;font-size:12px}.ss-editor-footer{display:flex;justify-content:space-between;gap:12px;margin-top:9px}
 @media(max-width:760px){.ss-editor-link-fields{grid-template-columns:1fr}.ss-editor-link-title,.ss-legal-editor-heading{align-items:flex-start;flex-direction:column}.ss-editor-format-pill{display:none}.ss-editor-footer{flex-direction:column;gap:4px}.ss-legal-page-tabs{gap:6px}.ss-legal-page-tabs button{padding:8px 10px}}
+
+/* Store settings: expandable section selector with the active settings window below it */
+.ss-layout{grid-template-columns:minmax(0,1fr)!important;gap:14px!important}
+.ss-nav{position:static!important;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px}
+.ss-nav-item{margin:0!important;min-height:64px!important;border:1px solid #e5eaf2!important;background:#fff!important;border-radius:11px!important}
+.ss-nav-item.is-active{background:#fff4eb!important;border-color:#ff6801!important;box-shadow:inset 3px 0 #ff6801!important}
+.ss-nav-number{margin-left:auto}
+.ss-form{width:100%;min-width:0}
+.ss-preview-aside{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media(max-width:900px){.ss-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.ss-preview-aside{grid-template-columns:1fr}}
+@media(max-width:560px){.ss-nav{grid-template-columns:1fr}.ss-nav-item{min-height:54px!important}.ss-workspace-head{gap:12px}}
