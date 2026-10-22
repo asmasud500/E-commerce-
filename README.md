@@ -80,3 +80,33 @@ Checkout inventory reservation now uses Firestore's native read-write transactio
 ## CI checks
 
 GitHub Actions runs security tests, TypeScript validation, and the production build. A green CI run is necessary but does not replace staging tests for authentication, stock contention, payment callbacks, Telegram actions, backups, and deployment secrets.
+
+
+## Gemini AI Studio
+
+The admin workspace at `/admin/ai-studio` manages six AI capabilities: product descriptions, smart product search, customer support, sales analysis, marketing drafts, and shopping assistance.
+
+### Configuration
+
+- Create an API key in Google AI Studio and configure it as the encrypted Cloudflare Worker secret `GEMINI_API_KEY`. Never use a `NEXT_PUBLIC_*` variable and never commit the real key.
+- Default model ID: `gemini-3.1-flash-lite`. Model availability and free-tier limits depend on the Google AI Studio project and can change; verify the current quota dashboard before enabling traffic.
+- AI Studio settings are stored in Firestore. Only a super admin can change global settings/model/limits; super admins and managers can review drafts and view telemetry.
+- Run a connection test from AI Studio after setting the secret. A successful connection test proves the API key/model can answer a small prompt; it does not prove that the project's quota is sufficient for production traffic.
+
+### Guardrails
+
+- Product description, marketing and sales analysis output is saved as a draft; approval does not automatically publish content.
+- Sales analysis uses server-side aggregates and does not send customer names, addresses, email addresses, or raw payment data to Gemini.
+- AI endpoints cannot confirm payment, change order status, issue refunds, place orders, or modify stock.
+- Public AI endpoints apply input bounds, request timeouts, and per-isolate rate limits. This in-memory limiter is not a distributed global rate limiter; apply Cloudflare rate limiting/WAF rules for production-scale abuse protection.
+- Search, shopper discovery and general support provide a deterministic catalog-only fallback when the model is unavailable. The fallback does not claim to verify order/payment status or undocumented store policies.
+- Usage dashboards show recorded application telemetry. The Gemini API does not expose authoritative provider quota through these application endpoints, so check Google AI Studio for actual limits. No paid billing is activated automatically when free quota is exhausted.
+- AI request logs intentionally avoid storing raw prompts and API keys. Generated drafts are retained in the `aiDrafts` Firestore collection and should be reviewed/retained under your store's data policy.
+
+### Staging checklist
+
+1. Set `GEMINI_API_KEY` as a Cloudflare Worker secret and confirm existing Firebase/Firestore secrets are configured.
+2. Deploy the feature branch to a staging environment, then test the connection from Admin → AI Studio.
+3. Test all six features with safe sample data, including a missing key, disabled feature, invalid model, quota/rate-limit response, and timeout.
+4. Verify product/marketing/sales outputs remain drafts until reviewed; verify admin role checks and public rate limits.
+5. Check mobile and desktop AI Studio layout, Firestore logs/drafts, and the existing checkout/order/payment flows before production rollout.
