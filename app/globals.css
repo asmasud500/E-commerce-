@@ -3853,3 +3853,50 @@ input:disabled,select:disabled,textarea:disabled{background:#f1f5f9;color:#64748
 @media (prefers-reduced-motion: reduce) {
   .admin-layout:has(.admin-sidebar) > .admin-sidebar { transition: none !important; }
 }
+
+
+/* Mobile Store Settings: restore normal document scrolling so every section is reachable. */
+@media (max-width: 760px) {
+  html:has(.ss-workspace),
+  body:has(.ss-workspace) {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-y: auto !important;
+  }
+  body:has(.ss-workspace) main {
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .admin-layout:has(.ss-workspace) {
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow: visible !important;
+    align-items: stretch !important;
+  }
+  .admin-layout:has(.ss-workspace) .admin-content.ss-page,
+  .admin-layout:has(.ss-workspace) .ss-page,
+  .admin-layout:has(.ss-workspace) .ss-workspace {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    overflow-y: visible !important;
+    overscroll-behavior: auto !important;
+    touch-action: pan-y !important;
+  }
+  .admin-layout:has(.ss-workspace) .ss-workspace > *,
+  .admin-layout:has(.ss-workspace) .ss-panel,
+  .admin-layout:has(.ss-workspace) .ss-panel-body {
+    min-height: 0;
+    max-height: none !important;
+  }
+  .admin-layout:has(.ss-workspace) .admin-sidebar {
+    max-height: calc(100dvh - 54px) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
