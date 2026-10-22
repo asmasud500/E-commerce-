@@ -32,7 +32,10 @@ async function envValue(name: string) {
 export async function getAiSettings(): Promise<AiSettings> {
   try {
     const row = await db.aiSetting.findUnique({ where: { id: "global" } });
-    if (row && typeof row === "object") {\n    const stored = row as AiSettings;\n    return { ...stored, model: SUPPORTED_GEMINI_MODELS.includes(stored.model as typeof SUPPORTED_GEMINI_MODELS[number]) ? stored.model : DEFAULT_GEMINI_MODEL };\n  }
+    if (row && typeof row === "object") {
+      const stored = row as AiSettings;
+      return { ...stored, model: SUPPORTED_GEMINI_MODELS.includes(stored.model as typeof SUPPORTED_GEMINI_MODELS[number]) ? stored.model : DEFAULT_GEMINI_MODEL };
+    }
   } catch {}
   return { enabled: true, model: DEFAULT_GEMINI_MODEL, features: {}, dailyRequestLimit: 300, maxOutputTokens: 900 };
 }
