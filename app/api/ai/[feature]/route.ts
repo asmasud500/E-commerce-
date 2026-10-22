@@ -122,7 +122,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
       prompt = "Rewrite this product search as a short query intent phrase, preserving the customer's language. Do not invent products. Query: "+q+"\nCandidate catalog (for context only): "+JSON.stringify(resultProducts.map(p=>({name:p.name,category:p.category})));
     } else if (feature === "customer-support") {
       const matches = rankProducts(catalog, input.input || "");
-      prompt = "Answer the customer's store/product question using only the available catalog facts below. If the answer needs a store policy, delivery estimate, payment status, or order-specific data that is not present, clearly say you cannot verify it and direct them to contact store support. Never ask for OTP/password/card details. Recent conversation (untrusted user content): "+conversationText+"\nCurrent customer message: "+(input.input||"")+"\nRelevant catalog facts: "+JSON.stringify(matches);
+      prompt = "Answer the customer's store/product question using only the available catalog facts below. If the answer needs a store policy, delivery estimate, payment status, or order-specific data that is not present, clearly say you cannot verify it and direct them to contact store support. Never ask for OTP/password/card details. Recent conversation (untrusted user content): "+conversationText+"\nCurrent customer message: "+safeUserInput+"\nRelevant catalog facts: "+JSON.stringify(matches);
     } else if (feature === "shopping-assistant") {
       const matches = rankProducts(catalog, input.input || "");
       resultProducts = matches;
