@@ -36,6 +36,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
           GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
           GOOGLE_DRIVE_CLIENT_SECRET: ${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
           GOOGLE_DRIVE_REFRESH_TOKEN: ${{ secrets.GOOGLE_DRIVE_REFRESH_TOKEN }}
@@ -45,11 +46,22 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for key in FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID ADMIN_EMAIL ADMIN_PASSWORD ADMIN_SESSION_SECRET PAYMENT_ENCRYPTION_KEY PAYMENT_WEBHOOK_SECRET CRON_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+          for key in FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID TELEGRAM_WEBHOOK_SECRET ADMIN_EMAIL ADMIN_PASSWORD ADMIN_SESSION_SECRET PAYMENT_ENCRYPTION_KEY PAYMENT_WEBHOOK_SECRET CRON_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
             if [ -z "${!key:-}" ]; then echo "::error::Required repository secret is missing: $key"; missing=1; fi
           done
           if [ "$missing" -ne 0 ]; then exit 1; fi
           echo "Required production secrets are present (values are not printed)."
+      - name: Deploy Firestore composite indexes
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: |
+          set -euo pipefail
+          node -e 'const fs=require("node:fs");const key=String(process.env.FIREBASE_PRIVATE_KEY||"").replace(/\\n/g,"\n");const account={type:"service_account",project_id:process.env.FIREBASE_PROJECT_ID,private_key:key,client_email:process.env.FIREBASE_CLIENT_EMAIL,token_uri:"https://oauth2.googleapis.com/token"};fs.writeFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS,JSON.stringify(account),{mode:0o600});'
+          npx --yes firebase-tools@14.12.0 deploy --only firestore:indexes --project "$FIREBASE_PROJECT_ID" --non-interactive
+          rm -f "$GOOGLE_APPLICATION_CREDENTIALS"
       - name: Run security and type checks
         run: |
           npm run test:security
@@ -131,12 +143,11 @@ jobs:
       # Telegram registration is best-effort; it must not block a successful Worker deploy.
       - name: Register store Telegram webhook and commands
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
-        continue-on-error: true
         run: |
           set -euo pipefail
           if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_WEBHOOK_SECRET:-}" ]; then
-            echo "Telegram webhook registration skipped: TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET must both be configured."
-            exit 0
+            echo "::error::Telegram webhook registration requires TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET."
+            exit 1
           fi
           API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
           URL="https://ecommerce-platform.masud50003.workers.dev/api/telegram/webhook"
@@ -144,6 +155,8 @@ jobs:
             -d "{\"url\":\"$URL\",\"secret_token\":\"$TELEGRAM_WEBHOOK_SECRET\",\"allowed_updates\":[\"message\",\"callback_query\"],\"drop_pending_updates\":false}" | tee /dev/stderr | jq -e '.ok == true' > /dev/null
           curl --fail --silent --show-error -X POST "$API/setMyCommands" -H 'content-type: application/json' \
             -d '{"commands":[{"command":"start","description":"Start"},{"command":"help","description":"Help"},{"command":"orders","description":"Recent orders"},{"command":"pending","description":"Pending orders"},{"command":"today","description":"Today summary"},{"command":"sales","description":"Sales report"},{"command":"stock","description":"Low stock"},{"command":"search","description":"Search orders"}]}' | tee /dev/stderr | jq -e '.ok == true' > /dev/null
+          curl --fail --silent --show-error "$API/getWebhookInfo" | tee /dev/stderr | jq -e --arg url "$URL" '.ok == true and .result.url == $url' > /dev/null
+          echo "Telegram webhook URL verified against the deployed Worker."
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
@@ -165,3 +178,19 @@ jobs:
           node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("/tmp/products.json","utf8"));if(!Array.isArray(d.items)||typeof d.total!=="number"||typeof d.pages!=="number")throw new Error("Product catalogue response is invalid");console.log("Product catalogue API smoke test passed; returned total="+d.total+".")'
           curl --fail --silent --show-error "$BASE_URL/api/categories" --output /tmp/categories.json
           node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("/tmp/categories.json","utf8"));if(!Array.isArray(d))throw new Error("Categories API response is invalid");console.log("Categories API smoke test passed; returned count="+d.length+".")'
+          curl --fail --silent --show-error "$BASE_URL/api/payment-gateways" --output /tmp/payment-gateways.json
+          node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("/tmp/payment-gateways.json","utf8"));if(!Array.isArray(d))throw new Error("Payment gateway API response is invalid");console.log("Payment gateway API smoke test passed; enabled checkout methods="+d.length+".")'
+          PRODUCT_ID="$(node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("/tmp/products.json","utf8"));process.stdout.write(String(d.items?.[0]?.id||""))')"
+          if [ -n "$PRODUCT_ID" ]; then
+            node -e 'const fs=require("fs");const p=JSON.parse(fs.readFileSync("/tmp/products.json","utf8")).items[0];fs.writeFileSync("/tmp/quote-request.json",JSON.stringify({items:[{productId:p.id,quantity:1}]}))'
+            curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/quote-request.json "$BASE_URL/api/checkout/quote" --output /tmp/checkout-quote.json
+            node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("/tmp/checkout-quote.json","utf8"));if(typeof d.total!=="number"||!Number.isFinite(d.total)||d.total<0)throw new Error("Checkout quote total is invalid");console.log("Live checkout quote smoke test passed; total is numeric and non-negative.")'
+          else
+            echo "::warning::Checkout quote smoke test skipped because no published products are available."
+          fi
+          PAYMENT_WEBHOOK_STATUS="$(curl --silent --show-error -o /tmp/payment-webhook-unauthorized.json -w '%{http_code}' -X POST "$BASE_URL/api/payments/webhook" -H 'content-type: application/json' --data '{}')"
+          if [ "$PAYMENT_WEBHOOK_STATUS" != "401" ]; then echo "Payment webhook must reject requests without its secret (expected 401, got $PAYMENT_WEBHOOK_STATUS)"; exit 1; fi
+          echo "Payment webhook unauthenticated-request guard passed."
+          SMS_STATUS="$(curl --silent --show-error -o /tmp/personal-sms-response.json -w '%{http_code}' -X POST "$BASE_URL/api/webhooks/mobile-money-sms")"
+          if [ "$SMS_STATUS" != "410" ]; then echo "Legacy personal-number SMS confirmation must remain disabled (expected 410, got $SMS_STATUS)"; exit 1; fi
+          echo "Personal-number SMS auto-confirm remains safely disabled."

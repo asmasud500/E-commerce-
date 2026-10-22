@@ -8,7 +8,7 @@ export async function GET(){
       db.deliveryZone.findMany({where:{active:true},orderBy:[{division:"asc"},{district:"asc"},{upazila:"asc"},{name:"asc"}]})
     ]);
     const settings={
-      storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",
+      storeName:"MART Store",logoUrl:"",supportEmail:"",supportPhone:"",currency:"BDT",
       defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:"",
       ...(stored||{})
     };
