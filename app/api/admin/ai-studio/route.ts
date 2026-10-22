@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { readAdminSession } from "@/lib/auth/admin";
 import { db } from "@/lib/prisma";
-import { AI_FEATURES, DEFAULT_GEMINI_MODEL, geminiGenerate, getAiSettings, saveAiSettings, recordAiRequest, safeAiError } from "@/lib/ai/gemini";
+import { AI_FEATURES, DEFAULT_GEMINI_MODEL, SUPPORTED_GEMINI_MODELS, geminiGenerate, getAiSettings, saveAiSettings, recordAiRequest, safeAiError } from "@/lib/ai/gemini";
 import { recordAdminAudit } from "@/lib/auth/audit";
 
 export const dynamic = "force-dynamic";
 const updateSchema = z.object({
   action: z.enum(["save", "test"]),
   enabled: z.boolean().optional(),
-  model: z.string().trim().min(3).max(100).optional(),
+  model: z.enum(SUPPORTED_GEMINI_MODELS).optional(),
   features: z.record(z.string(), z.boolean()).optional(),
   dailyRequestLimit: z.coerce.number().int().min(1).max(5000).optional(),
   maxOutputTokens: z.coerce.number().int().min(128).max(4096).optional()
