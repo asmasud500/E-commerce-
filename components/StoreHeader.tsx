@@ -16,6 +16,8 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
   const [arrivalsLabel,setArrivalsLabel]=useState("New Arrivals");
   const [dealsLabel,setDealsLabel]=useState("Deals & Offers");
   const [deliveryNotice,setDeliveryNotice]=useState("Shopping across Bangladesh");
+  const [brandColor,setBrandColor]=useState("#131921");
+  const [accentColor,setAccentColor]=useState("#ff6801");
   const [announcement,setAnnouncement]=useState("");
 
   useEffect(()=>{
@@ -28,7 +30,7 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
 
   useEffect(()=>{
     let off=false;
-    fetch("/api/storefront/config",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(off||!d?.settings)return;const name=typeof d.settings.storeName==="string"?d.settings.storeName.trim():"";if(name)setStoreName(name);if(typeof d.settings.logoUrl==="string")setLogoUrl(d.settings.logoUrl.trim());if(typeof d.settings.headerSearchPlaceholder==="string"&&d.settings.headerSearchPlaceholder.trim())setSearchPlaceholder(d.settings.headerSearchPlaceholder.trim());if(typeof d.settings.headerFeaturedLabel==="string"&&d.settings.headerFeaturedLabel.trim())setFeaturedLabel(d.settings.headerFeaturedLabel.trim());if(typeof d.settings.headerNewArrivalsLabel==="string"&&d.settings.headerNewArrivalsLabel.trim())setArrivalsLabel(d.settings.headerNewArrivalsLabel.trim());if(typeof d.settings.headerDealsLabel==="string"&&d.settings.headerDealsLabel.trim())setDealsLabel(d.settings.headerDealsLabel.trim());if(typeof d.settings.deliveryNotice==="string")setDeliveryNotice(d.settings.deliveryNotice.trim());if(typeof d.settings.announcement==="string")setAnnouncement(d.settings.announcement.trim())}).catch(()=>{});
+    fetch("/api/storefront/config",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(off||!d?.settings)return;const name=typeof d.settings.storeName==="string"?d.settings.storeName.trim():"";if(name)setStoreName(name);if(typeof d.settings.logoUrl==="string")setLogoUrl(d.settings.logoUrl.trim());if(typeof d.settings.brandColor==="string"&&/^#[0-9a-fA-F]{6}$/.test(d.settings.brandColor))setBrandColor(d.settings.brandColor);if(typeof d.settings.accentColor==="string"&&/^#[0-9a-fA-F]{6}$/.test(d.settings.accentColor))setAccentColor(d.settings.accentColor);if(typeof d.settings.headerSearchPlaceholder==="string"&&d.settings.headerSearchPlaceholder.trim())setSearchPlaceholder(d.settings.headerSearchPlaceholder.trim());if(typeof d.settings.headerFeaturedLabel==="string"&&d.settings.headerFeaturedLabel.trim())setFeaturedLabel(d.settings.headerFeaturedLabel.trim());if(typeof d.settings.headerNewArrivalsLabel==="string"&&d.settings.headerNewArrivalsLabel.trim())setArrivalsLabel(d.settings.headerNewArrivalsLabel.trim());if(typeof d.settings.headerDealsLabel==="string"&&d.settings.headerDealsLabel.trim())setDealsLabel(d.settings.headerDealsLabel.trim());if(typeof d.settings.deliveryNotice==="string")setDeliveryNotice(d.settings.deliveryNotice.trim());if(typeof d.settings.announcement==="string")setAnnouncement(d.settings.announcement.trim())}).catch(()=>{});
     return()=>{off=true};
   },[]);
 
@@ -41,6 +43,7 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
 
   return (
     <>
+    <style>{`:root{--store-brand:${brandColor};--store-accent:${accentColor}}`}</style>
     {announcement&&<div className="sh-announcement"><span aria-hidden="true">✦</span>{announcement}</div>}
     <header className="sh">
       <div className="sh-in">
