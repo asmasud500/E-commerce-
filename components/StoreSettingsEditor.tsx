@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useMemo,useState,type FormEvent} from "react";
+import {useEffect,useState,type FormEvent} from "react";
 import {POLICY_DEFAULTS,POLICY_FIELD,POLICY_TITLES,type PolicyKey} from "@/lib/store/policy-content";
 type Settings={storeName:string;supportEmail:string;supportPhone:string;currency:string;defaultDeliveryFee:number;freeShippingThreshold:number|null;taxEnabled:boolean;taxRate:number;announcement:string;tagline:string;brandColor:string;accentColor:string;address:string;whatsapp:string;facebookUrl:string;instagramUrl:string;youtubeUrl:string;openingHours:string;contactIntro:string;aboutIntro:string;aboutBody:string;footerNote:string;copyrightText:string;privacyContent:string;termsContent:string;returnsContent:string;shippingContent:string};
 const initial:Settings={storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:"",tagline:"Quality products, simple shopping.",brandColor:"#131921",accentColor:"#ff6801",address:"",whatsapp:"",facebookUrl:"",instagramUrl:"",youtubeUrl:"",openingHours:"",contactIntro:"",aboutIntro:"",aboutBody:"",footerNote:"",copyrightText:"",privacyContent:"",termsContent:"",returnsContent:"",shippingContent:""};
@@ -19,7 +19,7 @@ export default function StoreSettingsEditor(){
  const discard=()=>{setValue(saved);setNotice("Unsaved changes discarded.");setError(false)};
  const name=value.storeName.trim()||"Your store";
  const validColor=(s:string)=>/^#[0-9a-fA-F]{6}$/.test(s);
- const completeness=useMemo(()=>{const a=[!!value.storeName.trim(),!!(value.supportEmail.trim()||value.supportPhone.trim()),validColor(value.brandColor),validColor(value.accentColor)];return Math.round(a.filter(Boolean).length/a.length*100)},[value.storeName,value.supportEmail,value.supportPhone,value.brandColor,value.accentColor]);
+ const checks=[!!value.storeName.trim(),!!(value.supportEmail.trim()||value.supportPhone.trim()),validColor(value.brandColor),validColor(value.accentColor)];\n const completeness=Math.round(checks.filter(Boolean).length/checks.length*100);
  const policyField=POLICY_FIELD[policy] as keyof Settings, policyText=String(value[policyField]||"");
  return <section className="ss-workspace" aria-labelledby="ss-heading">
   <div className="ss-workspace-head"><div><span className="ss-eyebrow">STORE CONTROL CENTER</span><h2 id="ss-heading">Store configuration</h2><p>Manage the settings that shape your storefront and checkout, all in one place.</p></div><div className="ss-completion"><span className="ss-completion-ring">{completeness}%</span><span><strong>Setup checklist</strong><small>{completeness===100?"Core details look ready":"Complete your core store details"}</small></span></div></div>
