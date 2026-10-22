@@ -6,7 +6,7 @@ import {Icon} from "@/components/Icons";
 type Props={flashImages:string[];newImages:string[];flashHref:string;settings?:Record<string,any>};
 
 export default function HeroSlider({flashImages,newImages,flashHref,settings={}}:Props){
-  const configuredHref=typeof settings.heroCtaHref==="string"&&(/^(\/|#|https:\/\/)/.test(settings.heroCtaHref))?settings.heroCtaHref:flashHref;
+  const configuredHref=typeof settings.heroCtaHref==="string"&&!!settings.heroCtaHref&&settings.heroCtaHref!=="#flash-sale"&&(/^(\/|#|https:\/\/)/.test(settings.heroCtaHref))?settings.heroCtaHref:flashHref;
   const slides=[
     {theme:"hp-s1",pill:settings.heroBadge||"Limited-time deals",title:settings.heroTitle||"Mega Flash Sale",big:settings.heroBigText||"Up to 70% Off",text:settings.heroDescription||"Selected products at their lowest prices. Grab them before stock runs out.",cta:settings.heroCtaLabel||"Shop flash deals",href:configuredHref,images:flashImages},
     {theme:"hp-s2",pill:"New in store",title:"Fresh arrivals just landed",big:"",text:"Browse the newest products added to the catalog.",cta:"Shop new arrivals",href:"/products",images:newImages},
