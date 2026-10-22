@@ -6,7 +6,7 @@
 2. Add it to the Cloudflare Worker as an encrypted secret named GEMINI_API_KEY. Do not put the key in GitHub source, a NEXT_PUBLIC_* variable, Firestore settings, or browser code.
 3. Verify the Firebase service account and Firestore permissions already used by the store are configured in the staging Worker.
 4. Open Admin → AI Studio and run Test Gemini connection. A successful test confirms one small model call only; it does not guarantee ongoing free quota.
-5. Check the Google AI Studio quota page for the selected model before enabling customer traffic.
+5. Check the Google AI Studio quota page for the selected model before enabling customer traffic. Review Google's current Free-tier data terms: submitted content may be used to improve Google products, so do not send sensitive customer data.
 
 ## Feature smoke tests
 
