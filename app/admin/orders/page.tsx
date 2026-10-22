@@ -17,6 +17,7 @@ const statusLabel=(status:string)=>status==="PROCESSING"?"Packaging":status.char
 const statusTone=(status:string)=>status==="DELIVERED"||status==="CONFIRMED"?"success":status==="CANCELLED"||status==="REFUNDED"?"danger":status==="PENDING"?"warning":"neutral";
 export default function Orders(){
  const[orders,setOrders]=useState<O[]>([]),[error,setError]=useState(""),[loading,setLoading]=useState(true),[query,setQuery]=useState(""),[statusFilter,setStatusFilter]=useState("ALL"),[dateFilter,setDateFilter]=useState("ALL"),[expanded,setExpanded]=useState<string[]>([]);
+ const[updatingOrder,setUpdatingOrder]=useState<string|null>(null);
  async function load(){setLoading(true);try{const r=await fetch("/api/admin/orders",{cache:"no-store"});const d=await r.json().catch(()=>[]);if(!r.ok)throw new Error(d.error||"Unable to load orders");setOrders(Array.isArray(d)?d:[]);setError("")}catch(e){setError(e instanceof Error?e.message:"Unable to load orders")}finally{setLoading(false)}}
  useEffect(()=>{load()},[]);
  const filtered=useMemo(()=>orders.filter(o=>{
