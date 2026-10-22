@@ -302,3 +302,26 @@
 @media (prefers-reduced-motion: reduce) {
   .ss-nav-item { transition: none !important; }
 }
+
+
+/* Advanced theme controls — scoped to Store Settings, responsive on narrow screens. */
+.ss-theme-preview{width:100%;margin-top:14px;border:1px solid #e5eaf1;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 8px 22px rgba(18,34,56,.06);transition:max-width .18s ease}
+.ss-theme-preview-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;min-height:62px}
+.ss-theme-preview-top strong{font-size:16px;letter-spacing:-.025em}
+.ss-theme-preview-top span{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:8px 14px;color:#fff;font-size:11px;font-weight:700;white-space:nowrap}
+.ss-theme-preview-body{padding:20px}
+.ss-theme-preview-body>small{font-size:9px;font-weight:800;letter-spacing:.14em;color:#6b778b}
+.ss-theme-preview-body h4{margin:8px 0;font-size:clamp(18px,2vw,25px);letter-spacing:-.04em;color:#142238}
+.ss-theme-preview-body p{margin:0;color:#6b778b;font-size:12px}
+.ss-theme-preview-products{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.ss-theme-preview-products i{display:block;min-height:64px;border-radius:10px;background:linear-gradient(135deg,#f0f3f8,#e5eaf1)}
+.ss-theme-compact .ss-theme-preview-products{gap:6px}
+.ss-theme-compact .ss-theme-preview-products i{min-height:48px;border-radius:5px}
+.ss-theme-editorial .ss-theme-preview-body{padding:28px}
+.ss-theme-editorial .ss-theme-preview-body h4{font-size:clamp(23px,3vw,34px)}
+.ss-theme-modern .ss-theme-preview-products i{border-radius:16px;min-height:78px}
+.ss-corners-soft .ss-theme-preview-products i{border-radius:16px}
+.ss-corners-sharp .ss-theme-preview-products i{border-radius:0}
+.ss-field select{width:100%;min-height:42px;padding:10px 12px;border:1px solid #d9e1eb;border-radius:10px;background:#fff;color:#142238;font:inherit;font-size:12.5px}
+.ss-field select:focus-visible{outline:2px solid #ff6801;outline-offset:2px}
+@media(max-width:760px){.ss-theme-preview-body{padding:15px}.ss-theme-preview-top{padding:12px}.ss-theme-preview-products i{min-height:48px}.ss-theme-editorial .ss-theme-preview-body{padding:18px}}
