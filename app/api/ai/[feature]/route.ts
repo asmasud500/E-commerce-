@@ -135,6 +135,21 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
   } catch (error) {
     const safe = safeAiError(error);
     await recordAiRequest({ feature, status: "ERROR", errorCode: safe.code, actorType: session ? "admin" : "visitor" });
+    // Search and shopping discovery remain useful if Gemini is unavailable; use only live catalog facts.
+    if (["smart-search", "shopping-assistant", "customer-support"].includes(feature)) {
+      try {
+        const fallbackCatalog = await getCatalog();
+        const matches = rankProducts(fallbackCatalog, input.input || "");
+        const text = feature === "customer-support"
+          ? (matches.length
+            ? "I couldn't reach the AI service right now, but these catalog matches may help. I can't verify store policies, delivery timing, payment status, or an order without the relevant official data. Please contact store support for those details."
+            : "I couldn't reach the AI service right now. Please try again shortly or contact store support for help.")
+          : feature === "smart-search"
+            ? (matches.length ? "AI search is temporarily unavailable. Here are keyword-matched products from the live catalog." : "AI search is temporarily unavailable and no keyword matches were found. Try a product name or category.")
+            : (matches.length ? "AI recommendations are temporarily unavailable. Here are the closest keyword matches from the live catalog." : "AI recommendations are temporarily unavailable. Try describing a product name, category, or budget.");
+        return NextResponse.json({ text, model: null, fallback: true, products: matches }, { headers: { "Cache-Control": "no-store" } });
+      } catch {}
+    }
     const status = safe.code === "AI_NOT_CONFIGURED" ? 503 : safe.code === "AI_FEATURE_DISABLED" ? 503 : safe.code === "AI_QUOTA_EXHAUSTED" ? 429 : 502;
     return errorResponse(safe.code, safe.message, status);
   }
