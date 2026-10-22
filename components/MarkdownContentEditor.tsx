@@ -2,7 +2,7 @@
 import {useRef,useState} from "react";
 
 type Props={label:string;value:string;onChange:(value:string)=>void;maxLength?:number;placeholder?:string};
-const pages=[{label:"Home page",value:"/"},{label:"Products",value:"/products"},{label:"About us",value:"/about"},{label:"Contact",value:"/contact"},{label:"Delivery",value:"/shipping-policy"},{label:"Returns & refunds",value:"/return-policy"},{label:"Privacy",value:"/privacy-policy"},{label:"Terms",value:"/terms"},{label:"Order tracking",value:"/track"}];
+const pages=[{label:"Home page",value:"/"},{label:"Products",value:"/products"},{label:"About us",value:"/about"},{label:"Contact",value:"/contact"},{label:"Delivery",value:"/shipping-policy"},{label:"Returns & refunds",value:"/return-policy"},{label:"Privacy",value:"/privacy"},{label:"Terms",value:"/terms"},{label:"Order tracking",value:"/track"}];
 export default function MarkdownContentEditor({label,value,onChange,maxLength=10000,placeholder}:Props){
  const ref=useRef<HTMLTextAreaElement>(null);const [linkText,setLinkText]=useState("");const [destination,setDestination]=useState("/about");const [customUrl,setCustomUrl]=useState("");
  const insert=(before:string,after="",prefixLines=false)=>{const el=ref.current;if(!el){onChange(value+before+after);return}const start=el.selectionStart,end=el.selectionEnd,selected=value.slice(start,end)||"text";const replacement=prefixLines?selected.split("\n").map(line=>before+line).join("\n"):before+selected+after;const next=value.slice(0,start)+replacement+value.slice(end);if(next.length>maxLength)return;onChange(next);requestAnimationFrame(()=>{el.focus();const cursor=start+replacement.length;el.setSelectionRange(cursor,cursor)});};
