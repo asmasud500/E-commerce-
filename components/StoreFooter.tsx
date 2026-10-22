@@ -13,7 +13,7 @@ const ICONS={
 };
 
 export default function StoreFooter(){
-  const [storeName,setStoreName]=useState("MART Store");
+  const [storeName,setStoreName]=useState("MART Store");\n  const [logoUrl,setLogoUrl]=useState("");\n  const [shopHeading,setShopHeading]=useState("Shop");\n  const [accountHeading,setAccountHeading]=useState("Your account");\n  const [supportHeading,setSupportHeading]=useState("Customer support");
   const [supportEmail,setSupportEmail]=useState("");
   const [supportPhone,setSupportPhone]=useState("");
   const [tagline,setTagline]=useState("Quality products, simple shopping.");
@@ -32,7 +32,7 @@ export default function StoreFooter(){
       .then(r=>r.ok?r.json():null)
       .then(data=>{
         if(cancelled||!data?.settings)return;
-        if(typeof data.settings.storeName==="string"&&data.settings.storeName.trim())setStoreName(data.settings.storeName.trim());
+        if(typeof data.settings.storeName==="string"&&data.settings.storeName.trim())setStoreName(data.settings.storeName.trim());\n        if(typeof data.settings.logoUrl==="string")setLogoUrl(data.settings.logoUrl.trim());\n        if(typeof data.settings.footerShopHeading==="string"&&data.settings.footerShopHeading.trim())setShopHeading(data.settings.footerShopHeading.trim());\n        if(typeof data.settings.footerAccountHeading==="string"&&data.settings.footerAccountHeading.trim())setAccountHeading(data.settings.footerAccountHeading.trim());\n        if(typeof data.settings.footerSupportHeading==="string"&&data.settings.footerSupportHeading.trim())setSupportHeading(data.settings.footerSupportHeading.trim());
         if(typeof data.settings.supportEmail==="string")setSupportEmail(data.settings.supportEmail.trim());
         if(typeof data.settings.supportPhone==="string")setSupportPhone(data.settings.supportPhone.trim());
         if(typeof data.settings.tagline==="string"&&data.settings.tagline.trim())setTagline(data.settings.tagline.trim());
@@ -60,25 +60,25 @@ export default function StoreFooter(){
     <footer className="sf">
       <div className="sf-in">
         <div className="sf-brand">
-          <Link href="/" className="sh-logo" aria-label={storeName+" home"}><span className="sh-logo-name">{storeName}</span><span className="sh-logo-dot">.</span></Link>
+          <Link href="/" className="sh-logo" aria-label={storeName+" home"}>{logoUrl&&<img className="sh-logo-image" src={logoUrl} alt="" />}<span className="sh-logo-name">{storeName}</span>{!logoUrl&&<span className="sh-logo-dot">.</span>}</Link>
           <p>{tagline}</p>
           <small className="sf-trust-note">{footerNote}</small>
         </div>
         <div>
-          <h3>Shop</h3>
+          <h3>{shopHeading}</h3>
           <Link href="/products">All products</Link>
           <Link href="/products?featured=true">Featured products</Link>
           <Link href="/cart">Shopping cart</Link>
         </div>
         <div>
-          <h3>Your account</h3>
+          <h3>{accountHeading}</h3>
           <Link href="/track">Track your order</Link>
           <Link href="/account">Orders and profile</Link>
           <Link href="/wishlist">Wishlist</Link>
           <Link href="/products">Continue shopping</Link>
         </div>
         <div className="sf-contact">
-          <h3>Customer support</h3>
+          <h3>{supportHeading}</h3>
           {socials.length>0&&<div className="sf-social">{socials.map(x=><a key={x.name} href={x.href} className="sf-soc" aria-label={x.label} {...(x.external?{target:"_blank",rel:"noopener noreferrer"}:{})}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{x.icon}</svg><span>{x.name}</span></a>)}</div>}
           {address&&<p>{address}</p>}
           {openingHours&&<p>Hours: {openingHours}</p>}
