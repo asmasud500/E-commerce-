@@ -36,6 +36,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
           GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
           GOOGLE_DRIVE_CLIENT_SECRET: ${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
           GOOGLE_DRIVE_REFRESH_TOKEN: ${{ secrets.GOOGLE_DRIVE_REFRESH_TOKEN }}
@@ -45,7 +46,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for key in FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID ADMIN_EMAIL ADMIN_PASSWORD ADMIN_SESSION_SECRET PAYMENT_ENCRYPTION_KEY PAYMENT_WEBHOOK_SECRET CRON_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+          for key in FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID TELEGRAM_WEBHOOK_SECRET ADMIN_EMAIL ADMIN_PASSWORD ADMIN_SESSION_SECRET PAYMENT_ENCRYPTION_KEY PAYMENT_WEBHOOK_SECRET CRON_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
             if [ -z "${!key:-}" ]; then echo "::error::Required repository secret is missing: $key"; missing=1; fi
           done
           if [ "$missing" -ne 0 ]; then exit 1; fi
@@ -142,12 +143,11 @@ jobs:
       # Telegram registration is best-effort; it must not block a successful Worker deploy.
       - name: Register store Telegram webhook and commands
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
-        continue-on-error: true
         run: |
           set -euo pipefail
           if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_WEBHOOK_SECRET:-}" ]; then
-            echo "Telegram webhook registration skipped: TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET must both be configured."
-            exit 0
+            echo "::error::Telegram webhook registration requires TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET."
+            exit 1
           fi
           API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
           URL="https://ecommerce-platform.masud50003.workers.dev/api/telegram/webhook"
