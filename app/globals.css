@@ -3433,3 +3433,10 @@ input:disabled,select:disabled,textarea:disabled{background:#f1f5f9;color:#64748
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* Footer support & social buttons */
+.sf-social{display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 14px}
+.sf-soc{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid rgba(255,255,255,.2);border-radius:999px;color:#e5e7eb;font-size:13px;font-weight:600;line-height:1;transition:.2s}
+.sf-soc svg{flex:0 0 auto}
+.sf-soc:hover{background:var(--or);border-color:var(--or);color:#fff;transform:translateY(-1px)}
+.sf-soc:focus-visible{outline:2px solid #fff;outline-offset:2px}
