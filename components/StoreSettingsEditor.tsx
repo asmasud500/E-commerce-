@@ -19,7 +19,8 @@ export default function StoreSettingsEditor(){
  const discard=()=>{setValue(saved);setNotice("Unsaved changes discarded.");setError(false)};
  const name=value.storeName.trim()||"Your store";
  const validColor=(s:string)=>/^#[0-9a-fA-F]{6}$/.test(s);
- const checks=[!!value.storeName.trim(),!!(value.supportEmail.trim()||value.supportPhone.trim()),validColor(value.brandColor),validColor(value.accentColor)];\n const completeness=Math.round(checks.filter(Boolean).length/checks.length*100);
+ const checks=[!!value.storeName.trim(),!!(value.supportEmail.trim()||value.supportPhone.trim()),validColor(value.brandColor),validColor(value.accentColor)];
+  const completeness=Math.round(checks.filter(Boolean).length/checks.length*100);
  const policyField=POLICY_FIELD[policy] as keyof Settings, policyText=String(value[policyField]||"");
  return <section className="ss-workspace" aria-labelledby="ss-heading">
   <div className="ss-workspace-head"><div><span className="ss-eyebrow">STORE CONTROL CENTER</span><h2 id="ss-heading">Store configuration</h2><p>Manage the settings that shape your storefront and checkout, all in one place.</p></div><div className="ss-completion"><span className="ss-completion-ring">{completeness}%</span><span><strong>Setup checklist</strong><small>{completeness===100?"Core details look ready":"Complete your core store details"}</small></span></div></div>
