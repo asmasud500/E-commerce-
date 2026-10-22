@@ -96,8 +96,24 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
   }
   try {
     const today = new Date(); today.setHours(0,0,0,0);
-    const usedToday = await db.aiRequestLog.count({ where: { createdAt: { gte: today } } }).catch(() => 0);
-    if (usedToday >= Number(settings.dailyRequestLimit || 300)) return errorResponse("DAILY_LIMIT_REACHED", "The store's daily AI request limit has been reached. Try again tomorrow.", 429);
+    let usedToday: number;
+    try { usedToday = await db.aiRequestLog.count({ where: { createdAt: { gte: today } } }); }
+    catch { return errorResponse("AI_USAGE_UNAVAILABLE", "AI usage controls are temporarily unavailable, so new Gemini requests are paused for safety.", 503); }
+    if (usedToday >= Number(settings.dailyRequestLimit || 300)) {
+      if (["smart-search", "shopping-assistant", "customer-support"].includes(feature)) {
+        try {
+          const fallbackCatalog = await getCatalog();
+          const matches = rankProducts(fallbackCatalog, input.input || "");
+          const text = feature === "customer-support"
+            ? "The store's daily AI limit has been reached. These catalog matches may help, but I can't verify order status or undocumented store policies."
+            : feature === "smart-search"
+              ? (matches.length ? "The daily AI limit has been reached. Showing keyword-matched products from the live catalog." : "The daily AI limit has been reached and no keyword matches were found.")
+              : (matches.length ? "The daily AI limit has been reached. Showing the closest keyword matches from the live catalog." : "The daily AI limit has been reached. Try a product name or category.");
+          return NextResponse.json({ text, model: null, fallback: true, products: matches }, { headers: { "Cache-Control": "no-store" } });
+        } catch {}
+      }
+      return errorResponse("DAILY_LIMIT_REACHED", "The store's daily AI request limit has been reached. Try again tomorrow.", 429);
+    }
 
     const safeUserInput = redactSensitive(input.input || "");
     const conversationText = (input.conversation || []).map(m => m.role.toUpperCase()+": "+redactSensitive(m.text)).join("\n").slice(0,9000);
