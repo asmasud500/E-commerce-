@@ -32,7 +32,11 @@ export default function StoreFooter(){
       .then(r=>r.ok?r.json():null)
       .then(data=>{
         if(cancelled||!data?.settings)return;
-        if(typeof data.settings.storeName==="string"&&data.settings.storeName.trim())setStoreName(data.settings.storeName.trim());\n        if(typeof data.settings.logoUrl==="string")setLogoUrl(data.settings.logoUrl.trim());\n        if(typeof data.settings.footerShopHeading==="string"&&data.settings.footerShopHeading.trim())setShopHeading(data.settings.footerShopHeading.trim());\n        if(typeof data.settings.footerAccountHeading==="string"&&data.settings.footerAccountHeading.trim())setAccountHeading(data.settings.footerAccountHeading.trim());\n        if(typeof data.settings.footerSupportHeading==="string"&&data.settings.footerSupportHeading.trim())setSupportHeading(data.settings.footerSupportHeading.trim());
+        if(typeof data.settings.storeName==="string"&&data.settings.storeName.trim())setStoreName(data.settings.storeName.trim());
+        if(typeof data.settings.logoUrl==="string")setLogoUrl(data.settings.logoUrl.trim());
+        if(typeof data.settings.footerShopHeading==="string"&&data.settings.footerShopHeading.trim())setShopHeading(data.settings.footerShopHeading.trim());
+        if(typeof data.settings.footerAccountHeading==="string"&&data.settings.footerAccountHeading.trim())setAccountHeading(data.settings.footerAccountHeading.trim());
+        if(typeof data.settings.footerSupportHeading==="string"&&data.settings.footerSupportHeading.trim())setSupportHeading(data.settings.footerSupportHeading.trim());
         if(typeof data.settings.supportEmail==="string")setSupportEmail(data.settings.supportEmail.trim());
         if(typeof data.settings.supportPhone==="string")setSupportPhone(data.settings.supportPhone.trim());
         if(typeof data.settings.tagline==="string"&&data.settings.tagline.trim())setTagline(data.settings.tagline.trim());
