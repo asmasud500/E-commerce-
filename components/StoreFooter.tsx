@@ -13,7 +13,11 @@ const ICONS={
 };
 
 export default function StoreFooter(){
-  const [storeName,setStoreName]=useState("MART Store");\n  const [logoUrl,setLogoUrl]=useState("");\n  const [shopHeading,setShopHeading]=useState("Shop");\n  const [accountHeading,setAccountHeading]=useState("Your account");\n  const [supportHeading,setSupportHeading]=useState("Customer support");
+  const [storeName,setStoreName]=useState("MART Store");
+  const [logoUrl,setLogoUrl]=useState("");
+  const [shopHeading,setShopHeading]=useState("Shop");
+  const [accountHeading,setAccountHeading]=useState("Your account");
+  const [supportHeading,setSupportHeading]=useState("Customer support");
   const [supportEmail,setSupportEmail]=useState("");
   const [supportPhone,setSupportPhone]=useState("");
   const [tagline,setTagline]=useState("Quality products, simple shopping.");
