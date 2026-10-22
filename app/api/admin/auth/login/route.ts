@@ -36,6 +36,7 @@ export async function POST(req:NextRequest){
   }else{
     const staff=await db.staffAccount.findFirst({where:{email,active:true}});
     if(!staff?.passwordHash||!(STAFF_ROLES as readonly string[]).includes(staff.role)||!(await verifyStaffPassword(password,String(staff.passwordHash)))){
+      try{await db.auditLog.create({data:{actorId:email||"UNKNOWN",action:"ADMIN_LOGIN_FAILED",entity:"adminSession",entityId:null,metadata:{reason:"invalid_credentials"}}});}catch{}
       return NextResponse.json({error:"Invalid credentials"},{status:401});
     }
     role=staff.role;staffId=staff.id;
