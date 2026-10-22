@@ -47,7 +47,7 @@ export default function TrackClient({initialOrder}:{initialOrder:string}){
 
   return (
     <div className="trk">
-      <nav className="pg-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><Icon name="chevronRight" size={14}/><b>Track order</b></nav>
+      <nav className="pg-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><Icon name="chevronRight" size={14}/><b>Track My Order</b></nav>
       <section className="pg-card trk-form">
         <h1>Track your order</h1>
         <p>Enter any one: your order number, mobile number, or email address.</p>
