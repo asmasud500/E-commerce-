@@ -36,6 +36,17 @@ export async function GET(req: NextRequest) {
       return { feature, total: featureLogs.length, success: featureLogs.filter((r:any)=>r.status==="SUCCESS").length, fallbacks: featureLogs.filter((r:any)=>r.status==="FALLBACK").length, errors: featureLogs.filter((r:any)=>r.status==="ERROR").length, avgLatencyMs: featureLogs.length ? Math.round(featureLogs.reduce((s:number,r:any)=>s+Number(r.latencyMs||0),0)/featureLogs.length) : 0, inputTokens: featureLogs.reduce((s:number,r:any)=>s+Number(r.inputTokens||0),0), outputTokens: featureLogs.reduce((s:number,r:any)=>s+Number(r.outputTokens||0),0) };
     }));
   } catch (error) { console.error("AI Studio telemetry read failed", error instanceof Error ? error.message : "unknown"); }
+  const dailyUsage = Array.from({ length: 7 }, (_, index) => {
+    const day = new Date();
+    day.setUTCHours(0, 0, 0, 0);
+    day.setUTCDate(day.getUTCDate() - (6 - index));
+    const key = day.toISOString().slice(0, 10);
+    const dayLogs = logs.filter((row:any) => {
+      const date = new Date(row.createdAt);
+      return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === key;
+    });
+    return { date: key, label: day.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }), total: dayLogs.length, successes: dayLogs.filter((row:any)=>row.status==="SUCCESS").length, fallbacks: dayLogs.filter((row:any)=>row.status==="FALLBACK").length, errors: dayLogs.filter((row:any)=>row.status==="ERROR").length };
+  });
   const successes = logs.filter(r=>r.status==="SUCCESS").length;
   const errors = logs.filter(r=>r.status==="ERROR").length;
   const fallbacks = logs.filter(r=>r.status==="FALLBACK").length;
@@ -43,6 +54,7 @@ export async function GET(req: NextRequest) {
     settings: { enabled: settings.enabled !== false, model: settings.model || DEFAULT_GEMINI_MODEL, features: settings.features || {}, dailyRequestLimit: settings.dailyRequestLimit || 300, maxOutputTokens: settings.maxOutputTokens || 900, updatedAt: settings.updatedAt || null, updatedBy: settings.updatedBy || null },
     metrics: { window: "7 days", recordLimit: 3000, sampled: logs.length >= 3000, total: logs.length, successes, errors, fallbacks, successRate: logs.length ? Math.round((successes + fallbacks) / logs.length * 100) : null, avgLatencyMs: logs.length ? Math.round(logs.reduce((s:number,r:any)=>s+Number(r.latencyMs||0),0)/logs.length) : null, inputTokens: logs.reduce((s:number,r:any)=>s+Number(r.inputTokens||0),0), outputTokens: logs.reduce((s:number,r:any)=>s+Number(r.outputTokens||0),0), quota: "Provider quota is not exposed by this API; check Google AI Studio." },
     features: counts,
+    dailyUsage,
     logs: logs.slice(0,60).map(r=>({id:r.id,feature:r.feature,model:r.model,status:r.status,latencyMs:r.latencyMs,inputTokens:r.inputTokens,outputTokens:r.outputTokens,errorCode:r.errorCode,actorType:r.actorType,createdAt:r.createdAt})),
     drafts: drafts.map(d=>({id:d.id,feature:d.feature,title:d.title,status:d.status,createdBy:d.createdBy,createdAt:d.createdAt,updatedAt:d.updatedAt,content:d.content,metadata:d.metadata}))
   }, { headers: noStore() });
