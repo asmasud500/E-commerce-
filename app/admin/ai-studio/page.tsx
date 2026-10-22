@@ -115,7 +115,7 @@ export default function AiStudioPage() {
           </section>
         </div>
         <section className="ai-panel ai-daily-chart"><div className="ai-panel-heading"><div><h2>Daily request activity</h2><p>Recorded requests by UTC day from the current telemetry sample, including fallback outcomes.</p></div></div>
-          <div className="ai-daily-bars">{dailyUsage.map((day:AnyObj)=><div className="ai-daily-item" key={day.date}><div className="ai-daily-value">{day.total}</div><div className="ai-daily-track"><span style={{width:(day.total?Math.max(4,Number(day.total)/maxDailyUsage*100):0)+"%"}}/></div><small>{day.label}</small><em>{day.errors} errors · {day.fallbacks} fallback</em></div>)}</div>
+          <div className="ai-daily-bars">{dailyUsage.map((day:AnyObj)=><div className="ai-daily-item" key={day.date}><div className="ai-daily-value">{day.total}</div><div className="ai-daily-track"><span style={{height:(day.total?Math.max(4,Number(day.total)/maxDailyUsage*100):0)+"%"}}/></div><small>{day.label}</small><em>{day.errors} errors · {day.fallbacks} fallback</em></div>)}</div>
           <div className="ai-chart-legend"><span><i/>Total recorded requests</span><span>Data may be truncated if the 3,000-record limit is reached.</span></div>
         </section>
       </>}
