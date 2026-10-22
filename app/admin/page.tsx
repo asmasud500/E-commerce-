@@ -23,6 +23,7 @@ const modules = [
   { title: "Store banners", desc: "Manage promotional banner content, links, ordering and visibility.", href: "/admin/banners", icon: "▧", tag: "Merchandising" },
   { title: "Flash sales", desc: "Manage scheduled product promotions and sale campaigns.", href: "/admin/flash-sales", icon: "⚡", tag: "Marketing" },
   { title: "Activity log", desc: "Review available recent records of store and order operations.", href: "/admin/activity", icon: "◷", tag: "Audit" },
+  { title: "Security center", desc: "Review successful and failed admin sign-ins, staff last-login details and sensitive audit events.", href: "/admin/security", icon: "⛨", tag: "Security" },
   { title: "Storage health", desc: "Monitor image storage, backup queue, storage usage and retry failed backups.", href: "/admin/storage", icon: "☁", tag: "System" },
 ];
 
