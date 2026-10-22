@@ -10,6 +10,7 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
   const [count,setCount]=useState(0);
   const [cats,setCats]=useState<Cat[]>(categories||[]);
   const [storeName,setStoreName]=useState("MART Store");
+  const [logoUrl,setLogoUrl]=useState("");
   const [announcement,setAnnouncement]=useState("");
 
   useEffect(()=>{
@@ -22,7 +23,7 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
 
   useEffect(()=>{
     let off=false;
-    fetch("/api/storefront/config",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(off||!d?.settings)return;const name=typeof d.settings.storeName==="string"?d.settings.storeName.trim():"";if(name)setStoreName(name);if(typeof d.settings.announcement==="string")setAnnouncement(d.settings.announcement.trim())}).catch(()=>{});
+    fetch("/api/storefront/config",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(off||!d?.settings)return;const name=typeof d.settings.storeName==="string"?d.settings.storeName.trim():"";if(name)setStoreName(name);if(typeof d.settings.logoUrl==="string")setLogoUrl(d.settings.logoUrl.trim());if(typeof d.settings.announcement==="string")setAnnouncement(d.settings.announcement.trim())}).catch(()=>{});
     return()=>{off=true};
   },[]);
 
@@ -38,7 +39,7 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
     {announcement&&<div className="sh-announcement"><span aria-hidden="true">✦</span>{announcement}</div>}
     <header className="sh">
       <div className="sh-in">
-        <Link href="/" className="sh-logo" aria-label={`${storeName} home`}><span className="sh-logo-name">{storeName}</span><span className="sh-logo-dot">.</span></Link>
+        <Link href="/" className="sh-logo" aria-label={`${storeName} home`}>{logoUrl&&<img className="sh-logo-image" src={logoUrl} alt="" /> }<span className="sh-logo-name">{storeName}</span>{!logoUrl&&<span className="sh-logo-dot">.</span>}</Link>
         <form action="/products" method="get" role="search" className="sh-search">
           <select name="category" defaultValue="" aria-label="Search category">
             <option value="">All categories</option>
