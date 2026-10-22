@@ -3294,3 +3294,114 @@ button:disabled,input[type="button"]:disabled,input[type="submit"]:disabled,inpu
  .product-card button,.product-buy-card button,.cart-summary button,.cart-item button,.catalog-filters button,.empty-state button{min-height:34px;padding:7px 10px;font-size:12px}
  .hp-atc{min-height:34px;padding:7px 9px}
 }
+
+
+/* MART unified Navy + Orange design system refresh */
+:root{
+  color-scheme:light;
+  --bg:#f3f5f9;
+  --surface:#ffffff;
+  --text:#14213d;
+  --muted:#64748b;
+  --line:#e2e8f0;
+  --brand:#102344;
+  --accent:#ff6b00;
+  --accent-2:#e85d04;
+  --success:#07845e;
+  --danger:#c93636;
+  --radius:14px;
+  --shadow:0 8px 26px rgba(16,35,68,.065);
+  --navy-950:#0b1730;
+  --navy-900:#102344;
+  --navy-800:#17345e;
+  --orange-500:#ff6b00;
+  --orange-600:#e85d04;
+}
+html{background:var(--bg);scroll-padding-top:100px}
+body{background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+h1,h2,h3,h4{color:var(--navy-900);letter-spacing:-.035em}
+p{color:#526178}
+a{transition:color .18s ease}
+a:hover{color:var(--accent)}
+::selection{background:#ffe0c7;color:var(--navy-950)}
+input,select,textarea{border-color:#d7dfeb;border-radius:10px;background:#fff;color:var(--navy-900)}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,107,0,.13)}
+:focus-visible{outline-color:rgba(255,107,0,.65)}
+/* Header and shopping navigation */
+.site-header{background:rgba(16,35,68,.97);border-bottom:1px solid rgba(255,255,255,.12);color:#fff}
+.site-header .brand,.site-header .site-nav a{color:#fff}
+.site-header .site-nav a:hover{color:#ffad75}
+.site-header .nav-cart{background:#fff;color:var(--navy-900);border-color:rgba(255,255,255,.18)}
+.site-header .nav-cart:hover{color:var(--accent)}
+.brand span{color:#ff8a35}
+.site-footer{background:var(--navy-950);color:#e7edf7;border-top:3px solid var(--accent)}
+.site-footer p,.site-footer small,.site-footer a{color:#b9c5d8}
+.site-footer a:hover{color:#ff9a52}
+.site-footer small{border-color:rgba(255,255,255,.13)}
+/* Main store header: deep navy brand strip, orange search action, calm white controls */
+.sh{background:var(--navy-900)!important;color:#fff!important;border-bottom:1px solid rgba(255,255,255,.14)!important;box-shadow:0 5px 18px rgba(11,23,48,.13)}
+.sh .sh-logo,.sh .sh-logo-name{color:#fff!important}
+.sh .sh-logo-dot{color:#ff8a35!important}
+.sh .sh-act{color:#e7edf7!important;border:1px solid transparent}
+.sh .sh-act:hover{background:rgba(255,255,255,.09)!important;color:#fff!important}
+.sh .sh-search{background:#fff;border:2px solid var(--accent);border-radius:11px;overflow:hidden}
+.sh .sh-search select,.sh .sh-search input{background:#fff;color:var(--navy-900);border:0;box-shadow:none}
+.sh .sh-search button{background:var(--accent)!important;color:#fff!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+.sh .sh-search button:hover{background:var(--accent-2)!important;transform:none}
+.sh .sh-badge{background:var(--accent)!important;color:#fff!important}
+.sh-subnav{background:#fff!important;color:var(--navy-900)!important;border-bottom:1px solid var(--line)!important;box-shadow:0 3px 10px rgba(16,35,68,.035)}
+.sh-subnav a{color:var(--navy-900)!important}
+.sh-subnav a:hover{color:var(--accent)!important}
+.sh .sh-announcement,.sh-announcement{background:var(--accent)!important;color:#fff!important}
+/* Orange is reserved for primary actions; secondary controls remain navy/neutral. */
+button{border-color:#d9e1ec;color:var(--navy-900)}
+button:hover{border-color:#bdc9d9}
+button[style*="background: rgb(255, 104, 1)"],button[style*="background:#ff6801"],button[style*="background: #ff6801"]{background:var(--accent)!important;color:#fff!important}
+.primary-cta,.hp-btn,.hp-atc,.full-cta,.mart-auth-submit{background:linear-gradient(110deg,#ff790f,#f05e00)!important;color:#fff!important;border-color:#f36a08!important;box-shadow:0 5px 14px rgba(255,107,0,.18)}
+.primary-cta:hover,.hp-btn:hover,.hp-atc:hover,.full-cta:hover,.mart-auth-submit:hover:not(:disabled){background:linear-gradient(110deg,#f36a08,#d95000)!important;color:#fff!important;box-shadow:0 8px 20px rgba(255,107,0,.24)}
+.secondary-cta,.hp-btn-line{background:#fff!important;color:var(--navy-900)!important;border:1px solid #cbd5e1!important;box-shadow:none!important}
+.secondary-cta:hover,.hp-btn-line:hover{background:#f4f7fb!important;color:var(--accent)!important;border-color:#ffb27d!important}
+.status-badge.success{background:#e7f7ef;color:#08744f}
+.status-badge.warning{background:#fff3e7;color:#a84b00}
+.status-badge.danger{background:#fff0f0;color:#b42318}
+/* Cards, product surfaces and section rhythm */
+article,.admin-card,.stat-card,.product-buy-card,.table-wrap,.admin-quick a{border-color:#e0e6ef!important;border-radius:15px;box-shadow:0 5px 18px rgba(16,35,68,.045)}
+article:hover{box-shadow:0 12px 28px rgba(16,35,68,.09)}
+.stat-card strong{color:var(--navy-900)}
+.admin-kicker,.eyebrow{color:var(--accent)}
+.table-wrap th{background:#f0f4f9;color:#435573}
+.table-wrap th,.table-wrap td{border-bottom-color:#e8edf4}
+.checkout-steps span{background:#e7edf5;color:#53647e}
+.checkout-steps span.active{background:var(--navy-900);color:#fff;border-bottom:3px solid var(--accent)}
+.product-price{color:var(--navy-900)}
+/* Admin: unmistakable navy workspace with orange active states and readable content */
+.admin-layout{background:#f3f5f9}
+.admin-sidebar{background:linear-gradient(180deg,var(--navy-950),var(--navy-900));border-right:1px solid rgba(255,255,255,.08)}
+.admin-brand{color:#fff}
+.admin-brand small{color:#91a4c2}
+.admin-sidebar nav a{color:#b8c6da;border:1px solid transparent;transition:background .18s,border-color .18s,color .18s}
+.admin-sidebar nav a:hover{background:rgba(255,255,255,.07);color:#fff}
+.admin-sidebar nav a.active{background:rgba(255,107,0,.16);border-color:rgba(255,140,65,.25);color:#ff9a52;box-shadow:inset 3px 0 0 var(--accent)}
+.admin-store-link{color:#b8c6da}
+.admin-content{background:#f3f5f9}
+.admin-page-head h1,.admin-content h1{color:var(--navy-900)}
+.admin-content button,.admin-card button,.table-wrap button{border-radius:9px}
+.admin-content button[class*="danger"],.admin-card button[class*="danger"],.table-wrap button[class*="danger"]{background:#fff1f1;color:#b42318;border-color:#fecaca}
+.admin-content button[class*="primary"],.admin-card button[class*="primary"],.table-wrap button[class*="primary"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* Authentication pages: keep the same navy/orange brand */
+.mart-auth-page{background:radial-gradient(ellipse at top left,#e5ebf5 0%,#f3f5f9 48%,#fff4eb 100%)!important}
+.mart-auth-story{background:linear-gradient(145deg,var(--navy-950),var(--navy-800))!important}
+.mart-auth-brand-mark{background:var(--accent)!important;color:#fff!important}
+.mart-auth-heading h2{color:var(--navy-900)}
+.mart-auth-submit{background:linear-gradient(100deg,#ff790f,#f05e00)!important}
+/* Mobile layout: retain legibility and compact tap targets */
+@media(max-width:760px){
+ .sh{padding-top:0}
+ .sh .sh-in{gap:10px}
+ .sh .sh-act{padding:6px 7px}
+ .admin-sidebar{border-radius:0 0 14px 14px}
+ .admin-content{padding-top:20px}
+ .site-header-inner{background:var(--navy-900)}
+ .site-header .site-nav a{color:#fff}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
