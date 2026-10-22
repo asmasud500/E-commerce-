@@ -18,10 +18,18 @@ const schema=z.object({
   accentColor:z.string().trim().regex(/^#[0-9a-fA-F]{6}$/,"Use a hex colour like #ff6801").optional(),
   address:z.string().trim().max(300).optional(),
   whatsapp:z.string().trim().max(40).optional(),
-  facebookUrl:z.string().trim().max(300).refine(v=>v===""||/^https:\/\/[^\s]+$/.test(v),"Facebook link must start with https://").optional()
-}).strict();
+  facebookUrl:z.string().trim().max(300).refine(v=>v===""||/^https:\/\/[^\s]+$/.test(v),"Facebook link must start with https://").optional(),
+  instagramUrl:z.string().trim().max(300).refine(v=>v===""||/^https:\/\/[^\s]+$/.test(v),"Instagram link must start with https://").optional(),
+  youtubeUrl:z.string().trim().max(300).refine(v=>v===""||/^https:\/\/[^\s]+$/.test(v),"YouTube link must start with https://").optional(),
+  openingHours:z.string().trim().max(200).optional(),
+  contactIntro:z.string().trim().max(300).optional(),
+  aboutIntro:z.string().trim().max(300).optional(),
+  aboutBody:z.string().trim().max(5000).optional(),
+  footerNote:z.string().trim().max(200).optional(),
+  copyrightText:z.string().trim().max(200).optional()
+}).strip();
 
-const defaults={id:"store",storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:"",tagline:"Quality products, simple shopping.",brandColor:"#131921",accentColor:"#ff6801",address:"",whatsapp:"",facebookUrl:""};
+const defaults={id:"store",storeName:"MART Store",supportEmail:"",supportPhone:"",currency:"BDT",defaultDeliveryFee:120,freeShippingThreshold:3000,taxEnabled:false,taxRate:0,announcement:"",tagline:"Quality products, simple shopping.",brandColor:"#131921",accentColor:"#ff6801",address:"",whatsapp:"",facebookUrl:"",instagramUrl:"",youtubeUrl:"",openingHours:"",contactIntro:"",aboutIntro:"",aboutBody:"",footerNote:"",copyrightText:""};
 
 export async function GET(){
   try{

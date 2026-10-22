@@ -10,6 +10,11 @@ export default function StoreFooter(){
   const [address,setAddress]=useState("");
   const [whatsapp,setWhatsapp]=useState("");
   const [facebookUrl,setFacebookUrl]=useState("");
+  const [instagramUrl,setInstagramUrl]=useState("");
+  const [youtubeUrl,setYoutubeUrl]=useState("");
+  const [openingHours,setOpeningHours]=useState("");
+  const [footerNote,setFooterNote]=useState("A smoother way to shop online.");
+  const [copyrightText,setCopyrightText]=useState("");
 
   useEffect(()=>{
     let cancelled=false;
@@ -21,6 +26,11 @@ export default function StoreFooter(){
         if(typeof data.settings.supportEmail==="string")setSupportEmail(data.settings.supportEmail.trim());
         if(typeof data.settings.supportPhone==="string")setSupportPhone(data.settings.supportPhone.trim());
         if(typeof data.settings.tagline==="string"&&data.settings.tagline.trim())setTagline(data.settings.tagline.trim());
+        const link=(v:any)=>typeof v==="string"&&/^https:\/\//.test(v)?v.trim():"";
+        setInstagramUrl(link(data.settings.instagramUrl));setYoutubeUrl(link(data.settings.youtubeUrl));
+        if(typeof data.settings.openingHours==="string")setOpeningHours(data.settings.openingHours.trim());
+        if(typeof data.settings.footerNote==="string"&&data.settings.footerNote.trim())setFooterNote(data.settings.footerNote.trim());
+        if(typeof data.settings.copyrightText==="string")setCopyrightText(data.settings.copyrightText.trim());
         if(typeof data.settings.address==="string")setAddress(data.settings.address.trim());
         if(typeof data.settings.whatsapp==="string")setWhatsapp(data.settings.whatsapp.replace(/[^0-9]/g,""));
         if(typeof data.settings.facebookUrl==="string"&&/^https:\/\//.test(data.settings.facebookUrl))setFacebookUrl(data.settings.facebookUrl.trim());
@@ -34,7 +44,7 @@ export default function StoreFooter(){
         <div className="sf-brand">
           <Link href="/" className="sh-logo" aria-label={storeName+" home"}><span className="sh-logo-name">{storeName}</span><span className="sh-logo-dot">.</span></Link>
           <p>{tagline}</p>
-          <small className="sf-trust-note">A smoother way to shop online.</small>
+          <small className="sf-trust-note">{footerNote}</small>
         </div>
         <div>
           <h3>Shop</h3>
@@ -55,11 +65,14 @@ export default function StoreFooter(){
           {supportEmail&&<a href={"mailto:"+supportEmail}>Email: {supportEmail}</a>}
           {whatsapp&&<a href={"https://wa.me/"+whatsapp} target="_blank" rel="noopener noreferrer">WhatsApp: +{whatsapp}</a>}
           {facebookUrl&&<a href={facebookUrl} target="_blank" rel="noopener noreferrer">Facebook page</a>}
+          {instagramUrl&&<a href={instagramUrl} target="_blank" rel="noopener noreferrer">Instagram</a>}
+          {youtubeUrl&&<a href={youtubeUrl} target="_blank" rel="noopener noreferrer">YouTube</a>}
+          {openingHours&&<p>Hours: {openingHours}</p>}
           {address&&<p>{address}</p>}
-          {!supportPhone&&!supportEmail&&!whatsapp&&!facebookUrl&&!address&&<p>For order assistance, visit your account or check your order details.</p>}
+          {!supportPhone&&!supportEmail&&!whatsapp&&!facebookUrl&&!instagramUrl&&!youtubeUrl&&!address&&!openingHours&&<p>For order assistance, visit your account or check your order details.</p>}
         </div>
         <nav className="sf-links" aria-label="Store policies"><Link href="/about">About us</Link><Link href="/contact">Contact</Link><Link href="/shipping-policy">Delivery</Link><Link href="/return-policy">Returns &amp; refunds</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav>
-        <small className="sf-copyright">© {new Date().getFullYear()} {storeName}. All rights reserved.</small>
+        <small className="sf-copyright">{copyrightText||`© ${new Date().getFullYear()} ${storeName}. All rights reserved.`}</small>
       </div>
     </footer>
   );
