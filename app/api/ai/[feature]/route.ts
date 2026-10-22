@@ -48,11 +48,13 @@ function rankProducts(products: any[], query: string) {
   }));
 }
 async function getCatalog() {
-  const [products, categories, images] = await Promise.all([
+  const [products, categories] = await Promise.all([
     db.product.findMany({ where: { published: true }, take: 300 }),
-    db.category.findMany({}),
-    db.productImage.findMany({ take: 600, orderBy: { sortOrder: "asc" } })
+    db.category.findMany({})
   ]);
+  const productIds = (products as any[]).map(p => String(p.id)).filter(Boolean);
+  const batches = Array.from({ length: Math.ceil(productIds.length / 30) }, (_, i) => productIds.slice(i * 30, (i + 1) * 30));
+  const images = (await Promise.all(batches.map(ids => db.productImage.findMany({ where: { productId: { in: ids } }, orderBy: { sortOrder: "asc" } })))).flat();
   const categoryById = new Map<string, any>((categories as any[]).map(c=>[c.id,c] as [string, any]));
   const imagesById = new Map<string,any[]>();
   for (const image of images as any[]) { const arr=imagesById.get(image.productId)||[]; arr.push(image); imagesById.set(image.productId,arr); }
