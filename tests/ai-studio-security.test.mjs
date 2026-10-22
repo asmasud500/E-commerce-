@@ -51,7 +51,7 @@ test("AI telemetry and draft collections are mapped to the existing Firestore ad
 });
 
 test("storefront assistant warns users not to share authentication or payment secrets", () => {
-  assert.match(storefrontAssistant, /Don't share OTPs, passwords, or payment secrets/);
+  assert.match(storefrontAssistant, /Don't share personal details, OTPs, passwords, or payment secrets/);
   assert.match(storefrontAssistant, /customer-support/);
   assert.match(storefrontAssistant, /shopping-assistant/);
 });
