@@ -28,6 +28,7 @@ function allowedRequest(key: string) {
 function errorResponse(code: string, message: string, status: number) {
   return NextResponse.json({ error: { code, message } }, { status, headers: { "Cache-Control": "no-store" } });
 }
+function redactSensitive(s: string) { return s.slice(0,4000).replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, "[redacted email]").replace(/\\+?\\d[\\d\\s().-]{8,}\\d/g, "[redacted number]").replace(/\\b(?:otp|password|passcode|pin)\\s*[:=]?\\s*\\S+/gi, "[redacted secret]"); }
 function words(s: string) { return s.toLowerCase().normalize("NFKC").split(/[^\p{L}\p{N}]+/u).filter(x => x.length > 1); }
 function rankProducts(products: any[], query: string) {
   const tokens = words(query);
@@ -94,7 +95,8 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
     const usedToday = await db.aiRequestLog.count({ where: { createdAt: { gte: today } } }).catch(() => 0);
     if (usedToday >= Number(settings.dailyRequestLimit || 300)) return errorResponse("DAILY_LIMIT_REACHED", "The store's daily AI request limit has been reached. Try again tomorrow.", 429);
 
-    const conversationText = (input.conversation || []).map(m => m.role.toUpperCase()+": "+m.text).join("\n").slice(0,9000);
+    const safeUserInput = redactSensitive(input.input || "");
+    const conversationText = (input.conversation || []).map(m => m.role.toUpperCase()+": "+redactSensitive(m.text)).join("\n").slice(0,9000);
     let prompt = "";
     let draftTitle = "";
     let draftMetadata: Record<string, unknown> = {};
@@ -106,16 +108,16 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
       if (feature === "product-description" && !product && !input.productName) return errorResponse("PRODUCT_REQUIRED", "Choose a product or provide a product name.", 400);
       if (feature === "product-description") {
         const p = product || { name: input.productName, description: input.input || "", price: null, sku: null };
-        prompt = "Create an accurate, conversion-friendly product listing using only the supplied facts. Do not invent specifications, warranty, stock, shipping time, origin, certifications, or claims. Include a short title, description, 4-6 benefit bullets, and SEO title/meta description. Return plain text. Language: "+(input.language||"Bangla and English")+"; tone: "+(input.tone||"professional")+". Product facts: "+JSON.stringify({name:p.name,description:p.description,price:p.price,sku:p.sku,categoryId:p.categoryId,stock:p.stock,options:p.options,variants:p.variants,extraNotes:input.input||""});
+        prompt = "Create an accurate, conversion-friendly product listing using only the supplied facts. Do not invent specifications, warranty, stock, shipping time, origin, certifications, or claims. Include a short title, description, 4-6 benefit bullets, and SEO title/meta description. Return plain text. Language: "+(input.language||"Bangla and English")+"; tone: "+(input.tone||"professional")+". Product facts: "+JSON.stringify({name:p.name,description:p.description,price:p.price,sku:p.sku,categoryId:p.categoryId,stock:p.stock,options:p.options,variants:p.variants,extraNotes:safeUserInput});
         draftTitle = "Product description — " + String(p.name || input.productName);
         draftMetadata = { productId: product?.id || null };
       } else {
-        prompt = "Create a practical marketing campaign draft for a Bangladesh e-commerce store. Include campaign concept, audience, 3 social captions, one short ad headline, CTA and a 7-day content schedule. Do not claim discounts or product facts unless supplied. Language: "+(input.language||"Bangla and English")+"; tone: "+(input.tone||"friendly")+". Brief: "+(input.input||"General store awareness campaign")+"; selected product facts: "+JSON.stringify(product ? {name:product.name,description:product.description,price:product.price,salePrice:product.salePrice} : {});
+        prompt = "Create a practical marketing campaign draft for a Bangladesh e-commerce store. Include campaign concept, audience, 3 social captions, one short ad headline, CTA and a 7-day content schedule. Do not claim discounts or product facts unless supplied. Language: "+(input.language||"Bangla and English")+"; tone: "+(input.tone||"friendly")+". Brief: "+(safeUserInput||"General store awareness campaign")+"; selected product facts: "+JSON.stringify(product ? {name:product.name,description:product.description,price:product.price,salePrice:product.salePrice} : {});
         draftTitle = "Marketing campaign — " + (input.productName || "Store campaign");
         draftMetadata = { productId: product?.id || null };
       }
     } else if (feature === "smart-search") {
-      const q = input.input || "";
+      const q = safeUserInput;
       resultProducts = rankProducts(catalog, q);
       prompt = "Rewrite this product search as a short query intent phrase, preserving the customer's language. Do not invent products. Query: "+q+"\nCandidate catalog (for context only): "+JSON.stringify(resultProducts.map(p=>({name:p.name,category:p.category})));
     } else if (feature === "customer-support") {
