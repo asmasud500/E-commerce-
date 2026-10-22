@@ -89,7 +89,7 @@ The admin workspace at `/admin/ai-studio` manages six AI capabilities: product d
 ### Configuration
 
 - Create an API key in Google AI Studio and configure it as the encrypted Cloudflare Worker secret `GEMINI_API_KEY`. Never use a `NEXT_PUBLIC_*` variable and never commit the real key.
-- Default model ID: `gemini-3.1-flash-lite`. Model availability and free-tier limits depend on the Google AI Studio project and can change; verify the current quota dashboard before enabling traffic.
+- Default model ID: `gemini-3.5-flash-lite`. Model availability and free-tier limits depend on the Google AI Studio project and can change; verify the current quota dashboard before enabling traffic.
 - AI Studio settings are stored in Firestore. Only a super admin can change global settings/model/limits; super admins and managers can review drafts and view telemetry.
 - Run a connection test from AI Studio after setting the secret. A successful connection test proves the API key/model can answer a small prompt; it does not prove that the project's quota is sufficient for production traffic.
 
