@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type {Metadata} from "next";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import {Icon,categoryIcon} from "@/components/Icons";
@@ -16,7 +17,8 @@ const num=(v:any)=>v==null||v===""?null:Number(v);
 const time=(v:any)=>{const t=new Date(v?.toDate?.()??v).getTime();return Number.isFinite(t)?t:0};
 
 async function loadHome(){
-  let categories:any[]=[],products:any[]=[],images:any[]=[],banners:any[]=[],flashSales:any[]=[];
+  let categories:any[]=[],products:any[]=[],images:any[]=[],banners:any[]=[],flashSales:any[]=[],settings:any={};
+  try{settings=await db.storeSetting.findUnique({where:{id:"store"}})||{}}catch(error){console.error("Home store settings error:",error instanceof Error?error.message:String(error));}
   let reviews:any[]=[],paidOrders:any[]=[],orderItems:any[]=[];
   try{
     [categories,products,flashSales]=await Promise.all([
@@ -127,7 +129,7 @@ export default async function Home(){
     <>
       <StoreHeader categories={categories.map((c:any)=>({name:c.name,slug:c.slug}))}/>
       <main className="hp">
-        <h1 className="sr-only">Store: online shopping for quality products</h1>
+        <h1 className="sr-only">{settings.seoTitle||settings.storeName||"Store"}: online shopping</h1>
 
         <div className="hp-hero">
           <aside className="hp-cats" aria-label="Shop by category">
@@ -143,17 +145,17 @@ export default async function Home(){
               <Link href="/products" className="hp-cat hp-cat-all"><Icon name="grid" size={19} className="hp-cat-ic"/><span>All products</span><Icon name="chevronRight" size={16} className="hp-cat-go"/></Link>
             </div>
           </aside>
-          <HeroSlider flashImages={flashImages} newImages={newImages} flashHref={hasFlash?"#flash-sale":"/products"}/>
+          <HeroSlider flashImages={flashImages} newImages={newImages} flashHref={hasFlash?"#flash-sale":"/products"} settings={settings}/>
         </div>
 
-        <section className="hp-benefits" aria-label="Shopping benefits">
+        {settings.showBenefits!==false&&<section className="hp-benefits" aria-label="Shopping benefits">
           <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">✓</span><span><strong>Simple, secure checkout</strong><small>Clear order details before you pay</small></span></div>
           <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">৳</span><span><strong>Local payment options</strong><small>Choose an available payment method</small></span></div>
           <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">↗</span><span><strong>Order updates</strong><small>Keep track of your order status</small></span></div>
         </section>
 
         {banners.length>0&&<section className="hp-promo-section" aria-label="Store promotions">
-          <div className="hp-promo-heading"><span>CURATED FOR YOU</span><h2>Offers &amp; Highlights</h2><p>Discover the latest deals from our store.</p></div>
+          <div className="hp-promo-heading"><span>CURATED FOR YOU</span><h2>{settings.offersHeading||"Offers & Highlights"}</h2><p>{settings.offersDescription||"Discover the latest deals from our store."}</p></div>
           <div className="hp-promo-grid">
           {banners.map((b:any)=>{const href=typeof b.href==="string"&&b.href.startsWith("/")?b.href:(typeof b.href==="string"&&b.href.startsWith("https://")?b.href:"/products");const external=href.startsWith("https://");return <Link key={b.id} href={href} className="hp-promo-card" {...(external?{target:"_blank",rel:"noopener noreferrer"}:{})}>
             <div className="hp-promo-image"><img src={b.imageUrl} alt={b.title||"Store promotion"} loading="lazy" decoding="async"/><span className="hp-promo-badge">SPECIAL OFFER</span><span className="hp-promo-arrow" aria-hidden="true">↗</span></div>
@@ -171,11 +173,11 @@ export default async function Home(){
           </div>
         </nav>
 
-        {hasFlash&&(
+        {settings.showFlashSale!==false&&hasFlash&&(
           <section className="hp-sec" id="flash-sale" aria-labelledby="flash-h">
             <div className="hp-card">
               <div className="hp-sec-h">
-                <h2 id="flash-h"><Icon name="bolt" size={24} className="hp-bolt"/> Flash Sale</h2>
+                <h2 id="flash-h"><Icon name="bolt" size={24} className="hp-bolt"/> {settings.flashSaleHeading||"Flash Sale"}</h2>
                 <FlashCountdown endsAt={flashEndsAt}/>
                 <Link href="/products" className="hp-more">Shop all <Icon name="chevronRight" size={16}/></Link>
               </div>
@@ -184,10 +186,10 @@ export default async function Home(){
           </section>
         )}
 
-        {hasStores&&(
+        {settings.showFeaturedStores!==false&&hasStores&&(
           <section className="hp-sec" id="stores" aria-labelledby="stores-h">
             <div className="hp-sec-h hp-plain">
-              <h2 id="stores-h">Featured Stores</h2>
+              <h2 id="stores-h">{settings.featuredStoresHeading||"Featured Stores"}</h2>
               <Link href="/products" className="hp-more">View all <Icon name="chevronRight" size={16}/></Link>
             </div>
             <div className="hp-stores">
@@ -202,20 +204,20 @@ export default async function Home(){
           </section>
         )}
 
-        {trending.length>0&&(
+        {settings.showTrending!==false&&trending.length>0&&(
           <section className="hp-sec" aria-labelledby="trending-h">
             <div className="hp-sec-h hp-plain">
-              <h2 id="trending-h"><Icon name="trendingUp" size={22}/> Trending Now</h2>
+              <h2 id="trending-h"><Icon name="trendingUp" size={22}/> {settings.trendingHeading||"Trending Now"}</h2>
               <Link href="/products" className="hp-more">Explore popular <Icon name="chevronRight" size={16}/></Link>
             </div>
             <div className="hp-grid">{trending.map(p=><ProductCard key={p.id} p={p}/>)}</div>
           </section>
         )}
 
-        {arrivals.length>0&&(
+        {settings.showNewArrivals!==false&&arrivals.length>0&&(
           <section className="hp-sec" aria-labelledby="arrivals-h">
             <div className="hp-sec-h hp-plain">
-              <h2 id="arrivals-h">New Arrivals</h2>
+              <h2 id="arrivals-h">{settings.newArrivalsHeading||"New Arrivals"}</h2>
               <Link href="/products" className="hp-more">See what's new <Icon name="chevronRight" size={16}/></Link>
             </div>
             <div className="hp-grid">{arrivals.map(p=><ProductCard key={p.id} p={p}/>)}</div>
