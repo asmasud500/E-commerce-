@@ -7,6 +7,7 @@ import { useState } from "react";
 const groups = [
   { title: "Workspace", items: [
     ["/admin", "Overview", "⌂"],
+    ["/admin/ai-studio", "AI Studio", "✦"],
     ["/admin/reports", "Reports & analytics", "▥"],
     ["/admin/activity", "Activity log", "◷"],
   ]},
