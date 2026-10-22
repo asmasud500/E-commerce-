@@ -101,7 +101,7 @@ The admin workspace at `/admin/ai-studio` manages six AI capabilities: product d
 - Public AI endpoints apply input bounds, sensitive-identifier redaction, request timeouts, and per-isolate rate limits. The app-side daily cap is best-effort under concurrency, not a replacement for provider quotas or Cloudflare global rate limiting. This in-memory limiter is not a distributed global rate limiter; apply Cloudflare rate limiting/WAF rules for production-scale abuse protection.
 - Search, shopper discovery and general support provide a deterministic catalog-only fallback when the model is unavailable. The fallback does not claim to verify order/payment status or undocumented store policies.
 - Usage dashboards show recorded application telemetry. The Gemini API does not expose authoritative provider quota through these application endpoints, so check Google AI Studio for actual limits. No paid billing is activated automatically when free quota is exhausted.
-- AI request logs intentionally avoid storing raw prompts and API keys. Generated drafts are retained in the `aiDrafts` Firestore collection and should be reviewed/retained under your store's data policy.
+- AI request logs intentionally avoid storing raw prompts and API keys. Generated drafts are retained in the `aiDrafts` Firestore collection and should be reviewed/retained under your store's data policy. Google AI Studio Free-tier prompts may be used to improve Google products; review the current Google data terms before production and never send sensitive customer data.
 
 ### Staging checklist
 
