@@ -2,6 +2,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { db } from "@/lib/prisma";
 
 export const DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite";
+export const SUPPORTED_GEMINI_MODELS = ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.8-flash"] as const;
 export const AI_FEATURES = [
   "product-description", "smart-search", "customer-support",
   "sales-analyst", "marketing-studio", "shopping-assistant"
@@ -31,7 +32,7 @@ async function envValue(name: string) {
 export async function getAiSettings(): Promise<AiSettings> {
   try {
     const row = await db.aiSetting.findUnique({ where: { id: "global" } });
-    if (row && typeof row === "object") return row as AiSettings;
+    if (row && typeof row === "object") {\n    const stored = row as AiSettings;\n    return { ...stored, model: SUPPORTED_GEMINI_MODELS.includes(stored.model as typeof SUPPORTED_GEMINI_MODELS[number]) ? stored.model : DEFAULT_GEMINI_MODEL };\n  }
   } catch {}
   return { enabled: true, model: DEFAULT_GEMINI_MODEL, features: {}, dailyRequestLimit: 300, maxOutputTokens: 900 };
 }
@@ -40,7 +41,7 @@ export async function saveAiSettings(settings: AiSettings, actor: string) {
   const data = {
     id: "global",
     enabled: settings.enabled !== false,
-    model: String(settings.model || DEFAULT_GEMINI_MODEL).slice(0, 100),
+    model: SUPPORTED_GEMINI_MODELS.includes(settings.model as typeof SUPPORTED_GEMINI_MODELS[number]) ? settings.model : DEFAULT_GEMINI_MODEL,
     features: settings.features || {},
     dailyRequestLimit: Math.min(5000, Math.max(1, Number(settings.dailyRequestLimit || 300))),
     maxOutputTokens: Math.min(4096, Math.max(128, Number(settings.maxOutputTokens || 900))),
@@ -62,7 +63,7 @@ export async function geminiGenerate(args: {
   const settings = await getAiSettings();
   if (!args.skipFeatureCheck && (settings.enabled === false || settings.features?.[args.feature] === false)) throw new Error("AI_FEATURE_DISABLED");
   const model = String(args.model || settings.model || DEFAULT_GEMINI_MODEL).trim();
-  if (!/^[a-zA-Z0-9._-]{3,100}$/.test(model)) throw new Error("AI_MODEL_INVALID");
+  if (!SUPPORTED_GEMINI_MODELS.includes(model as typeof SUPPORTED_GEMINI_MODELS[number])) throw new Error("AI_MODEL_INVALID");
   const maxOutputTokens = Math.min(4096, Math.max(128, Number(args.maxOutputTokens || settings.maxOutputTokens || 900)));
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 25000);
