@@ -104,7 +104,7 @@ export default function AiStudioPage() {
           <article><span>Token usage · 7 days</span><strong>{Number(stats.inputTokens||0)+Number(stats.outputTokens||0) ? (Number(stats.inputTokens||0)+Number(stats.outputTokens||0)).toLocaleString() : "—"}</strong><small>Only tokens reported by Gemini; “—” means none recorded</small></article>
         </div>
         <div className="ai-two-col">
-          <section className="ai-panel"><div className="ai-panel-heading"><div><h2>Feature health</h2><p>Counts from stored request logs, last 7 days.</p></div><button type="button" onClick={()=>void load()}>Refresh</button></div>
+          <section className="ai-panel"><div className="ai-panel-heading"><div><h2>Feature health</h2><p>Counts from up to 3,000 recent request logs in the last 7 days.</p></div><button type="button" onClick={()=>void load()}>Refresh</button></div>
             <div className="ai-feature-list">{FEATURES.map(f=>{const s:any=featureStats.get(f.id)||{};const enabled=settings.enabled&&settings.features?.[f.id]!==false;return <div className="ai-feature-row" key={f.id}><span className="ai-feature-mark">✦</span><div className="ai-feature-main"><strong>{f.title}</strong><small>{s.total??0} logged · {s.errors??0} errors · {s.avgLatencyMs??0} ms avg</small></div><span className={"ai-pill "+(enabled?"good":"muted")}>{enabled?"Enabled":"Disabled"}</span></div>})}</div>
           </section>
           <section className="ai-panel"><h2>Service status</h2><p>Provider quota is not exposed by the Gemini API. Do not treat local request counts as Google quota.</p>
