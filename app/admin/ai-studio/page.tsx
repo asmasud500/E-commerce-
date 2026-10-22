@@ -49,6 +49,8 @@ export default function AiStudioPage() {
   useEffect(()=>{ void load(); },[load]);
 
   const stats = data?.metrics || {};
+  const dailyUsage: AnyObj[] = data?.dailyUsage || [];
+  const maxDailyUsage = Math.max(1, ...dailyUsage.map((day:AnyObj)=>Number(day.total||0)));
   const featureStats = useMemo(()=>new Map<string, AnyObj>((data?.features||[]).map((x:AnyObj)=>[x.feature,x] as [string, AnyObj])),[data]);
   const setFeature = (id:string, enabled:boolean) => setSettings((s:AnyObj)=>({...s,features:{...(s.features||{}),[id]:enabled}}));
 
@@ -112,6 +114,10 @@ export default function AiStudioPage() {
             <button className="ai-primary" onClick={()=>{setTab("settings");void testConnection();}} disabled={testing}>{testing?"Testing…":"Test Gemini connection"}</button>
           </section>
         </div>
+        <section className="ai-panel ai-daily-chart"><div className="ai-panel-heading"><div><h2>Daily request activity</h2><p>Recorded requests by UTC day from the current telemetry sample, including fallback outcomes.</p></div></div>
+          <div className="ai-daily-bars">{dailyUsage.map((day:AnyObj)=><div className="ai-daily-item" key={day.date}><div className="ai-daily-value">{day.total}</div><div className="ai-daily-track"><span style={{width:(day.total?Math.max(4,Number(day.total)/maxDailyUsage*100):0)+"%"}}/></div><small>{day.label}</small><em>{day.errors} errors · {day.fallbacks} fallback</em></div>)}</div>
+          <div className="ai-chart-legend"><span><i/>Total recorded requests</span><span>Data may be truncated if the 3,000-record limit is reached.</span></div>
+        </section>
       </>}
       {tab==="features" && <div className="ai-two-col">
         <section className="ai-panel"><h2>Feature controls</h2><p>Switch features on or off independently. Changes apply after saving.</p>
