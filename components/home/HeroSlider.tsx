@@ -3,11 +3,12 @@ import Link from "next/link";
 import {useEffect,useState} from "react";
 import {Icon} from "@/components/Icons";
 
-type Props={flashImages:string[];newImages:string[];flashHref:string};
+type Props={flashImages:string[];newImages:string[];flashHref:string;settings?:Record<string,any>};
 
-export default function HeroSlider({flashImages,newImages,flashHref}:Props){
+export default function HeroSlider({flashImages,newImages,flashHref,settings={}}:Props){
+  const configuredHref=typeof settings.heroCtaHref==="string"&&!!settings.heroCtaHref&&settings.heroCtaHref!=="#flash-sale"&&(/^(\/|#|https:\/\/)/.test(settings.heroCtaHref))?settings.heroCtaHref:flashHref;
   const slides=[
-    {theme:"hp-s1",pill:"Limited-time deals",title:"Mega Flash Sale",big:"Up to 70% Off",text:"Selected products at their lowest prices. Grab them before stock runs out.",cta:"Shop flash deals",href:flashHref,images:flashImages},
+    {theme:"hp-s1",pill:settings.heroBadge||"Limited-time deals",title:settings.heroTitle||"Mega Flash Sale",big:settings.heroBigText||"Up to 70% Off",text:settings.heroDescription||"Selected products at their lowest prices. Grab them before stock runs out.",cta:settings.heroCtaLabel||"Shop flash deals",href:configuredHref,images:flashImages},
     {theme:"hp-s2",pill:"New in store",title:"Fresh arrivals just landed",big:"",text:"Browse the newest products added to the catalog.",cta:"Shop new arrivals",href:"/products",images:newImages},
     {theme:"hp-s3",pill:"Easy checkout",title:"Pay with bKash, Nagad or Rocket",big:"",text:"Send the amount, submit your transaction ID, and we confirm your order.",cta:"Start shopping",href:"/products",images:[] as string[]},
   ];
