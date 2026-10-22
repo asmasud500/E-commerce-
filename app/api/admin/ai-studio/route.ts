@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     settings: { enabled: settings.enabled !== false, model: settings.model || DEFAULT_GEMINI_MODEL, features: settings.features || {}, dailyRequestLimit: settings.dailyRequestLimit || 300, maxOutputTokens: settings.maxOutputTokens || 900, updatedAt: settings.updatedAt || null, updatedBy: settings.updatedBy || null },
     metrics: { window: "7 days", recordLimit: 3000, sampled: logs.length >= 3000, total: logs.length, successes, errors, successRate: logs.length ? Math.round(successes / logs.length * 100) : null, avgLatencyMs: logs.length ? Math.round(logs.reduce((s:number,r:any)=>s+Number(r.latencyMs||0),0)/logs.length) : null, inputTokens: logs.reduce((s:number,r:any)=>s+Number(r.inputTokens||0),0), outputTokens: logs.reduce((s:number,r:any)=>s+Number(r.outputTokens||0),0), quota: "Provider quota is not exposed by this API; check Google AI Studio." },
     features: counts,
-    logs: logs.slice(0,60).map(r=>({id:r.id,feature:r.feature,model:r.model,status:r.status,latencyMs:r.latencyMs,errorCode:r.errorCode,actorType:r.actorType,createdAt:r.createdAt})),
+    logs: logs.slice(0,60).map(r=>({id:r.id,feature:r.feature,model:r.model,status:r.status,latencyMs:r.latencyMs,inputTokens:r.inputTokens,outputTokens:r.outputTokens,errorCode:r.errorCode,actorType:r.actorType,createdAt:r.createdAt})),
     drafts: drafts.map(d=>({id:d.id,feature:d.feature,title:d.title,status:d.status,createdBy:d.createdBy,createdAt:d.createdAt,updatedAt:d.updatedAt,content:d.content,metadata:d.metadata}))
   }, { headers: noStore() });
 }
