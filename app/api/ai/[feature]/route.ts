@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { readAdminSession } from "@/lib/auth/admin";
 import { db } from "@/lib/prisma";
+import { getEffectivePrice } from "@/lib/products/pricing";
 import { AI_FEATURES, geminiGenerate, getAiSettings, recordAiRequest, safeAiError, type AiFeature } from "@/lib/ai/gemini";
 
 export const dynamic = "force-dynamic";
@@ -42,15 +43,16 @@ function rankProducts(products: any[], query: string) {
     return { p, score };
   }).filter(x => x.score > 0).sort((a,b) => b.score-a.score).slice(0, 8).map(({p}) => ({
     id:p.id, name:p.name, description:String(p.description||"").slice(0,450),
-    price:Number(p.salePrice ?? p.price ?? 0), currency:"BDT", stock:Number(p.stock||0),
+    price:Number(p.effectivePrice ?? p.salePrice ?? p.price ?? 0), currency:"BDT", stock:Number(p.stock||0),
     category:p.category?.name || null, slug:p.slug || null,
     images:Array.isArray(p.images)?p.images.slice(0,1).map((i:any)=>i.url):[]
   }));
 }
 async function getCatalog() {
-  const [products, categories] = await Promise.all([
+  const [products, categories, flashSales] = await Promise.all([
     db.product.findMany({ where: { published: true }, take: 300 }),
-    db.category.findMany({})
+    db.category.findMany({}),
+    db.flashSale.findMany({ where: { active: true } })
   ]);
   const productIds = (products as any[]).map(p => String(p.id)).filter(Boolean);
   const batches = Array.from({ length: Math.ceil(productIds.length / 30) }, (_, i) => productIds.slice(i * 30, (i + 1) * 30));
@@ -58,7 +60,7 @@ async function getCatalog() {
   const categoryById = new Map<string, any>((categories as any[]).map(c=>[c.id,c] as [string, any]));
   const imagesById = new Map<string,any[]>();
   for (const image of images as any[]) { const arr=imagesById.get(image.productId)||[]; arr.push(image); imagesById.set(image.productId,arr); }
-  return (products as any[]).map(p=>({...p,category:categoryById.get(p.categoryId)||null,images:imagesById.get(p.id)||[]}));
+  return (products as any[]).filter(p => Array.isArray(p.variants) && p.variants.length ? p.variants.some((v:any)=>Number(v.stock)>0) : Number(p.stock)>0).map(p=>({...p,effectivePrice:getEffectivePrice(p,flashSales),category:categoryById.get(p.categoryId)||null,images:imagesById.get(p.id)||[]}));
 }
 async function saveDraft(feature: string, title: string, content: string, actor: string, metadata: Record<string, unknown> = {}) {
   return db.aiDraft.create({ data: {
