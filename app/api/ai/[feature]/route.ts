@@ -49,7 +49,7 @@ async function getCatalog() {
     db.category.findMany({}),
     db.productImage.findMany({ take: 600, orderBy: { sortOrder: "asc" } })
   ]);
-  const categoryById = new Map((categories as any[]).map(c=>[c.id,c]));
+  const categoryById = new Map<string, any>((categories as any[]).map(c=>[c.id,c] as [string, any]));
   const imagesById = new Map<string,any[]>();
   for (const image of images as any[]) { const arr=imagesById.get(image.productId)||[]; arr.push(image); imagesById.set(image.productId,arr); }
   return (products as any[]).map(p=>({...p,category:categoryById.get(p.categoryId)||null,images:imagesById.get(p.id)||[]}));
