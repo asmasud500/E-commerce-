@@ -9,7 +9,7 @@ type Cat={name:string;slug:string};
 export default function StoreHeader({categories}:{categories?:Cat[]}){
   const [count,setCount]=useState(0);
   const [cats,setCats]=useState<Cat[]>(categories||[]);
-  const [storeName,setStoreName]=useState("MART Store");
+  const [storeName,setStoreName]=useState("MART Store");\n  const [logoUrl,setLogoUrl]=useState("");\n  const [searchPlaceholder,setSearchPlaceholder]=useState("Search for products, brands and more");\n  const [featuredLabel,setFeaturedLabel]=useState("Featured");\n  const [arrivalsLabel,setArrivalsLabel]=useState("New Arrivals");\n  const [dealsLabel,setDealsLabel]=useState("Deals & Offers");\n  const [deliveryNotice,setDeliveryNotice]=useState("Shopping across Bangladesh");
   const [logoUrl,setLogoUrl]=useState("");
   const [announcement,setAnnouncement]=useState("");
 
@@ -45,7 +45,7 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
             <option value="">All categories</option>
             {cats.map(c=><option key={c.slug} value={c.slug}>{c.name}</option>)}
           </select>
-          <input name="q" type="search" placeholder="Search for products, brands and more" aria-label="Search products" autoComplete="off"/>
+          <input name="q" type="search" placeholder={searchPlaceholder} aria-label="Search products" autoComplete="off"/>
           <button type="submit" aria-label="Search"><Icon name="search" size={18}/><span>Search</span></button>
         </form>
         <nav className="sh-actions" aria-label="Account and cart">
@@ -62,11 +62,11 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
     <nav className="sh-subnav" aria-label="Main shopping navigation">
       <div className="sh-subnav-in">
         <Link href="/products" className="sh-all-cats"><Icon name="menu" size={17}/> All Categories</Link>
-        <Link href="/products?featured=true">Featured</Link>
-        <Link href="/products">New Arrivals</Link>
-        <Link href="/products">Deals & Offers</Link>
+        <Link href="/products?featured=true">{featuredLabel}</Link>
+        <Link href="/products">{arrivalsLabel}</Link>
+        <Link href="/products">{dealsLabel}</Link>
         <span className="sh-subnav-spacer"/>
-        <span className="sh-delivery"><Icon name="mapPin" size={15}/> Shopping across Bangladesh</span>
+        <span className="sh-delivery"><Icon name="mapPin" size={15}/> {deliveryNotice}</span>
       </div>
     </nav>
     </>
