@@ -3,7 +3,7 @@ import Link from "next/link";
 import {useEffect,useState} from "react";
 import {Icon} from "@/components/Icons";
 
-type Props={flashImages:string[];newImages:string[];flashHref:string};
+type Props={flashImages:string[];newImages:string[];flashHref:string;settings?:Record<string,any>};
 
 export default function HeroSlider({flashImages,newImages,flashHref}:Props){
   const slides=[
