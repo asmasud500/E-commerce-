@@ -18,6 +18,7 @@ async function admin(req: NextRequest) {
   return readAdminSession(req.cookies.get("admin_session")?.value || "");
 }
 function noStore() { return { "Cache-Control": "private, no-store, max-age=0" }; }
+const connectionTestRate = new Map<string, { count: number; until: number }>();
 
 export async function GET(req: NextRequest) {
   const session = await admin(req);
@@ -68,6 +69,20 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid AI Studio settings." }, { status: 400 });
   const body = parsed.data;
   if (body.action === "test") {
+    const now = Date.now();
+    const rateKey = session.email.toLowerCase();
+    const current = connectionTestRate.get(rateKey);
+    if (current && current.until > now && current.count >= 5) return NextResponse.json({ ok: false, error: "Connection tests are limited to five per five minutes." }, { status: 429, headers: noStore() });
+    if (!current || current.until <= now) connectionTestRate.set(rateKey, { count: 1, until: now + 300_000 });
+    else current.count++;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const testSettings = await getAiSettings();
+    try {
+      const usedToday = await db.aiRequestLog.count({ where: { createdAt: { gte: today }, status: { in: ["SUCCESS", "ERROR"] } } });
+      if (usedToday >= Number(testSettings.dailyRequestLimit || 300)) return NextResponse.json({ ok: false, error: "The store's daily Gemini request cap has been reached." }, { status: 429, headers: noStore() });
+    } catch {
+      return NextResponse.json({ ok: false, error: "AI usage controls are unavailable; the connection test was paused for safety." }, { status: 503, headers: noStore() });
+    }
     const started = Date.now();
     try {
       const generated = await geminiGenerate({ feature: "customer-support", prompt: "Reply with exactly: MART Gemini connection test successful.", model: body.model || (await getAiSettings()).model, maxOutputTokens: 128, skipFeatureCheck: true });
