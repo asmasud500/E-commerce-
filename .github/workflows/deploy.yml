@@ -130,7 +130,7 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
       # Telegram registration is best-effort; it must not block a successful Worker deploy.
       - name: Register store Telegram webhook and commands
-        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
         continue-on-error: true
         run: |
           set -euo pipefail
@@ -141,7 +141,7 @@ jobs:
           API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
           URL="https://ecommerce-platform.masud50003.workers.dev/api/telegram/webhook"
           curl --fail --silent --show-error -X POST "$API/setWebhook" -H 'content-type: application/json' \
-            -d "{\"url\":\"$URL\",\"secret_token\":\"$TELEGRAM_WEBHOOK_SECRET\",\"allowed_updates\":[\"message\",\"callback_query\"],\"drop_pending_updates\":true}" | tee /dev/stderr | jq -e '.ok == true' > /dev/null
+            -d "{\"url\":\"$URL\",\"secret_token\":\"$TELEGRAM_WEBHOOK_SECRET\",\"allowed_updates\":[\"message\",\"callback_query\"],\"drop_pending_updates\":false}" | tee /dev/stderr | jq -e '.ok == true' > /dev/null
           curl --fail --silent --show-error -X POST "$API/setMyCommands" -H 'content-type: application/json' \
             -d '{"commands":[{"command":"start","description":"Start"},{"command":"help","description":"Help"},{"command":"orders","description":"Recent orders"},{"command":"pending","description":"Pending orders"},{"command":"today","description":"Today summary"},{"command":"sales","description":"Sales report"},{"command":"stock","description":"Low stock"},{"command":"search","description":"Search orders"}]}' | tee /dev/stderr | jq -e '.ok == true' > /dev/null
         env:
