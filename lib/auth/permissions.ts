@@ -7,6 +7,7 @@ export function canAccessAdminPath(role: string, path: string, method: string): 
   if (path === "/admin" || path === "/admin/unauthorized") return true;
   const superAdminOnly = [
     "/admin/staff", "/api/admin/staff",
+    "/admin/security",
     "/admin/settings", "/api/admin/store-settings",
     "/admin/activity", "/api/admin/activity",
     // Payment gateway credentials/configuration and refund execution are high-impact.
