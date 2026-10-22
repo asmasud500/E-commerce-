@@ -3752,3 +3752,104 @@ input:disabled,select:disabled,textarea:disabled{background:#f1f5f9;color:#64748
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Admin shell final layout correction: keep navigation beside content on desktop
+   and turn it into a dismissible drawer on narrow screens. */
+@media (min-width: 761px) {
+  .admin-layout:has(.admin-sidebar) {
+    display: grid !important;
+    grid-template-columns: 250px minmax(0, 1fr) !important;
+    align-items: start;
+    width: 100%;
+    min-width: 0;
+  }
+  .admin-layout:has(.admin-sidebar) > .admin-sidebar {
+    position: sticky !important;
+    top: 0;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 250px;
+    max-width: 250px;
+    height: 100dvh;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    transform: none !important;
+    z-index: 30;
+  }
+  .admin-layout:has(.admin-sidebar) > .admin-content,
+  .admin-layout:has(.admin-sidebar) > main.admin-content,
+  .admin-layout:has(.admin-sidebar) > .admin-main {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    overflow-x: clip;
+  }
+  .admin-layout:has(.admin-sidebar) > .admin-mobile-toggle,
+  .admin-layout:has(.admin-sidebar) > .admin-sidebar-overlay {
+    display: none !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-layout:has(.admin-sidebar) {
+    display: block !important;
+    width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+  .admin-layout:has(.admin-sidebar) > .admin-mobile-toggle {
+    display: flex !important;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    min-height: 54px;
+  }
+  .admin-layout:has(.admin-sidebar) > .admin-sidebar {
+    position: fixed !important;
+    inset: 54px auto 0 0;
+    width: min(320px, 88vw);
+    max-width: 88vw;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transform: translateX(-110%);
+    transition: transform .22s ease;
+    z-index: 120;
+  }
+  .admin-layout:has(.admin-sidebar) > .admin-sidebar.is-open {
+    transform: translateX(0);
+  }
+  .admin-layout:has(.admin-sidebar) > .admin-sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 54px 0 0;
+    z-index: 110;
+    width: 100%;
+    height: auto;
+    background: rgba(8, 15, 28, .58);
+    backdrop-filter: blur(2px);
+  }
+  .admin-layout:has(.admin-sidebar) > .admin-content,
+  .admin-layout:has(.admin-sidebar) > main.admin-content,
+  .admin-layout:has(.admin-sidebar) > .admin-main {
+    display: block;
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    padding: 20px 14px 32px !important;
+    overflow-x: clip;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-layout:has(.admin-sidebar) > .admin-sidebar { transition: none !important; }
+}
