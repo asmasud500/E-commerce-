@@ -16,6 +16,7 @@ const featureName = (id:string) => FEATURES.find(f=>f.id===id)?.title || id;
 
 export default function AiStudioPage() {
   const [data,setData] = useState<AnyObj|null>(null);
+  const [products,setProducts] = useState<AnyObj[]>([]);
   const [loading,setLoading] = useState(true);
   const [saving,setSaving] = useState(false);
   const [testing,setTesting] = useState(false);
@@ -40,6 +41,8 @@ export default function AiStudioPage() {
       const j = await r.json();
       if(!r.ok) throw new Error(j.error || "AI Studio data could not be loaded.");
       setData(j); setSettings(j.settings);
+      const productResponse = await fetch("/api/admin/products", { cache: "no-store" });
+      if (productResponse.ok) { const productRows = await productResponse.json(); setProducts(Array.isArray(productRows) ? productRows : []); }
     } catch(e) { setNotice(e instanceof Error ? e.message : "AI Studio data could not be loaded."); }
     finally { setLoading(false); }
   },[]);
@@ -118,7 +121,7 @@ export default function AiStudioPage() {
         </section>
         <section className="ai-panel"><h2>Try an AI feature</h2><p>Use this panel to test live feature behavior. Admin-only tools require the correct role.</p>
           <label>Feature<select value={selected} onChange={e=>{setSelected(e.target.value);setGenerated(null)}}>{FEATURES.map(f=><option key={f.id} value={f.id}>{f.title}</option>)}</select></label>
-          {["product-description","marketing-studio"].includes(selected)&&<><label>Product name (if not selecting by ID)<input value={productName} onChange={e=>setProductName(e.target.value)} placeholder="e.g. Cotton T-shirt"/></label><label>Product ID (optional)<input value={productId} onChange={e=>setProductId(e.target.value)} placeholder="Existing product document ID"/></label></>}
+          {["product-description","marketing-studio"].includes(selected)&&<><label>Product name (if not selecting by ID)<input value={productName} onChange={e=>setProductName(e.target.value)} placeholder="e.g. Cotton T-shirt"/></label><label>Choose existing product (optional)<select value={productId} onChange={e=>{setProductId(e.target.value);const p=products.find(x=>x.id===e.target.value);if(p)setProductName(p.name||"");}}><option value="">Use product name / general brief</option>{products.map(p=><option key={p.id} value={p.id}>{p.name} · {p.sku||p.id}</option>)}</select></label></>}
           <label>Prompt / product notes<textarea rows={4} value={input} onChange={e=>setInput(e.target.value)} placeholder="Describe what you need. Avoid entering customer or payment secrets."/></label>
           <div className="ai-form-grid"><label>Language<select value={language} onChange={e=>setLanguage(e.target.value)}><option>Bangla and English</option><option>Bangla</option><option>English</option></select></label><label>Tone<select value={tone} onChange={e=>setTone(e.target.value)}><option value="professional">Professional</option><option value="friendly">Friendly</option><option value="premium">Premium</option><option value="concise">Concise</option></select></label></div>
           {selected==="sales-analyst"&&<label>Report period<select value={dateRange} onChange={e=>setDateRange(e.target.value)}><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select></label>}
