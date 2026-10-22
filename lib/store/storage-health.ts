@@ -1,7 +1,6 @@
 import { db } from "@/lib/prisma";
 import { readTelegramFile } from "@/lib/telegram/file-storage";
 import { readGoogleDriveImage } from "@/lib/google-drive/file-storage";
-import { telegramApi } from "@/lib/notifications/telegram-admin";
 
 const sha256 = async (bytes: Uint8Array) => {
   const digest = await crypto.subtle.digest("SHA-256", Uint8Array.from(bytes).buffer as ArrayBuffer);
