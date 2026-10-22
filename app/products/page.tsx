@@ -5,6 +5,7 @@ import StoreFooter from "@/components/StoreFooter";
 import {Icon} from "@/components/Icons";
 import {ProductCard,type HomeProduct} from "@/components/home/ProductCard";
 import {isFreeDelivery} from "@/lib/shipping";
+import SmartSearchSuggestions from "@/components/SmartSearchSuggestions";
 
 export const dynamic="force-dynamic";
 
@@ -118,6 +119,7 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
             <select name="sort" defaultValue={sort} aria-label="Sort products"><option value="">Featured first</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option><option value="name_asc">Name: A to Z</option><option value="name_desc">Name: Z to A</option><option value="newest">Newest arrivals</option></select>
             <button className="pg-btn" type="submit"><Icon name="search" size={16}/> Find products</button>
           </form>
+          {q&&<SmartSearchSuggestions query={q}/>}
           {(q||category||featured||freeOnly||sort)&&<div className="pc-active-filters" aria-label="Active filters">
             <span>Active filters</span>
             {q&&<Link href={href({q:""})} className="pc-filter-chip">Search: {q} <b aria-hidden="true">×</b></Link>}
