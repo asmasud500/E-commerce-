@@ -259,7 +259,7 @@ export default function PaymentGateways() {
     <a href="/admin" style={{ color: "var(--admin-muted, #64748b)", textDecoration: "none" }}>← Admin dashboard</a>
     <div className="admin-heading-row" style={{ marginTop: 16, alignItems: "center", gap: 16, flexWrap: "wrap" }}>
       <div><div className="admin-kicker">PAYMENTS · CONFIGURATION</div><h1>Payment methods</h1><p>Manage checkout payment options, merchant details and sandbox/live modes.</p><p role="note" style={{maxWidth:850,fontSize:13,lineHeight:1.6,color:"var(--admin-muted,#64748b)"}}>Automatic online checkout currently supports SSLCOMMERZ only. Other payment providers remain disabled until their APIs are implemented and verified; an image/merchant number alone cannot confirm payment automatically. Cash on Delivery can be enabled by adding a CUSTOM method and checking “This is Cash on Delivery”. Enable live online payments only after provider approval and a successful end-to-end test.</p></div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button type="button" onClick={enableDemoPayment} disabled={busy || loading}>{busy ? "Enabling…" : "Enable Demo Payment"}</button><button type="button" onClick={exportCsv} disabled={!filtered.length}>Export CSV</button><button type="button" onClick={() => void load()} disabled={loading}>{loading ? "Refreshing…" : "Refresh"}</button><button className="admin-primary-action" type="button" onClick={() => setShowForm(v => !v)}>{showForm ? "Close form" : "+ Add payment method"}</button></div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button type="button" onClick={enableDemoPayment} disabled={busy || loading}>{busy ? "Enabling…" : "Enable Demo Payment"}</button><button type="button" onClick={exportCsv} disabled={!filtered.length}>Export CSV</button><button type="button" onClick={() => void load()} disabled={loading}>{loading ? "Refreshing…" : "Refresh Data"}</button><button className="admin-primary-action" type="button" onClick={() => setShowForm(v => !v)}>{showForm ? "Close form" : "+ Add payment method"}</button></div>
     </div>
     <div className="admin-stat-grid" style={{ marginTop: 22 }}>
       {[["Total methods", items.length, "Configured payment options"], ["Enabled", items.filter(g => g.enabled).length, "Available for checkout"], ["Disabled", items.filter(g => !g.enabled).length, "Not shown as active"], ["Live mode", items.filter(g => g.enabled && g.mode === "LIVE").length, "Enabled live configurations"]].map(([label, value, note]) =>
@@ -318,12 +318,12 @@ export default function PaymentGateways() {
           {g.apiBaseUrl && <p style={{ overflowWrap: "anywhere" }}>API: {g.apiBaseUrl}</p>}
           {g.type === "BANGLA_QR" && g.qrImageUrl && <img src={g.qrImageUrl} alt="Bangla QR payment code" loading="lazy" style={{ width: 180, maxWidth: "100%", borderRadius: 12, margin: "8px 0" }} />}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: "auto", paddingTop: 12 }}>
-            <button type="button" onClick={() => void edit(g)}>Edit</button>
+            <button type="button" onClick={() => void edit(g)}>Edit Payment Method</button>
             <button type="button" onClick={() => openApiConfigEdit(g)}>API endpoints &amp; settings</button>
             <button type="button" onClick={() => openCredentialEdit(g)}>Set API credentials</button>
             {MANUAL_TYPES.includes(g.type) && <button type="button" onClick={() => openPayEdit(g)}>Number &amp; instructions</button>}
             <button type="button" onClick={() => void patch(g, { enabled: !g.enabled })}>{g.enabled ? "Disable" : "Enable"}</button>
-            <button type="button" onClick={() => void remove(g)}>Delete</button>
+            <button type="button" onClick={() => void remove(g)}>Delete Payment Method</button>
           </div>
           {g.enabled && g.mode === "LIVE" && <small style={{ color: "#b45309" }}>Check provider credentials and callback verification before accepting live payments.</small>}
         </article>)}</div>}
