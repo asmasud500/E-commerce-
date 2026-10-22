@@ -36,10 +36,10 @@ export default function PaymentClient(){
   {result?.ok&&result.paymentUrl&&<div style={{marginTop:22,border:"1px solid #bbf7d0",background:"#f0fdf4",borderRadius:14,padding:16}}>
    <b style={{color:"#166534"}}>Your secure payment session is ready</b>
    <p style={{fontSize:13,lineHeight:1.6,color:"#166534",margin:"6px 0 14px"}}>Continue to the payment partner to choose your preferred enabled method and complete payment.</p>
-   <button type="button" className="pg-btn pg-btn-block" onClick={continuePayment} style={{background:"#ff6801",borderColor:"#ff6801",color:"#fff",minHeight:48}}>Continue securely to payment <span aria-hidden="true">→</span></button>
+   <button type="button" className="pg-btn pg-btn-block" onClick={continuePayment} style={{background:"#ff6801",borderColor:"#ff6801",color:"#fff",minHeight:48}}>Continue Securely to Payment <span aria-hidden="true">→</span></button>
    <div style={{textAlign:"center",fontSize:11,color:"#166534",marginTop:10}}>Payment partner: {result.gatewayName||"Configured gateway"}</div>
   </div>}
-  {result&&!result.ok&&<div role="alert" style={{marginTop:20,padding:16,borderRadius:12,border:"1px solid #fecaca",background:"#fef2f2"}}><b style={{color:"#991b1b"}}>Payment session unavailable</b><p style={{color:"#991b1b",fontSize:13,lineHeight:1.6}}>{message||result.message||"Please check the gateway configuration and try again."}</p><button type="button" className="pg-btn pg-btn-line" disabled={loading} onClick={()=>void pay()}>{loading?"Trying…":"Try again"}</button></div>}
+  {result&&!result.ok&&<div role="alert" style={{marginTop:20,padding:16,borderRadius:12,border:"1px solid #fecaca",background:"#fef2f2"}}><b style={{color:"#991b1b"}}>Payment session unavailable</b><p style={{color:"#991b1b",fontSize:13,lineHeight:1.6}}>{message||result.message||"Please check the gateway configuration and try again."}</p><button type="button" className="pg-btn pg-btn-line" disabled={loading} onClick={()=>void pay()}>{loading?"Trying…":"Retry Payment"}</button></div>}
   {message&&<p role="alert" className="form-error">{message}</p>}
   <div style={{display:"flex",alignItems:"center",gap:9,marginTop:22,fontSize:12,lineHeight:1.6,color:"var(--muted,#64748b)"}}><span aria-hidden="true">🛡️</span><span>We never ask for your mobile banking PIN, OTP or card PIN on this website. Complete sensitive payment steps only on the secure payment partner page.</span></div>
  </>}
