@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   if (body.action === "test") {
     const started = Date.now();
     try {
-      const generated = await geminiGenerate({ feature: "customer-support", prompt: "Reply with exactly: MART Gemini connection test successful.", model: body.model || (await getAiSettings()).model, maxOutputTokens: 128 });
+      const generated = await geminiGenerate({ feature: "customer-support", prompt: "Reply with exactly: MART Gemini connection test successful.", model: body.model || (await getAiSettings()).model, maxOutputTokens: 128, skipFeatureCheck: true });
       await recordAiRequest({ feature: "connection-test", model: generated.model, status: "SUCCESS", latencyMs: Date.now()-started, inputTokens: generated.inputTokens, outputTokens: generated.outputTokens, actorType: "admin" });
       return NextResponse.json({ ok: true, model: generated.model, latencyMs: generated.latencyMs, message: generated.text }, { headers: noStore() });
     } catch (error) {
