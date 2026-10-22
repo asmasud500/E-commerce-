@@ -107,7 +107,7 @@ async function loadHome(){
     return {id:c.id,name:c.name,slug:c.slug,count:items.length,cover:items.find(p=>p.image)?.image||null};
   }).filter(s=>s.count>0).sort((a,b)=>b.count-a.count).slice(0,6);
 
-  return {categories,flash,flashEndsAt,forYou,trending,arrivals,stores,banners,
+  return {categories,flash,flashEndsAt,forYou,trending,arrivals,stores,banners,settings,
     flashImages:flash.map(p=>p.image).filter(Boolean) as string[],
     newImages:newest.map(p=>p.image).filter(Boolean) as string[]};
 }
@@ -120,8 +120,15 @@ const QUICK=[
   {icon:"truck",label:"Free Delivery",href:"/products?delivery=free"},
 ];
 
+export async function generateMetadata():Promise<Metadata>{
+  try{
+    const s=await db.storeSetting.findUnique({where:{id:"store"}});
+    const storeName=String(s?.storeName||"MART Store");
+    return {title:String(s?.seoTitle||storeName+" | Online shopping"),description:String(s?.seoDescription||s?.tagline||"Quality products, simple shopping across Bangladesh."),keywords:String(s?.seoKeywords||"").split(",").map((x:string)=>x.trim()).filter(Boolean)};
+  }catch{return {title:"MART Store | Online shopping",description:"Quality products, simple shopping across Bangladesh."}}
+}
 export default async function Home(){
-  const {categories,flash,flashEndsAt,forYou,trending,arrivals,stores,banners,flashImages,newImages}=await loadHome();
+  const {categories,flash,flashEndsAt,forYou,trending,arrivals,stores,banners,settings,flashImages,newImages}=await loadHome();
   const hasFlash=flash.length>0,hasStores=stores.length>0;
   const quickHref=(q:typeof QUICK[number])=>q.fallback&&!((q.label==="Flash Deals"&&hasFlash)||(q.label==="Official Stores"&&hasStores))?q.fallback:q.href;
 
@@ -152,9 +159,9 @@ export default async function Home(){
           <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">✓</span><span><strong>Simple, secure checkout</strong><small>Clear order details before you pay</small></span></div>
           <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">৳</span><span><strong>Local payment options</strong><small>Choose an available payment method</small></span></div>
           <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">↗</span><span><strong>Order updates</strong><small>Keep track of your order status</small></span></div>
-        </section>
+        </section>}
 
-        {banners.length>0&&<section className="hp-promo-section" aria-label="Store promotions">
+        {settings.showPromotions!==false&&banners.length>0&&<section className="hp-promo-section" aria-label="Store promotions">
           <div className="hp-promo-heading"><span>CURATED FOR YOU</span><h2>{settings.offersHeading||"Offers & Highlights"}</h2><p>{settings.offersDescription||"Discover the latest deals from our store."}</p></div>
           <div className="hp-promo-grid">
           {banners.map((b:any)=>{const href=typeof b.href==="string"&&b.href.startsWith("/")?b.href:(typeof b.href==="string"&&b.href.startsWith("https://")?b.href:"/products");const external=href.startsWith("https://");return <Link key={b.id} href={href} className="hp-promo-card" {...(external?{target:"_blank",rel:"noopener noreferrer"}:{})}>
@@ -224,8 +231,8 @@ export default async function Home(){
           </section>
         )}
 
-        <section className="hp-sec" aria-labelledby="fy-h">
-          <div className="hp-sec-h hp-tab"><h2 id="fy-h">Just For You</h2></div>
+        {settings.showRecommendations!==false&&<section className="hp-sec" aria-labelledby="fy-h">
+          <div className="hp-sec-h hp-tab"><h2 id="fy-h">{settings.justForYouHeading||"Just For You"}</h2></div>
           {forYou.length?(
             <>
               <div className="hp-grid">{forYou.map(p=><ProductCard key={p.id} p={p}/>)}</div>
@@ -234,7 +241,7 @@ export default async function Home(){
           ):(
             <div className="hp-card hp-empty"><h3>Products are on their way</h3><p>New items will show up here as soon as they are added to the catalog.</p></div>
           )}
-        </section>
+        </section>}
       </main>
       <StoreFooter/>
     </>
