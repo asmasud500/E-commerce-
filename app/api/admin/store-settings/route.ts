@@ -54,7 +54,7 @@ const schema=z.object({
   instagramUrl:z.string().trim().max(300).refine(v=>v===""||/^https:\/\/[^\s]+$/.test(v),"Instagram link must start with https://").optional(),
   youtubeUrl:z.string().trim().max(300).refine(v=>v===""||/^https:\/\/[^\s]+$/.test(v),"YouTube link must start with https://").optional(),
   openingHours:z.string().trim().max(200).optional(),
-  contactIntro:z.string().trim().max(300).optional(),
+  contactIntro:z.string().max(10000).optional(),
   aboutIntro:z.string().trim().max(300).optional(),
   aboutBody:z.string().trim().max(5000).optional(),
   footerNote:z.string().trim().max(200).optional(),
