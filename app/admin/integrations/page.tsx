@@ -29,8 +29,8 @@ function Card({def,info,onSaved}:{def:typeof PROVIDERS[number];info?:Info;onSave
       {def.config.map(f=><label key={f.key} style={{display:"grid",gap:4}}>{f.label}<input value={config[f.key]||""} placeholder={f.placeholder} onChange={e=>setConfig({...config,[f.key]:e.target.value})}/></label>)}
       {def.secrets.map(f=><label key={f.key} style={{display:"grid",gap:4}}>{f.label} {info?.secretsSet?.[f.key]?<small style={{color:"#047857"}}>✔ saved — leave blank to keep</small>:<small style={{color:"#b45309"}}>not set</small>}
         <input type="password" autoComplete="new-password" value={secrets[f.key]||""} placeholder={info?.secretsSet?.[f.key]?"••••••••":""} onChange={e=>setSecrets({...secrets,[f.key]:e.target.value})}/></label>)}
-      <button disabled={busy}>{busy?"Saving…":"Save"}</button>
-      {def.id==="sms"&&<div style={{display:"flex",gap:8}}><input placeholder="Test phone 01XXXXXXXXX" value={phone} onChange={e=>setPhone(e.target.value)}/><button type="button" onClick={test}>Send test SMS</button></div>}
+      <button disabled={busy}>{busy?"Saving…":"Save Integration Settings"}</button>
+      {def.id==="sms"&&<div style={{display:"flex",gap:8}}><input placeholder="Test phone 01XXXXXXXXX" value={phone} onChange={e=>setPhone(e.target.value)}/><button type="button" onClick={test}>Send Test SMS</button></div>}
       {msg&&<small role="status">{msg}</small>}
     </form>
   </section>;
