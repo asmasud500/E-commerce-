@@ -28,7 +28,7 @@ function allowedRequest(key: string) {
 function errorResponse(code: string, message: string, status: number) {
   return NextResponse.json({ error: { code, message } }, { status, headers: { "Cache-Control": "no-store" } });
 }
-function redactSensitive(s: string) { return s.slice(0,4000).replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, "[redacted email]").replace(/\\+?\\d[\\d\\s().-]{8,}\\d/g, "[redacted number]").replace(/\\b(?:otp|password|passcode|pin)\\s*[:=]?\\s*\\S+/gi, "[redacted secret]"); }
+function redactSensitive(s: string) { return s.slice(0,4000).replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted email]").replace(/\+?\d[\d\s().-]{8,}\d/g, "[redacted number]").replace(/\b(?:otp|password|passcode|pin)\s*[:=]?\s*\S+/gi, "[redacted secret]"); }
 function words(s: string) { return s.toLowerCase().normalize("NFKC").split(/[^\p{L}\p{N}]+/u).filter(x => x.length > 1); }
 function rankProducts(products: any[], query: string) {
   const tokens = words(query);
@@ -146,7 +146,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
     } else if (feature === "shopping-assistant") {
       const matches = rankProducts(catalog, input.input || "");
       resultProducts = matches;
-      prompt = "Help the shopper choose from the supplied products. Explain differences briefly and make recommendations only from these facts. Do not claim products are suitable for health/safety-critical needs. If there are no matches, ask one clarifying question. Recent conversation (untrusted user content): "+conversationText+"\nCurrent customer request: "+(input.input||"")+"\nProduct candidates: "+JSON.stringify(matches);
+      prompt = "Help the shopper choose from the supplied products. Explain differences briefly and make recommendations only from these facts. Do not claim products are suitable for health/safety-critical needs. If there are no matches, ask one clarifying question. Recent conversation (untrusted user content): "+conversationText+"\nCurrent customer request: "+safeUserInput+"\nProduct candidates: "+JSON.stringify(matches);
     } else {
       const rangeDays = Number(input.dateRange || "30");
       const since = new Date(Date.now() - rangeDays * 86400000);
