@@ -20,7 +20,11 @@ const publicRate = new Map<string, { count: number; until: number }>();
 function allowedRequest(key: string) {
   const now = Date.now();
   const current = publicRate.get(key);
-  if (!current || current.until < now) { publicRate.set(key, { count: 1, until: now + 60_000 }); return true; }
+  if (!current || current.until < now) {
+    if (publicRate.size > 5000) for (const [entry, value] of publicRate) if (value.until < now) publicRate.delete(entry);
+    if (publicRate.size > 6000) return false;
+    publicRate.set(key, { count: 1, until: now + 60_000 }); return true;
+  }
   if (current.count >= 12) return false;
   current.count++;
   return true;
