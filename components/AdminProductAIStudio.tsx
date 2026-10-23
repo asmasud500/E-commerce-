@@ -12,7 +12,8 @@ type Draft = {
   tags: string[]; categorySuggestion: string; sku?: string; price?: number;
 };
 type Finding = { productId?: string; sku?: string; productName?: string; severity?: string; issue?: string; recommendation?: string };
-type Result = { mode: string; summary?: string; draft?: Draft; findings?: Finding[]; recommendations?: string[]; report?: string; model?: string; sampleSize?: number };
+type Optimization = { productId: string; sku?: string; productName?: string; metaTitle?: string; metaDescription?: string; metaKeywords?: string };
+type Result = { mode: string; summary?: string; draft?: Draft; findings?: Finding[]; optimizations?: Optimization[]; recommendations?: string[]; report?: string; model?: string; sampleSize?: number };
 
 export default function AdminProductAIStudio({ products, onRefresh }: { products: Product[]; onRefresh: () => Promise<void> | void }) {
   const [mode, setMode] = useState<"draft" | "seo" | "audit" | "stock" | "pricing">("draft");
@@ -61,6 +62,32 @@ export default function AdminProductAIStudio({ products, onRefresh }: { products
       await onRefresh();
     } catch (e) { setError(e instanceof Error ? e.message : "Could not save product draft."); }
     finally { setSaving(false); }
+  }
+
+  async function applySeoOptimizations() {
+    const changes = result?.optimizations || [];
+    if (!changes.length || saving) return;
+    if (!confirm(`Apply AI SEO metadata to ${changes.length} product(s)? This updates SEO fields only; it does not publish products.`)) return;
+    setSaving(true); setError(""); setNotice("");
+    let applied = 0; const failed: string[] = [];
+    try {
+      for (const change of changes) {
+        try {
+          const response = await fetch("/api/admin/products/" + encodeURIComponent(change.productId), {
+            method: "PATCH", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...(change.metaTitle ? { metaTitle: change.metaTitle } : {}),
+              ...(change.metaDescription ? { metaDescription: change.metaDescription } : {}),
+              ...(change.metaKeywords ? { metaKeywords: change.metaKeywords } : {})
+            })
+          });
+          if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.error || "Update rejected"); }
+          applied++;
+        } catch { failed.push(change.sku || change.productId); }
+      }
+      setNotice(`SEO update complete: ${applied} saved, ${failed.length} failed${failed.length ? " (" + failed.slice(0, 8).join(", ") + ")" : ""}. Review the audit history for product updates.`);
+      await onRefresh();
+    } finally { setSaving(false); }
   }
 
   function toggleSelected(id: string) {
@@ -113,6 +140,7 @@ export default function AdminProductAIStudio({ products, onRefresh }: { products
       {result.summary&&<p>{result.summary}</p>}
       {result.draft&&<><div className="pai-grid">{([["Product title",result.draft.name],["Description",result.draft.description],["SEO title",result.draft.seoTitle],["Meta description",result.draft.metaDescription],["Suggested category",result.draft.categorySuggestion],["Tags",(result.draft.tags||[]).join(", ")]] as [string,string][]).map(([label,value])=><div className="pai-field" key={label}><span>{label}</span><p>{value||"Not provided"}</p></div>)}</div><div className="pai-actions"><button type="button" className="pai-primary" disabled={saving||!sku.trim()||!price.trim()} onClick={()=>void createDraftProduct()}>{saving?"Saving…":"Approve & save as unpublished draft"}</button></div><p className="pai-foot">This creates an unpublished draft only. Images, category, variants, stock and all claims must be checked in the normal product editor.</p></>}
       {result.findings&&<div className="pai-products">{result.findings.map((f,i)=><div className="pai-field" key={(f.productId||f.sku||"finding")+i}><span>{(f.severity||"info").toUpperCase()} · {f.productName||f.sku||"Catalog finding"}</span><p><strong>{f.issue||"Review recommended"}</strong><br/>{f.recommendation||""}</p></div>)}</div>}
+      {result.optimizations&&<><div className="pai-products">{result.optimizations.map((o,i)=><div className="pai-field" key={o.productId}><span>{o.productName||o.sku||"Product"} · SEO preview</span><p><strong>Title:</strong> {o.metaTitle||"—"}<br/><strong>Description:</strong> {o.metaDescription||"—"}<br/><strong>Keywords:</strong> {o.metaKeywords||"—"}</p></div>)}</div><div className="pai-actions"><button type="button" className="pai-primary" disabled={saving||!result.optimizations.length} onClick={()=>void applySeoOptimizations()}>{saving?"Applying…":"Approve & apply SEO to all listed products"}</button></div><p className="pai-foot">Explicit approval updates only metaTitle, metaDescription and metaKeywords. Each product update passes through the normal authenticated product API.</p></>}
       {result.recommendations&&<ul className="pai-list">{result.recommendations.map((v,i)=><li key={i}>{v}</li>)}</ul>}
       {result.report&&<p style={{whiteSpace:"pre-wrap"}}>{result.report}</p>}
       {result.sampleSize!==undefined&&<p className="pai-foot">Analysis sample: {result.sampleSize} product(s). Recommendations reflect this sample, not necessarily the full catalog.</p>}
