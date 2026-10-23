@@ -101,14 +101,14 @@ async function getReadOnlyContext(pageKey: string): Promise<{ source: string; da
       const [gateways, groups, recent] = await Promise.all([
         db.paymentGateway.findMany({ select: { name: true, type: true, mode: true, enabled: true, sortOrder: true } }),
         db.paymentTransaction.groupBy({ by: ["status"], _count: { _all: true }, _sum: { amount: true } }),
-        db.paymentTransaction.findMany({ take: 30, orderBy: { createdAt: "desc" }, select: { reference: true, providerTransactionId: true, amount: true, status: true, verifiedAt: true, createdAt: true, gateway: { select: { name: true, type: true } }, order: { select: { orderNumber: true, paymentStatus: true, total: true } } } })
+        db.paymentTransaction.findMany({ take: 30, orderBy: { createdAt: "desc" }, select: { amount: true, status: true, verifiedAt: true, createdAt: true, gateway: { select: { name: true, type: true } }, order: { select: { orderNumber: true, paymentStatus: true, total: true } } } })
       ]);
       return { source: "Live database: public gateway configuration, transaction status aggregates and 30 latest transactions. Secrets/raw provider payloads excluded.", data: jsonSafe({ gateways, groups, recent }) };
     }
     case "returns": {
       const rows = await db.returnRequest.findMany({ take: 100, orderBy: { createdAt: "desc" } });
       const allowed = rows.map((r: any) => ({
-        status: r.status, reason: r.reason, resolution: r.resolution,
+        status: r.status, reason: r.reason ? redact(String(r.reason)) : null, resolution: r.resolution ? redact(String(r.resolution)) : null,
         createdAt: r.createdAt, updatedAt: r.updatedAt,
         hasOrderReference: Boolean(r.orderId || r.orderNumber),
         hasEvidence: Boolean(r.evidenceUrl || r.imageUrl)
@@ -180,14 +180,6 @@ async function getReadOnlyContext(pageKey: string): Promise<{ source: string; da
       if (!row) return { source: "Live database checked: store settings record was not found; no active values are inferred.", data: null };
       const keys = ["storeName", "currency", "fontFamily", "headingFont", "layoutPreset", "contentWidth", "buttonStyle", "cornerStyle", "brandColor", "accentColor", "defaultDeliveryFee", "freeShippingThreshold", "taxEnabled", "taxRate", "showBenefits", "showPromotions", "showFlashSale", "showFeaturedStores", "showTrending", "showNewArrivals", "showRecommendations"];
       return { source: "Live database: allowlisted store theme, checkout-cost and storefront visibility settings. Contact details, social URLs and page content are excluded.", data: Object.fromEntries(keys.filter((k) => k in row).map((k) => [k, row[k]])) };
-    }
-    case "staff": {
-      const [admins, customers, recentActions] = await Promise.all([
-        db.user.count({ where: { role: "ADMIN" } }),
-        db.user.count({ where: { role: "CUSTOMER" } }),
-        db.auditLog.findMany({ take: 30, orderBy: { createdAt: "desc" }, select: { action: true, entity: true, createdAt: true } })
-      ]);
-      return { source: "Live aggregate user-role counts and recent audit action labels only. Identities, emails, actor IDs and permission secrets are excluded; the schema does not expose a detailed staff permission matrix.", data: jsonSafe({ admins, customers, recentActions }) };
     }
     case "coupons": {
       const coupons = await db.coupon.findMany({ take: 200, orderBy: { updatedAt: "desc" }, select: { code: true, name: true, campaignName: true, type: true, value: true, minOrder: true, startsAt: true, expiresAt: true, usageLimit: true, usedCount: true, perCustomerLimit: true, active: true } });
