@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import AdminPageAiAssistant from "@/components/AdminPageAiAssistant";
 
 const groups = [
   { title: "Workspace", items: [
@@ -67,6 +68,7 @@ export default function AdminSidebar() {
           <Link href="/" className="admin-store-link" onClick={() => setOpen(false)}>↗ &nbsp; View storefront</Link>
         </div>
       </aside>
+      <AdminPageAiAssistant />
     </>
   );
 }
