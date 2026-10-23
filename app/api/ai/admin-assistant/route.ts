@@ -106,24 +106,52 @@ async function getReadOnlyContext(pageKey: string): Promise<{ source: string; da
       return { source: "Live database: public gateway configuration, transaction status aggregates and 30 latest transactions. Secrets/raw provider payloads excluded.", data: jsonSafe({ gateways, groups, recent }) };
     }
     case "returns": {
-      const [groups, recent] = await Promise.all([
-        db.order.groupBy({ by: ["status", "paymentStatus"], where: { OR: [{ status: "REFUNDED" }, { paymentStatus: "REFUNDED" }, { refundReference: { not: null } }] }, _count: { _all: true }, _sum: { total: true } }),
-        db.order.findMany({ take: 30, where: { OR: [{ status: "REFUNDED" }, { paymentStatus: "REFUNDED" }, { refundReference: { not: null } }] }, orderBy: { updatedAt: "desc" }, select: { orderNumber: true, status: true, paymentStatus: true, total: true, refundReference: true, refundReason: true, refundedAt: true, updatedAt: true } })
-      ]);
-      return { source: "Live database: order refund markers and refunded-order sample only. No separate return-request model exists in the verified schema.", data: jsonSafe({ groups, recent }) };
+      const rows = await db.returnRequest.findMany({ take: 100, orderBy: { createdAt: "desc" } });
+      const allowed = rows.map((r: any) => ({
+        status: r.status, reason: r.reason, resolution: r.resolution,
+        createdAt: r.createdAt, updatedAt: r.updatedAt,
+        hasOrderReference: Boolean(r.orderId || r.orderNumber),
+        hasEvidence: Boolean(r.evidenceUrl || r.imageUrl)
+      }));
+      const counts = allowed.reduce((acc: Record<string, number>, r: any) => {
+        const key = String(r.status || "UNKNOWN"); acc[key] = (acc[key] || 0) + 1; return acc;
+      }, {});
+      return { source: "Live database: up to 100 return requests, with customer identifiers and evidence URLs excluded.", data: jsonSafe({ sampleCount: allowed.length, statusCounts: counts, recent: allowed.slice(0, 30) }) };
     }
     case "integrations": {
-      const gateways = await db.paymentGateway.findMany({ select: { name: true, type: true, mode: true, enabled: true, sortOrder: true, updatedAt: true, apiBaseUrl: true, publicConfig: true, encryptedSecrets: true } });
-      return { source: "Live database: payment gateway metadata only. Secret values, public config contents and API URLs are not sent to the AI.", data: gateways.map(g => ({ name: g.name, type: g.type, mode: g.mode, enabled: g.enabled, sortOrder: g.sortOrder, updatedAt: g.updatedAt, hasApiBaseUrl: Boolean(g.apiBaseUrl), hasPublicConfig: Boolean(g.publicConfig), hasEncryptedSecrets: Boolean(g.encryptedSecrets) })) };
+      const [shippingAndMessaging, gateways] = await Promise.all([
+        publicIntegrations(),
+        db.paymentGateway.findMany({ select: { name: true, type: true, mode: true, enabled: true, sortOrder: true, updatedAt: true, encryptedSecrets: true } })
+      ]);
+      const safeIntegrations = shippingAndMessaging.map((i: any) => ({
+        id: i.id, name: i.name, kind: i.kind, enabled: i.enabled,
+        configuredSecretKeys: Object.entries(i.secretsSet || {}).filter(([, set]) => set).map(([key]) => key),
+        configFieldNames: Object.keys(i.config || {})
+      }));
+      const safeGateways = gateways.map((g: any) => ({
+        name: g.name, type: g.type, mode: g.mode, enabled: g.enabled,
+        sortOrder: g.sortOrder, updatedAt: g.updatedAt,
+        hasEncryptedSecrets: Boolean(g.encryptedSecrets)
+      }));
+      return { source: "Live database: integration and payment-gateway status only. Secret values and integration config values are excluded.", data: jsonSafe({ integrations: safeIntegrations, gateways: safeGateways }) };
     }
     case "storage": {
-      const logs = await db.auditLog.findMany({ take: 50, where: { OR: [{ entity: { contains: "storage", mode: "insensitive" } }, { action: { contains: "backup", mode: "insensitive" } }, { action: { contains: "storage", mode: "insensitive" } }] }, orderBy: { createdAt: "desc" }, select: { action: true, entity: true, createdAt: true } });
-      return { source: "Live database: up to 50 storage/backup-related audit event labels and timestamps. Metadata, actor IDs and file paths excluded; this is not a storage health probe.", data: logs };
+      const overview = await getStorageOverview();
+      return { source: "Live database: bounded storage/backup aggregate snapshot. File names, paths, job errors and raw asset metadata are excluded; counts are sampled and are not a full infrastructure health probe.", data: jsonSafe({
+        totalAssets: overview.totalAssets, totalBytes: overview.totalBytes,
+        duplicateSavingsBytes: overview.duplicateSavingsBytes, backupComplete: overview.backupComplete,
+        backupPending: overview.backupPending, backupFailed: overview.backupFailed,
+        legacyBase64Images: overview.legacyBase64Images,
+        productImageRecords: overview.productImageRecords, reviewImageRecords: overview.reviewImageRecords
+      }) };
     }
-    case "marketing":
-    case "flash-sales": {
+    case "marketing": {
       const campaigns = await db.coupon.findMany({ take: 100, where: { campaignName: { not: null } }, orderBy: { updatedAt: "desc" }, select: { campaignName: true, campaignDescription: true, type: true, value: true, startsAt: true, expiresAt: true, usageLimit: true, usedCount: true, active: true } });
-      return { source: "Live database: coupon campaign metadata only; this is not a complete marketing or flash-sale scheduler.", data: jsonSafe({ campaigns, sampleLimit: 100 }) };
+      return { source: "Live database: coupon campaign metadata only; external ad-platform performance is not connected.", data: jsonSafe({ campaigns, sampleLimit: 100 }) };
+    }
+    case "flash-sales": {
+      const rows = await db.flashSale.findMany({ take: 100, orderBy: { startsAt: "desc" }, select: { title: true, productIds: true, discountPercent: true, startsAt: true, endsAt: true, active: true } });
+      return { source: "Live database: up to 100 flash-sale schedules, with product IDs omitted.", data: jsonSafe(rows.map((r: any) => ({ title: r.title, productCount: Array.isArray(r.productIds) ? r.productIds.length : 0, discountPercent: r.discountPercent, startsAt: r.startsAt, endsAt: r.endsAt, active: r.active }))) };
     }
     case "staff": {
       const [totalAdmins, totalCustomers, recentAdminActions] = await Promise.all([
@@ -132,6 +160,34 @@ async function getReadOnlyContext(pageKey: string): Promise<{ source: string; da
         db.auditLog.findMany({ take: 30, where: { createdAt: { gte: new Date(Date.now() - 30 * 86400000) } }, orderBy: { createdAt: "desc" }, select: { action: true, entity: true, createdAt: true } })
       ]);
       return { source: "Live aggregate user role counts and 30 recent audit action labels; no staff identities or actor IDs. Schema exposes only ADMIN/CUSTOMER roles, not a detailed permission matrix.", data: { totalAdmins, totalCustomers, recentAdminActions } };
+    }
+    case "gift-cards": {
+      const rows = await db.giftCard.findMany({ take: 200, orderBy: { createdAt: "desc" } });
+      const safe = rows.map((g: any) => ({ status: g.status, initialBalance: Number(g.initialBalance || 0), balance: Number(g.balance || 0), issuedAt: g.issuedAt, expiresAt: g.expiresAt, createdAt: g.createdAt, hasRecipient: Boolean(g.recipientName || g.recipientEmail || g.recipientPhone) }));
+      const statusCounts = safe.reduce((acc: Record<string, number>, g: any) => { const k = String(g.status || "UNKNOWN"); acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+      return { source: "Live database: up to 200 gift-card balances/statuses. Codes, recipient identities and messages are excluded.", data: jsonSafe({ sampleCount: safe.length, statusCounts, totalInitialValue: safe.reduce((n: number, g: any) => n + g.initialBalance, 0), remainingBalance: safe.reduce((n: number, g: any) => n + g.balance, 0), recent: safe.slice(0, 30) }) };
+    }
+    case "delivery-zones": {
+      const zones = await db.deliveryZone.findMany({ take: 300, orderBy: [{ division: "asc" }, { district: "asc" }, { upazila: "asc" }, { name: "asc" }], select: { name: true, division: true, district: true, upazila: true, fee: true, freeAbove: true, estimatedDays: true, active: true } });
+      return { source: "Live database: up to 300 delivery-zone coverage and fee settings.", data: jsonSafe({ sampleCount: zones.length, active: zones.filter((z: any) => z.active).length, inactive: zones.filter((z: any) => !z.active).length, zones }) };
+    }
+    case "banners": {
+      const banners = await db.banner.findMany({ take: 100, orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }], select: { title: true, href: true, startsAt: true, endsAt: true, active: true, sortOrder: true } });
+      return { source: "Live database: up to 100 banner publication/scheduling fields. Image URLs are excluded.", data: jsonSafe({ sampleCount: banners.length, active: banners.filter((b: any) => b.active).length, banners }) };
+    }
+    case "settings": {
+      const row: any = await db.storeSetting.findUnique({ where: { id: "store" } });
+      if (!row) return { source: "Live database checked: store settings record was not found; no active values are inferred.", data: null };
+      const keys = ["storeName", "currency", "fontFamily", "headingFont", "layoutPreset", "contentWidth", "buttonStyle", "cornerStyle", "brandColor", "accentColor", "defaultDeliveryFee", "freeShippingThreshold", "taxEnabled", "taxRate", "showBenefits", "showPromotions", "showFlashSale", "showFeaturedStores", "showTrending", "showNewArrivals", "showRecommendations"];
+      return { source: "Live database: allowlisted store theme, checkout-cost and storefront visibility settings. Contact details, social URLs and page content are excluded.", data: Object.fromEntries(keys.filter((k) => k in row).map((k) => [k, row[k]])) };
+    }
+    case "staff": {
+      const [admins, customers, recentActions] = await Promise.all([
+        db.user.count({ where: { role: "ADMIN" } }),
+        db.user.count({ where: { role: "CUSTOMER" } }),
+        db.auditLog.findMany({ take: 30, orderBy: { createdAt: "desc" }, select: { action: true, entity: true, createdAt: true } })
+      ]);
+      return { source: "Live aggregate user-role counts and recent audit action labels only. Identities, emails, actor IDs and permission secrets are excluded; the schema does not expose a detailed staff permission matrix.", data: jsonSafe({ admins, customers, recentActions }) };
     }
     case "coupons": {
       const coupons = await db.coupon.findMany({ take: 200, orderBy: { updatedAt: "desc" }, select: { code: true, name: true, campaignName: true, type: true, value: true, minOrder: true, startsAt: true, expiresAt: true, usageLimit: true, usedCount: true, perCustomerLimit: true, active: true } });
@@ -149,7 +205,8 @@ export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Please provide a page and a question (up to 3,000 characters)." }, { status: 400, headers: { "Cache-Control": "no-store" } });
   const { pageKey, pageTitle, prompt: rawPrompt, language } = parsed.data;
-  if (!Object.hasOwn(pageGuidance, pageKey) || !Object.hasOwn(pagePaths, pageKey)) return NextResponse.json({ error: "Unsupported admin page." }, { status: 400, headers: { "Cache-Control": "no-store" } });\n  if (!canAccessAdminPath(session.role, pagePaths[pageKey], "GET")) return NextResponse.json({ error: "Your role does not have read access to this admin module." }, { status: 403, headers: { "Cache-Control": "no-store" } });
+  if (!Object.hasOwn(pageGuidance, pageKey) || !Object.hasOwn(pagePaths, pageKey)) return NextResponse.json({ error: "Unsupported admin page." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+  if (!canAccessAdminPath(session.role, pagePaths[pageKey], "GET")) return NextResponse.json({ error: "Your role does not have read access to this admin module." }, { status: 403, headers: { "Cache-Control": "no-store" } });
   const settings = await getAiSettings();
   if (settings.enabled === false || settings.features?.["admin-page-assistant"] === false) return NextResponse.json({ error: "AI is disabled globally or the Admin Page Assistant feature is disabled in AI Studio." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   try {
