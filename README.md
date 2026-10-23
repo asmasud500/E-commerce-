@@ -88,7 +88,7 @@ The admin workspace at `/admin/ai-studio` manages six AI capabilities: product d
 
 ### Configuration
 
-- Create an API key in Google AI Studio and configure it as the encrypted Cloudflare Worker secret `GEMINI_API_KEY`. Never use a `NEXT_PUBLIC_*` variable and never commit the real key.
+- Create an API key in Google AI Studio and add it in GitHub repository Settings → Secrets and variables → Actions as a repository secret named `GEMINI_API_KEY`. The production deploy workflow syncs it into Cloudflare Worker encrypted secret storage using `wrangler secret put`; you do not need to paste the key into the Cloudflare dashboard. Never use a `NEXT_PUBLIC_*` variable and never commit the real key. If the GitHub secret is absent, deployment continues but Gemini features will not connect.
 - Default model ID: `gemini-3.5-flash-lite`. Model availability and free-tier limits depend on the Google AI Studio project and can change; verify the current quota dashboard before enabling traffic.
 - AI Studio settings are stored in Firestore. Only a super admin can change global settings/model/limits; super admins and managers can review drafts and view telemetry.
 - Run a connection test from AI Studio after setting the secret. A successful connection test proves the API key/model can answer a small prompt; it does not prove that the project's quota is sufficient for production traffic.
@@ -105,7 +105,7 @@ The admin workspace at `/admin/ai-studio` manages six AI capabilities: product d
 
 ### Staging checklist
 
-1. Set `GEMINI_API_KEY` as a Cloudflare Worker secret and confirm existing Firebase/Firestore secrets are configured.
+1. Set the repository Actions secret `GEMINI_API_KEY` in GitHub and confirm existing Firebase/Firestore secrets are configured. The deployment workflow transfers it to the Worker secret store automatically on the next deployment.
 2. Deploy the feature branch to a staging environment, then test the connection from Admin → AI Studio.
 3. Test all six features with safe sample data, including a missing key, disabled feature, invalid model, quota/rate-limit response, and timeout.
 4. Verify product/marketing/sales outputs remain drafts until reviewed; verify admin role checks and public rate limits.
