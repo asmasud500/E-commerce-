@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { readAdminSession } from "@/lib/auth/admin";
 import { canAccessAdminPath } from "@/lib/auth/permissions";
+import { publicIntegrations } from "@/lib/integrations/store";
+import { getStorageOverview } from "@/lib/store/storage-operations";
 import { db } from "@/lib/prisma";
 import { geminiGenerate, getAiSettings, recordAiRequest, safeAiError } from "@/lib/ai/gemini";
 
@@ -143,7 +145,7 @@ async function getReadOnlyContext(pageKey: string): Promise<{ source: string; da
 export async function POST(req: NextRequest) {
   const session = await readAdminSession(req.cookies.get("admin_session")?.value || "");
   if (!session) return NextResponse.json({ error: "Admin authentication is required." }, { status: 401, headers: { "Cache-Control": "no-store" } });
-  if (!Object.hasOwn(pagePaths, "")) { /* role/path authorization is checked after validating the page key */ }\n  if (!["SUPER_ADMIN", "MANAGER", "ORDER_MANAGER", "PRODUCT_MANAGER", "SUPPORT"].includes(session.role)) return NextResponse.json({ error: "Your role cannot access the page AI assistant." }, { status: 403, headers: { "Cache-Control": "no-store" } });
+  if (!["SUPER_ADMIN", "MANAGER", "ORDER_MANAGER", "PRODUCT_MANAGER", "SUPPORT"].includes(session.role)) return NextResponse.json({ error: "Your role cannot access the page AI assistant." }, { status: 403, headers: { "Cache-Control": "no-store" } });
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Please provide a page and a question (up to 3,000 characters)." }, { status: 400, headers: { "Cache-Control": "no-store" } });
   const { pageKey, pageTitle, prompt: rawPrompt, language } = parsed.data;
