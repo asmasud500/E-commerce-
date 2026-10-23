@@ -7,7 +7,7 @@ export const AI_FEATURES = [
   "product-description", "smart-search", "customer-support",
   "sales-analyst", "marketing-studio", "shopping-assistant",
   "seo-auditor", "inventory-assistant", "review-analyzer", "storefront-audit",
-  "creative-studio", "workflow-planner", "security-assistant", "admin-page-assistant"
+  "creative-studio", "workflow-planner", "security-assistant", "admin-page-assistant", "product-catalog-automation"
 ] as const;
 export type AiFeature = typeof AI_FEATURES[number];
 
