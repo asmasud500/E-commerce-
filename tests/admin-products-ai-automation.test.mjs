@@ -25,7 +25,7 @@ test("AI product endpoint is suggestion-only and validates bounded requests", ()
   assert.match(source, /AI_PRODUCT_ANALYSIS/);
   assert.match(source, /allowedIds/);
   assert.match(source, /metaKeywords/);
-  assert.match(source, /mimeType: z.enum\(\["image\\/jpeg", "image\\/png", "image\\/webp"\]\)/);
+  assert.ok(source.includes('mimeType: z.enum(["image/jpeg", "image/png", "image/webp"])'));
   assert.doesNotMatch(source, /db\.product\.(create|update|delete)\(/);
 });
 
