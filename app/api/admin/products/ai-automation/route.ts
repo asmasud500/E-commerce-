@@ -60,7 +60,7 @@ function cleanProduct(p: SafeProduct) {
 }
 const taskGuidance: Record<string, string> = {
   draft: "Create a product listing draft from the factual brief. Never invent specifications, material, size, compatibility, warranty, certifications, country of origin, stock, price, shipping time or claims. Return JSON with keys name, description, seoTitle, metaDescription, tags (string array), categorySuggestion. Use only facts in the brief; mark unknown facts as not specified.",
-  seo: "Audit SEO title, description and category completeness. Return JSON {summary, findings:[{productId,sku,productName,severity,issue,recommendation}]}. Suggest text only; do not claim keyword ranking guarantees.",
+  seo: "Generate optimized SEO metadata for each supplied product. Return JSON {summary, optimizations:[{productId,sku,productName,metaTitle,metaDescription,metaKeywords}]}. Keep titles concise, descriptions accurate, and keywords relevant; use only facts already present in product name, description and category. Never invent specifications or guarantee rankings. Include only product IDs from the supplied sample.",
   audit: "Audit data completeness, likely duplicate candidates, invalid pricing and missing descriptions. Return JSON {summary, findings:[{productId,sku,productName,severity,issue,recommendation}]}. A duplicate is only a candidate, not a certainty.",
   stock: "Analyze only the provided stock and threshold values. Flag out-of-stock and low-stock records. Do not forecast demand or restock quantities because sales velocity and supplier lead-time data may not be supplied. Return JSON {summary, findings:[{productId,sku,productName,severity,issue,recommendation}]}",
   pricing: "Review current and sale prices for data-quality concerns. Do not invent competitor prices, costs, margin or demand. Since cost data is not provided, do not calculate profit margin. Return JSON {summary, findings:[{productId,sku,productName,severity,issue,recommendation}], recommendations:[string]}."
@@ -104,6 +104,21 @@ export async function POST(req: NextRequest) {
       const draft = parsedJson ? normalizeDraft(parsedJson) : null;
       if (!draft) return NextResponse.json({ error: "AI did not return a valid product draft. Please retry with more factual details." }, { status: 502 });
       result = { mode: input.mode, draft, model: ai.model };
+    } else if (input.mode === "seo" && parsedJson) {
+      const allowedIds = new Set(rows.map(p => p.id));
+      const optimizations = Array.isArray(parsedJson.optimizations) ? parsedJson.optimizations.slice(0, 30).flatMap((item: unknown) => {
+        if (!item || typeof item !== "object") return [];
+        const value = item as Record<string, unknown>;
+        const productId = boundedText(value.productId, 200);
+        if (!allowedIds.has(productId)) return [];
+        const metaTitle = boundedText(value.metaTitle, 200);
+        const metaDescription = boundedText(value.metaDescription, 320);
+        const metaKeywords = boundedText(value.metaKeywords, 500);
+        if (!metaTitle && !metaDescription && !metaKeywords) return [];
+        const product = rows.find(p => p.id === productId);
+        return [{ productId, sku: product?.sku || boundedText(value.sku, 100), productName: product?.name || boundedText(value.productName, 200), metaTitle, metaDescription, metaKeywords }];
+      }) : [];
+      result = { mode: input.mode, summary: boundedText(parsedJson.summary, 1200), optimizations, sampleSize: rows.length, model: ai.model };
     } else if (parsedJson) {
       const findings = Array.isArray(parsedJson.findings) ? parsedJson.findings.slice(0, 100).map((item: unknown) => {
         if (!item || typeof item !== "object") return null;
