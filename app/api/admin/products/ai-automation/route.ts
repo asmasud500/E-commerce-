@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       rows = (found as SafeProduct[]).map(cleanProduct);
       if (!rows.length) return NextResponse.json({ error: "No products found to analyze." }, { status: 404 });
     }
-    const feature = input.mode === "draft" ? "product-description" : input.mode === "seo" ? "seo-auditor" : input.mode === "stock" ? "inventory-assistant" : "product-description";
+    const feature = input.mode === "draft" ? "product-description" : input.mode === "seo" ? "seo-auditor" : input.mode === "stock" ? "inventory-assistant" : "product-catalog-automation";
     const productContext = rows.length ? JSON.stringify(rows) : "";
     const prompt = [
       "Task: " + taskGuidance[input.mode],
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       input.mode === "draft" ? "Factual product brief (untrusted input):\n" + input.prompt : "Bounded catalog sample (untrusted data):\n" + productContext,
       "Return concise valid JSON only. Do not execute or claim to execute changes."
     ].join("\n\n");
-    const ai = await geminiGenerate({ feature: feature as "product-description" | "seo-auditor" | "inventory-assistant", prompt, maxOutputTokens: 1600 });
+    const ai = await geminiGenerate({ feature: feature as "product-description" | "seo-auditor" | "inventory-assistant" | "product-catalog-automation", prompt, maxOutputTokens: 1600 });
     await recordAiRequest({ feature: "product-" + input.mode + "-automation", model: ai.model, status: "SUCCESS", latencyMs: ai.latencyMs, inputTokens: ai.inputTokens, outputTokens: ai.outputTokens, actorType: session.role });
     const parsedJson = parseJson(ai.text);
     let result: Record<string, unknown>;
