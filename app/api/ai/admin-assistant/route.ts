@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { readAdminSession } from "@/lib/auth/admin";
+import { canAccessAdminPath } from "@/lib/auth/permissions";
 import { db } from "@/lib/prisma";
 import { geminiGenerate, getAiSettings, recordAiRequest, safeAiError } from "@/lib/ai/gemini";
 
@@ -33,6 +34,15 @@ const pageGuidance: Record<string, string> = {
   settings: "Review supplied configuration for gaps/conflicts and propose impact/rollback checks. Never claim unprovided settings are active.",
   integrations: "Diagnose supplied redacted webhook/API failures. Never reveal secrets or modify production integrations.",
   staff: "Recommend least-privilege roles and audit questions. Never invite users or change permissions."
+};
+
+const pagePaths: Record<string, string> = {
+  orders: "/admin/orders", returns: "/admin/returns", products: "/admin/products", inventory: "/admin/inventory",
+  categories: "/admin/categories", customers: "/admin/customers", reviews: "/admin/reviews", "mart-pay": "/admin/mart-pay",
+  transactions: "/admin/payment-transactions", coupons: "/admin/coupons", "gift-cards": "/admin/gift-cards",
+  marketing: "/admin/marketing", "flash-sales": "/admin/flash-sales", "delivery-zones": "/admin/delivery-zones",
+  banners: "/admin/banners", storage: "/admin/storage", settings: "/admin/settings",
+  integrations: "/admin/integrations", staff: "/admin/staff"
 };
 
 function redact(value: string) {
@@ -133,11 +143,11 @@ async function getReadOnlyContext(pageKey: string): Promise<{ source: string; da
 export async function POST(req: NextRequest) {
   const session = await readAdminSession(req.cookies.get("admin_session")?.value || "");
   if (!session) return NextResponse.json({ error: "Admin authentication is required." }, { status: 401, headers: { "Cache-Control": "no-store" } });
-  if (!["SUPER_ADMIN", "MANAGER"].includes(session.role)) return NextResponse.json({ error: "Your role cannot access the page AI assistant." }, { status: 403, headers: { "Cache-Control": "no-store" } });
+  if (!Object.hasOwn(pagePaths, "")) { /* role/path authorization is checked after validating the page key */ }\n  if (!["SUPER_ADMIN", "MANAGER", "ORDER_MANAGER", "PRODUCT_MANAGER", "SUPPORT"].includes(session.role)) return NextResponse.json({ error: "Your role cannot access the page AI assistant." }, { status: 403, headers: { "Cache-Control": "no-store" } });
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Please provide a page and a question (up to 3,000 characters)." }, { status: 400, headers: { "Cache-Control": "no-store" } });
   const { pageKey, pageTitle, prompt: rawPrompt, language } = parsed.data;
-  if (!Object.hasOwn(pageGuidance, pageKey)) return NextResponse.json({ error: "Unsupported admin page." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+  if (!Object.hasOwn(pageGuidance, pageKey) || !Object.hasOwn(pagePaths, pageKey)) return NextResponse.json({ error: "Unsupported admin page." }, { status: 400, headers: { "Cache-Control": "no-store" } });\n  if (!canAccessAdminPath(session.role, pagePaths[pageKey], "GET")) return NextResponse.json({ error: "Your role does not have read access to this admin module." }, { status: 403, headers: { "Cache-Control": "no-store" } });
   const settings = await getAiSettings();
   if (settings.enabled === false || settings.features?.["admin-page-assistant"] === false) return NextResponse.json({ error: "AI is disabled globally or the Admin Page Assistant feature is disabled in AI Studio." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   try {
