@@ -5,7 +5,9 @@ export const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite";
 export const SUPPORTED_GEMINI_MODELS = ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.8-flash"] as const;
 export const AI_FEATURES = [
   "product-description", "smart-search", "customer-support",
-  "sales-analyst", "marketing-studio", "shopping-assistant"
+  "sales-analyst", "marketing-studio", "shopping-assistant",
+  "seo-auditor", "inventory-assistant", "review-analyzer", "storefront-audit",
+  "creative-studio", "workflow-planner", "security-assistant"
 ] as const;
 export type AiFeature = typeof AI_FEATURES[number];
 
