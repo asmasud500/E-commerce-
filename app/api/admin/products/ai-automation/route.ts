@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   if (input.mode !== "draft" && input.image) return NextResponse.json({ error: "Images are only accepted for product draft generation." }, { status: 400 });
 
   try {
-    let rows: SafeProduct[] = [];
+    let rows: ReturnType<typeof cleanProduct>[] = [];
     if (input.mode !== "draft") {
       const found = await db.product.findMany({
         where: input.productIds.length ? { id: { in: input.productIds } } : undefined,
