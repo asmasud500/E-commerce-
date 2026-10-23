@@ -18,6 +18,7 @@ type Result = { mode: string; summary?: string; draft?: Draft; findings?: Findin
 export default function AdminProductAIStudio({ products, onRefresh }: { products: Product[]; onRefresh: () => Promise<void> | void }) {
   const [mode, setMode] = useState<"draft" | "seo" | "audit" | "stock" | "pricing">("draft");
   const [brief, setBrief] = useState("");
+  const [imageData, setImageData] = useState<{ mimeType: "image/jpeg" | "image/png" | "image/webp"; data: string; name: string } | null>(null);
   const [sku, setSku] = useState("");
   const [price, setPrice] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
@@ -30,12 +31,24 @@ export default function AdminProductAIStudio({ products, onRefresh }: { products
   const selectedProducts = useMemo(() => products.filter(p => selected.includes(p.id)), [products, selected]);
   const draft = result?.draft;
 
+  async function chooseImage(file?: File) {
+    if (!file) return;
+    if (!(["image/jpeg", "image/png", "image/webp"] as string[]).includes(file.type)) { setError("শুধু JPG, PNG বা WebP ছবি ব্যবহার করো।"); return; }
+    if (file.size > 4 * 1024 * 1024) { setError("ছবির সর্বোচ্চ সাইজ 4 MB।"); return; }
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read image.")); reader.onerror = () => reject(new Error("Could not read image.")); reader.readAsDataURL(file); });
+      const data = dataUrl.split(",")[1];
+      if (!data) throw new Error("Invalid image data.");
+      setImageData({ mimeType: file.type as "image/jpeg" | "image/png" | "image/webp", data, name: file.name }); setError("");
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not read image."); }
+  }
+
   async function runAI() {
     setBusy(true); setError(""); setNotice(""); setResult(null);
     try {
       const response = await fetch("/api/admin/products/ai-automation", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, prompt: brief, productIds: mode === "draft" ? [] : selected })
+        body: JSON.stringify({ mode, prompt: brief, productIds: mode === "draft" ? [] : selected, ...(mode === "draft" && imageData ? { image: { mimeType: imageData.mimeType, data: imageData.data } } : {}) })
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "AI product task failed.");
@@ -117,6 +130,7 @@ export default function AdminProductAIStudio({ products, onRefresh }: { products
         {mode === "draft" ? <>
           <label htmlFor="pai-brief">Product facts / brief</label>
           <textarea id="pai-brief" maxLength={2500} value={brief} onChange={e=>setBrief(e.target.value)} placeholder="Example: Cotton T-shirt, navy blue, sizes M/L/XL, 100% cotton only if confirmed, target audience…"/>
+          <label htmlFor="pai-image">Product image (optional · JPG, PNG or WebP · max 4 MB)</label><input id="pai-image" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void chooseImage(e.target.files?.[0])}/>{imageData&&<p className="pai-help">Selected image: {imageData.name} <button type="button" className="pai-secondary" onClick={()=>setImageData(null)}>Remove image</button></p>}
           <label htmlFor="pai-sku">SKU (required before saving)</label><input id="pai-sku" maxLength={100} value={sku} onChange={e=>setSku(e.target.value)} placeholder="Enter a unique SKU"/>
           <label htmlFor="pai-price">Price (BDT)</label><input id="pai-price" inputMode="decimal" value={price} onChange={e=>setPrice(e.target.value)} placeholder="Enter verified price"/>
         </> : <>
@@ -124,7 +138,7 @@ export default function AdminProductAIStudio({ products, onRefresh }: { products
           <div className="pai-products">{products.slice(0,100).map(p=><label className="pai-product" key={p.id}><input type="checkbox" checked={selected.includes(p.id)} onChange={()=>toggleSelected(p.id)} disabled={!selected.includes(p.id)&&selected.length>=30}/><span><strong>{p.name}</strong><small>{p.sku} · Stock {p.stock} · {p.published?"Published":"Draft"}</small></span></label>)}</div>
           <p className="pai-help">Selection is limited to 30 products per AI request.</p>
         </>}
-        <div className="pai-actions"><button type="button" className="pai-primary" disabled={busy||(mode==="draft"&&brief.trim().length<5)} onClick={()=>void runAI()}>{busy?"Analyzing…":mode==="draft"?"Generate draft":"Run AI analysis"}</button>{mode!=="draft"&&<button type="button" className="pai-secondary" onClick={()=>setSelected([])}>Clear selection</button>}</div>
+        <div className="pai-actions"><button type="button" className="pai-primary" disabled={busy||(mode==="draft"&&brief.trim().length<5&&!imageData)} onClick={()=>void runAI()}>{busy?"Analyzing…":mode==="draft"?"Generate draft":"Run AI analysis"}</button>{mode!=="draft"&&<button type="button" className="pai-secondary" onClick={()=>setSelected([])}>Clear selection</button>}</div>
         <p className="pai-foot">AI suggestions are not live product changes. Price, stock and publishing changes require review and explicit admin action.</p>
       </div>
       <div className="pai-box">
