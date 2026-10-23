@@ -55,3 +55,23 @@ test("storefront assistant warns users not to share authentication or payment se
   assert.match(storefrontAssistant, /customer-support/);
   assert.match(storefrontAssistant, /shopping-assistant/);
 });
+
+
+test("expanded AI Studio tools are registered and remain admin-only", () => {
+  assert.match(provider, /seo-auditor/);
+  assert.match(provider, /inventory-assistant/);
+  assert.match(provider, /review-analyzer/);
+  assert.match(provider, /storefront-audit/);
+  assert.match(provider, /creative-studio/);
+  assert.match(provider, /workflow-planner/);
+  assert.match(provider, /security-assistant/);
+  assert.match(featureRoute, /const adminOnly = .*seo-auditor.*inventory-assistant.*review-analyzer/s);
+  assert.match(featureRoute, /requiresImplementation|Workflow request/);
+});
+
+test("new AI Studio tools create reviewable drafts and do not execute actions", () => {
+  assert.match(featureRoute, /"creative-studio","workflow-planner","security-assistant"/);
+  assert.match(featureRoute, /do not claim any automation was created or executed/i);
+  assert.match(featureRoute, /Do not modify stock/);
+  assert.match(featureRoute, /Never update products/);
+});

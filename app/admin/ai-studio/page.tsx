@@ -9,7 +9,14 @@ const FEATURES = [
   { id:"customer-support", title:"AI Customer Support", desc:"Answer general product questions from available catalog facts." },
   { id:"sales-analyst", title:"AI Sales Analyst", desc:"Summarize server-calculated order and revenue aggregates." },
   { id:"marketing-studio", title:"AI Marketing Studio", desc:"Create campaign ideas, social captions and a practical content plan." },
-  { id:"shopping-assistant", title:"AI Shopping Assistant", desc:"Help shoppers compare products found in the store catalog." }
+  { id:"shopping-assistant", title:"AI Shopping Assistant", desc:"Help shoppers compare products found in the store catalog." },
+  { id:"seo-auditor", title:"AI SEO Auditor", desc:"Audit real published-product metadata and save prioritized fixes for review." },
+  { id:"inventory-assistant", title:"AI Inventory Assistant", desc:"Review low-stock and out-of-stock products without changing inventory." },
+  { id:"review-analyzer", title:"AI Review Analyzer", desc:"Summarize approved customer reviews and recurring product feedback." },
+  { id:"storefront-audit", title:"AI Storefront UX Audit", desc:"Create a prioritized UX/accessibility audit from store context and your notes." },
+  { id:"creative-studio", title:"AI Banner & Creative Studio", desc:"Create banner copy, layout briefs and image-generation prompts; no automatic publishing." },
+  { id:"workflow-planner", title:"AI Workflow Planner", desc:"Design safe automation plans with approvals, retries, logs and test cases." },
+  { id:"security-assistant", title:"AI Security & Error Assistant", desc:"Analyze redacted errors and suggest defensive fixes; never edits production code." }
 ] as const;
 type AnyObj = Record<string, any>;
 const featureName = (id:string) => FEATURES.find(f=>f.id===id)?.title || id;
@@ -127,7 +134,7 @@ export default function AiStudioPage() {
         </section>
         <section className="ai-panel"><h2>Try an AI feature</h2><p>Use this panel to test live feature behavior. Admin-only tools require the correct role.</p>
           <label>Feature<select value={selected} onChange={e=>{setSelected(e.target.value);setGenerated(null)}}>{FEATURES.map(f=><option key={f.id} value={f.id}>{f.title}</option>)}</select></label>
-          {["product-description","marketing-studio"].includes(selected)&&<><label>Product name (if not selecting by ID)<input value={productName} onChange={e=>setProductName(e.target.value)} placeholder="e.g. Cotton T-shirt"/></label><label>Choose existing product (optional)<select value={productId} onChange={e=>{setProductId(e.target.value);const p=products.find(x=>x.id===e.target.value);if(p)setProductName(p.name||"");}}><option value="">Use product name / general brief</option>{products.map(p=><option key={p.id} value={p.id}>{p.name} · {p.sku||p.id}</option>)}</select></label></>}
+          {["product-description","marketing-studio","creative-studio"].includes(selected)&&<><label>Product name (if not selecting by ID)<input value={productName} onChange={e=>setProductName(e.target.value)} placeholder="e.g. Cotton T-shirt"/></label><label>Choose existing product (optional)<select value={productId} onChange={e=>{setProductId(e.target.value);const p=products.find(x=>x.id===e.target.value);if(p)setProductName(p.name||"");}}><option value="">Use product name / general brief</option>{products.map(p=><option key={p.id} value={p.id}>{p.name} · {p.sku||p.id}</option>)}</select></label></>}
           <label>Prompt / product notes<textarea rows={4} value={input} onChange={e=>setInput(e.target.value)} placeholder="Describe what you need. Avoid entering customer or payment secrets."/></label>
           <div className="ai-form-grid"><label>Language<select value={language} onChange={e=>setLanguage(e.target.value)}><option>Bangla and English</option><option>Bangla</option><option>English</option></select></label><label>Tone<select value={tone} onChange={e=>setTone(e.target.value)}><option value="professional">Professional</option><option value="friendly">Friendly</option><option value="premium">Premium</option><option value="concise">Concise</option></select></label></div>
           {selected==="sales-analyst"&&<label>Report period<select value={dateRange} onChange={e=>setDateRange(e.target.value)}><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select></label>}
