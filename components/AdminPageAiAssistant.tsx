@@ -86,7 +86,7 @@ export default function AdminPageAiAssistant() {
         <button type="button" onClick={() => setOpen(false)} aria-label="Close AI assistant">×</button>
       </header>
       <div className="admin-ai-body">
-        <p className="admin-ai-context">Page-aware help for <strong>{page[2]}</strong>. The assistant only sees the notes you submit; it does not automatically read or change page records.</p>
+        <p className="admin-ai-context">Page-aware guidance for <strong>{page[2]}</strong>. Some modules provide bounded, read-only live database context; others use only your submitted notes. It never changes records.</p>
         <button type="button" className="admin-ai-suggestion" disabled={busy} onClick={() => { setPrompt(starterPrompts[page[1]] || "Help me review this admin page safely."); void ask(starterPrompts[page[1]] || "Help me review this admin page safely."); }}>✦ Suggested: {starterPrompts[page[1]] || "Review this page safely"}</button>
         <label htmlFor="admin-ai-question">Question or redacted details</label>
         <textarea id="admin-ai-question" rows={4} maxLength={3000} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Ask in Bangla or English. Paste only redacted logs/details—never passwords, OTPs, or API keys." />
