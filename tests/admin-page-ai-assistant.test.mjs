@@ -14,6 +14,10 @@ test("page assistant is restricted to authenticated privileged admin roles", () 
 test("page assistant is read-only and redacts sensitive input", () => {
   assert.match(api, /function redact\(/);
   assert.match(api, /Never execute actions/);
+  assert.match(api, /getReadOnlyContext/);
+  assert.match(api, /feature: "admin-page-assistant"/);
+  assert.match(api, /paymentGateway\.findMany/);
+  assert.match(api, /raw provider payloads are excluded/);
   assert.match(api, /Never confirm payments, issue refunds/);
 });
 
