@@ -65,11 +65,14 @@ function jsonSafe(value: unknown): unknown {
 async function getReadOnlyContext(pageKey: string): Promise<{ source: string; data: unknown }> {
   switch (pageKey) {
     case "orders": {
-      const [groups, recent] = await Promise.all([
-        db.order.groupBy({ by: ["status", "paymentStatus"], _count: { _all: true }, _sum: { total: true } }),
-        db.order.findMany({ take: 12, orderBy: { createdAt: "desc" }, select: { orderNumber: true, status: true, paymentStatus: true, total: true, courierName: true, trackingNumber: true, createdAt: true, shippedAt: true, deliveredAt: true } })
-      ]);
-      return { source: "Live database: order status/payment aggregates and 12 latest orders. Customer contact data excluded.", data: jsonSafe({ groups, recent }) };
+      const rows = await db.order.findMany({ take: 1000, orderBy: { createdAt: "desc" }, select: { orderNumber: true, status: true, paymentStatus: true, total: true, courierName: true, trackingNumber: true, createdAt: true, shippedAt: true, deliveredAt: true } });
+      const groups = new Map<string, { status: string; paymentStatus: string; count: number; total: number }>();
+      for (const row of rows) {
+        const status = String(row.status || "UNKNOWN"), paymentStatus = String(row.paymentStatus || "UNKNOWN"), key = status + "::" + paymentStatus;
+        const group = groups.get(key) || { status, paymentStatus, count: 0, total: 0 };
+        group.count += 1; group.total += Number(row.total || 0); groups.set(key, group);
+      }
+      return { source: "Live database: order status/payment aggregates computed from up to 1,000 most recent orders, plus 12 recent orders. Customer contact data excluded; totals are sampled, not all-time totals.", data: jsonSafe({ sampledOrderCount: rows.length, groups: [...groups.values()], recent: rows.slice(0, 12) }) };
     }
     case "products":
     case "inventory": {
@@ -78,32 +81,44 @@ async function getReadOnlyContext(pageKey: string): Promise<{ source: string; da
       return { source: "Live database: up to 250 most recently updated product records, not necessarily the entire catalogue.", data: jsonSafe({ summary, products }) };
     }
     case "categories": {
-      const categories = await db.category.findMany({ take: 200, orderBy: { name: "asc" }, select: { name: true, slug: true, _count: { select: { products: true } } } });
-      return { source: "Live database: category names/slugs and product counts (up to 200).", data: categories };
+      const [categories, products] = await Promise.all([
+        db.category.findMany({ take: 200, orderBy: { name: "asc" }, select: { id: true, name: true, slug: true } }),
+        db.product.findMany({ take: 2000, select: { categoryId: true } })
+      ]);
+      const counts = new Map<string, number>();
+      for (const product of products) if (product.categoryId) counts.set(String(product.categoryId), (counts.get(String(product.categoryId)) || 0) + 1);
+      return { source: "Live database: up to 200 categories and product counts computed from a sample of up to 2,000 product records.", data: categories.map((category: any) => ({ name: category.name, slug: category.slug, productCount: counts.get(String(category.id)) || 0 })) };
     }
     case "customers": {
-      const [total, recent, buyers] = await Promise.all([
+      const [total, recent, orders] = await Promise.all([
         db.user.count({ where: { role: "CUSTOMER" } }),
         db.user.count({ where: { role: "CUSTOMER", createdAt: { gte: new Date(Date.now() - 30 * 86400000) } } }),
-        db.order.findMany({ distinct: ["userId"], where: { userId: { not: null } }, select: { userId: true }, take: 500 })
+        db.order.findMany({ where: { userId: { not: null } }, select: { userId: true }, take: 1000 })
       ]);
-      return { source: "Live aggregate customer counts only; no names, emails, phone numbers or IDs are sent.", data: { totalCustomers: total, newCustomersLast30Days: recent, distinctCustomersWithOrdersInSample: buyers.length, buyerSampleLimit: 500 } };
+      const uniqueBuyerCount = new Set(orders.map((o: any) => String(o.userId || "")).filter(Boolean)).size;
+      return { source: "Live aggregate customer counts only; buyer count is based on up to 1,000 orders. No names, emails, phone numbers or IDs are sent.", data: { totalCustomers: total, newCustomersLast30Days: recent, distinctCustomersWithOrdersInSample: uniqueBuyerCount, sampledOrders: orders.length, buyerSampleLimit: 1000 } };
     }
     case "reviews": {
-      const [counts, recent] = await Promise.all([
-        db.review.groupBy({ by: ["approved", "rating"], _count: { _all: true } }),
-        db.review.findMany({ take: 30, orderBy: { createdAt: "desc" }, select: { rating: true, comment: true, approved: true, createdAt: true, product: { select: { name: true } } } })
-      ]);
-      return { source: "Live database: review rating/status aggregates and 30 latest comments; reviewer identity excluded.", data: jsonSafe({ counts, recent: recent.map(r => ({ ...r, comment: r.comment ? redact(r.comment) : null })) }) };
+      const rows = await db.review.findMany({ take: 500, orderBy: { createdAt: "desc" }, select: { rating: true, comment: true, approved: true, createdAt: true, product: { select: { name: true } } } });
+      const countsMap = new Map<string, { approved: boolean; rating: number; count: number }>();
+      for (const row of rows) {
+        const approved = Boolean(row.approved), rating = Number(row.rating || 0), key = approved + "::" + rating;
+        const group = countsMap.get(key) || { approved, rating, count: 0 }; group.count += 1; countsMap.set(key, group);
+      }
+      return { source: "Live database: review rating/status aggregates computed from up to 500 latest reviews and 30 latest comments; reviewer identity excluded.", data: jsonSafe({ sampledReviewCount: rows.length, counts: [...countsMap.values()], recent: rows.slice(0, 30).map((r: any) => ({ ...r, comment: r.comment ? redact(String(r.comment)) : null })) }) };
     }
     case "mart-pay":
     case "transactions": {
       const [gateways, groups, recent] = await Promise.all([
         db.paymentGateway.findMany({ select: { name: true, type: true, mode: true, enabled: true, sortOrder: true } }),
-        db.paymentTransaction.groupBy({ by: ["status"], _count: { _all: true }, _sum: { amount: true } }),
-        db.paymentTransaction.findMany({ take: 30, orderBy: { createdAt: "desc" }, select: { amount: true, status: true, verifiedAt: true, createdAt: true, gateway: { select: { name: true, type: true } }, order: { select: { orderNumber: true, paymentStatus: true, total: true } } } })
+        db.paymentTransaction.findMany({ take: 1000, orderBy: { createdAt: "desc" }, select: { amount: true, status: true, verifiedAt: true, createdAt: true, gateway: { select: { name: true, type: true } }, order: { select: { orderNumber: true, paymentStatus: true, total: true } } } })
       ]);
-      return { source: "Live database: public gateway configuration, transaction status aggregates and 30 latest transactions. Secrets/raw provider payloads excluded.", data: jsonSafe({ gateways, groups, recent }) };
+      const groupsMap = new Map<string, { status: string; count: number; amount: number }>();
+      for (const row of recent) {
+        const status = String(row.status || "UNKNOWN"), group = groupsMap.get(status) || { status, count: 0, amount: 0 };
+        group.count += 1; group.amount += Number(row.amount || 0); groupsMap.set(status, group);
+      }
+      return { source: "Live database: public gateway configuration and transaction status aggregates computed from up to 1,000 latest transactions. Secrets/raw provider payloads excluded; totals are sampled.", data: jsonSafe({ gateways, sampledTransactionCount: recent.length, groups: [...groupsMap.values()], recent: recent.slice(0, 30) }) };
     }
     case "returns": {
       const rows = await db.returnRequest.findMany({ take: 100, orderBy: { createdAt: "desc" } });
