@@ -43,6 +43,7 @@ jobs:
           GOOGLE_DRIVE_CLIENT_EMAIL: ${{ secrets.GOOGLE_DRIVE_CLIENT_EMAIL }}
           GOOGLE_DRIVE_PRIVATE_KEY: ${{ secrets.GOOGLE_DRIVE_PRIVATE_KEY }}
           GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           set -euo pipefail
           missing=0
@@ -50,7 +51,7 @@ jobs:
             if [ -z "${!key:-}" ]; then echo "::error::Required repository secret is missing: $key"; missing=1; fi
           done
           if [ "$missing" -ne 0 ]; then exit 1; fi
-          if [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
+          if [ -z "${GEMINI_API_KEY:-}" ]; then
             echo "::notice::GEMINI_API_KEY is not configured in GitHub Actions; Gemini features will not be connected."
           else
             echo "GEMINI_API_KEY is configured in GitHub Actions (value hidden)."
