@@ -51,3 +51,13 @@ test("live assistant context avoids payment references and redacts free-text ret
   assert.doesNotMatch(api, /providerTransactionId: true/);
   assert.doesNotMatch(api, /reference: true, providerTransactionId: true/);
 });
+
+test("live aggregates use the Firestore compatibility API", () => {
+  // The Firestore adapter exposes findMany/count/aggregate but not Prisma groupBy/distinct.
+  assert.doesNotMatch(api, /\\.groupBy\\(/);
+  assert.doesNotMatch(api, /distinct:\s*\\[/);
+  assert.match(api, /sampledOrderCount/);
+  assert.match(api, /sampledTransactionCount/);
+  assert.match(api, /sampledReviewCount/);
+  assert.match(api, /productCount/);
+});
