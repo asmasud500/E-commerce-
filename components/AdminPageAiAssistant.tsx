@@ -56,6 +56,7 @@ export default function AdminPageAiAssistant() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [model, setModel] = useState("");
+  const [contextSource, setContextSource] = useState("");
 
   async function ask(value?: string) {
     const question = (value ?? prompt).trim();
@@ -68,7 +69,7 @@ export default function AdminPageAiAssistant() {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "AI assistant request failed.");
-      setAnswer(payload.answer || "No answer was returned."); setModel(payload.model || "");
+      setAnswer(payload.answer || "No answer was returned."); setModel(payload.model || ""); setContextSource(payload.contextSource || "No live context source reported.");
       setPrompt(question);
     } catch (e) {
       setError(e instanceof Error ? e.message : "AI assistant request failed.");
@@ -91,7 +92,7 @@ export default function AdminPageAiAssistant() {
         <textarea id="admin-ai-question" rows={4} maxLength={3000} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Ask in Bangla or English. Paste only redacted logs/details—never passwords, OTPs, or API keys." />
         <button type="button" className="admin-ai-submit" disabled={busy || prompt.trim().length < 2} onClick={() => void ask()}>{busy ? "Analyzing…" : "Ask AI"}</button>
         {error && <p className="admin-ai-error" role="alert">{error}</p>}
-        {answer && <div className="admin-ai-answer"><div className="admin-ai-answer-title">AI recommendation {model ? "· " + model : ""}</div><p>{answer}</p><button type="button" className="admin-ai-copy" onClick={() => { void navigator.clipboard?.writeText(answer); }}>Copy response</button></div>}
+        {answer && <div className="admin-ai-answer"><div className="admin-ai-answer-title">AI recommendation {model ? "· " + model : ""}</div><p>{answer}</p><small className="admin-ai-context-source">Context: {contextSource}</small><button type="button" className="admin-ai-copy" onClick={() => { void navigator.clipboard?.writeText(answer); }}>Copy response</button></div>}
         <small className="admin-ai-safety">Suggestions only. Payments, refunds, inventory, publishing, settings and permissions are never changed by AI.</small>
       </div>
     </section>}
@@ -106,7 +107,7 @@ export default function AdminPageAiAssistant() {
       .admin-ai-suggestion{border:1px solid #ffd4b5;background:#fff7f0;color:#793300;border-radius:9px;padding:9px;text-align:left;font-size:12px;cursor:pointer}
       .admin-ai-body label{font-size:12px;font-weight:700}.admin-ai-body textarea{width:100%;box-sizing:border-box;resize:vertical;border:1px solid #cfd5dd;border-radius:9px;padding:10px;font:inherit;font-size:13px;min-height:84px}
       .admin-ai-submit{border:0;border-radius:9px;background:#ff6801;color:white;padding:10px 14px;font-weight:700;cursor:pointer}.admin-ai-submit:disabled,.admin-ai-suggestion:disabled{opacity:.55;cursor:wait}
-      .admin-ai-error{color:#b42318;font-size:12px}.admin-ai-answer{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f8fa;border:1px solid #e4e7ec;border-radius:10px;padding:12px;font-size:13px;line-height:1.55}.admin-ai-answer-title{font-weight:700;font-size:12px;margin-bottom:8px;color:#344054}.admin-ai-answer p{margin:0}
+      .admin-ai-error{color:#b42318;font-size:12px}.admin-ai-answer{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f8fa;border:1px solid #e4e7ec;border-radius:10px;padding:12px;font-size:13px;line-height:1.55}.admin-ai-answer-title{font-weight:700;font-size:12px;margin-bottom:8px;color:#344054}.admin-ai-answer p{margin:0}.admin-ai-context-source{display:block;margin-top:10px;padding-top:8px;border-top:1px solid #e4e7ec;color:#667085;font-size:11px;line-height:1.45}
       .admin-ai-copy{margin-top:10px;border:1px solid #d0d5dd;background:#fff;border-radius:7px;padding:6px 10px;font-size:12px;cursor:pointer}
       @media(max-width:600px){.admin-ai-fab{right:12px;bottom:12px;padding:10px 14px}.admin-ai-panel{right:12px;bottom:64px;max-height:78dvh}}
     `}</style>
