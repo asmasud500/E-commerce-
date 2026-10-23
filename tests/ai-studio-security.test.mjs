@@ -71,7 +71,7 @@ test("expanded AI Studio tools are registered and remain admin-only", () => {
 
 test("new AI Studio tools create reviewable drafts and do not execute actions", () => {
   assert.match(featureRoute, /"creative-studio","workflow-planner","security-assistant"/);
-  assert.match(featureRoute, /Do not claim any automation was created or executed/);
+  assert.match(featureRoute, /do not claim any automation was created or executed/i);
   assert.match(featureRoute, /Do not modify stock/);
-  assert.match(featureRoute, /Do not update products/);
+  assert.match(featureRoute, /Never update products/);
 });
