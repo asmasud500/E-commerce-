@@ -16,7 +16,8 @@ const FEATURES = [
   { id:"storefront-audit", title:"AI Storefront UX Audit", desc:"Create a prioritized UX/accessibility audit from store context and your notes." },
   { id:"creative-studio", title:"AI Banner & Creative Studio", desc:"Create banner copy, layout briefs and image-generation prompts; no automatic publishing." },
   { id:"workflow-planner", title:"AI Workflow Planner", desc:"Design safe automation plans with approvals, retries, logs and test cases." },
-  { id:"security-assistant", title:"AI Security & Error Assistant", desc:"Analyze redacted errors and suggest defensive fixes; never edits production code." }
+  { id:"security-assistant", title:"AI Security & Error Assistant", desc:"Analyze redacted errors and suggest defensive fixes; never edits production code." },
+  { id:"admin-page-assistant", title:"AI Admin Page Assistant", desc:"Provide page-aware advice using approved read-only database context; operational changes always require human action." }
 ] as const;
 type AnyObj = Record<string, any>;
 const featureName = (id:string) => FEATURES.find(f=>f.id===id)?.title || id;
@@ -101,7 +102,7 @@ export default function AiStudioPage() {
 
   return <div className="admin-layout"><AdminSidebar/><main className="admin-content ai-studio">
     <div className="admin-kicker">MART · INTELLIGENCE WORKSPACE</div>
-    <div className="ai-hero"><div><h1>AI Studio</h1><p>Manage six Gemini-powered features, review AI drafts, and monitor real request telemetry in one workspace.</p></div><div className={"ai-health "+(settings.enabled?"is-on":"is-off")}><i/> {settings.enabled?"AI controls enabled":"AI globally paused"}</div></div>
+    <div className="ai-hero"><div><h1>AI Studio</h1><p>Manage Gemini-powered features, review AI drafts, and monitor real request telemetry in one workspace.</p></div><div className={"ai-health "+(settings.enabled?"is-on":"is-off")}><i/> {settings.enabled?"AI controls enabled":"AI globally paused"}</div></div>
     {notice && <div className="ai-notice" role="status">{notice}<button type="button" onClick={()=>setNotice("")} aria-label="Dismiss notice">×</button></div>}
     <div className="ai-tabs" role="tablist" aria-label="AI Studio sections">{tabs.map(([id,label])=><button key={id} role="tab" aria-selected={tab===id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}</div>
     {loading && !data ? <div className="ai-panel"><p>Loading live AI Studio data…</p></div> : <>
