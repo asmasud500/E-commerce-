@@ -17,7 +17,7 @@ test("page assistant is read-only and redacts sensitive input", () => {
   assert.match(api, /getReadOnlyContext/);
   assert.match(api, /feature: "admin-page-assistant"/);
   assert.match(api, /paymentGateway\.findMany/);
-  assert.match(api, /raw provider payloads are excluded/);
+  assert.match(api, /provider payloads excluded/i);
   assert.match(api, /Never confirm payments, issue refunds/);
 });
 
