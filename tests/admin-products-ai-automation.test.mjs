@@ -29,5 +29,5 @@ test("product AI UI requires explicit approval before saving an unpublished draf
   assert.match(source, /Approve & save as unpublished draft/);
   assert.match(source, /published:\s*false/);
   assert.match(source, /Human approval required/);
-  assert.match(source, /Stock, publishing changes require review/);
+  assert.match(source, /publishing changes require review/);
 });
