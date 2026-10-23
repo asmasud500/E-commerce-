@@ -30,3 +30,17 @@
 ## Rollout gate
 
 Run CI (npm run test:security, npx tsc --noEmit, npm run build, and npm run cf:build), deploy to a staging Worker, and test desktop/mobile layouts plus the existing login, catalog, cart, checkout, payment callback, order management, Telegram, and backup workflows. Production deployment remains a separate explicit action after staging results and secret configuration are verified.
+
+
+## Expanded AI Studio tools
+
+The admin workspace also includes:
+- SEO audit of up to 100 published products, with explicit sample labels and metadata recommendations only.
+- Inventory insights based on a bounded published-product snapshot; the assistant never changes stock or invents demand.
+- Review analysis over up to 200 approved reviews. Personal identifiers are redacted before prompt construction.
+- Storefront UX audit based on catalog context and admin-provided notes; it does not claim to crawl or measure the live site.
+- Banner/creative briefs and image-generation prompts. This model integration returns text briefs, not rendered image files.
+- Workflow plans with trigger, conditions, approvals, retries, idempotency, failure handling, audit events, tests and rollback.
+- Defensive security/error reviews for admin-supplied, redacted excerpts; no production code is changed.
+
+All new business tools are admin-only and restricted to SUPER_ADMIN/MANAGER. Their output is stored as a reviewable AI draft and is never auto-published or executed. Validate recommendations against the source records before acting.
