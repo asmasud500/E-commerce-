@@ -21,6 +21,8 @@ test("AI product endpoint is suggestion-only and validates bounded requests", ()
   assert.match(source, /published:\s*Boolean\(p\.published\)/);
   assert.match(source, /does not execute or claim to execute changes/i);
   assert.match(source, /AI_PRODUCT_ANALYSIS/);
+  assert.match(source, /allowedIds/);
+  assert.match(source, /metaKeywords/);
   assert.doesNotMatch(source, /db\.product\.(create|update|delete)\(/);
 });
 
@@ -30,4 +32,6 @@ test("product AI UI requires explicit approval before saving an unpublished draf
   assert.match(source, /published:\s*false/);
   assert.match(source, /Human approval required/);
   assert.match(source, /publishing changes require review/);
+  assert.match(source, /Approve & apply SEO to all listed products/);
+  assert.match(source, /method: "PATCH"/);
 });
