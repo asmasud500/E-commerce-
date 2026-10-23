@@ -53,7 +53,7 @@ export default function AdminProductAIStudio({ products, onRefresh }: { products
     try {
       const response = await fetch("/api/admin/products", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: draft.name, description: draft.description, sku: sku.trim(), price: Number(price), published: false, stock: 0, lowStockThreshold: 5, featured: false })
+        body: JSON.stringify({ name: draft.name, description: draft.description, sku: sku.trim(), price: Number(price), published: false, stock: 0, lowStockThreshold: 5, featured: false, metaTitle: draft.seoTitle, metaDescription: draft.metaDescription, metaKeywords: (draft.tags || []).join(", ") })
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Could not save product draft.");
