@@ -3,6 +3,7 @@ import {z} from "zod";
 import {db} from "@/lib/prisma";
 import {recordAdminAudit} from "@/lib/auth/audit";
 import {readAdminSession} from "@/lib/auth/admin";
+import {canAccessAdminPath} from "@/lib/auth/permissions";
 
 export const runtime = "nodejs";
 const rowSchema = z.object({
@@ -30,6 +31,7 @@ function boolValue(v:unknown){return typeof v==="boolean"?v:["true","1","yes","y
 export async function POST(req:NextRequest){
   const session=await readAdminSession(req.cookies.get("admin_session")?.value||"");
   if(!session)return NextResponse.json({error:"Admin authentication required."},{status:401});
+  if(!canAccessAdminPath(session.role,"/api/admin/products/bulk","POST"))return NextResponse.json({error:"You do not have permission to import products."},{status:403});
   try{
     const body=await req.json();
     if(!Array.isArray(body?.rows)||body.rows.length===0)return NextResponse.json({error:"No product rows supplied."},{status:400});

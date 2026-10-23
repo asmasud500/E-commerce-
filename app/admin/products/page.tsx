@@ -1,5 +1,6 @@
 "use client";
 import AdminSidebar from "@/components/AdminSidebar";
+import AdminProductAIStudio from "@/components/AdminProductAIStudio";
 import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
 
@@ -45,6 +46,7 @@ export default function AdminProducts(){
  }
  return <div className="admin-layout"><AdminSidebar/><main className="admin-content">
  <header className="admin-heading-row catalog-page-heading"><div><div className="admin-kicker">MART · CATALOGUE MANAGEMENT</div><Link href="/admin" className="catalog-back-link">← Dashboard</Link><h1>Products &amp; Catalogue</h1><p>Manage product listings, pricing, publishing and stock visibility from one workspace.</p></div><div className="catalog-header-actions"><Link href="/admin/categories">Categories</Link><Link href="/admin/inventory">Inventory</Link><Link href="/admin/products/new" className="catalog-add-product">＋ Add product</Link></div></header>
+ <AdminProductAIStudio products={products} onRefresh={load} />
  <section className="catalog-import-panel">
   <div className="catalog-import-heading"><span className="catalog-import-icon">⇅</span><div><h2>Bulk import &amp; export</h2><p>Update products in batches using Excel or Google Sheets.</p></div></div>
   <p className="catalog-import-description">Download the complete CSV template, fill product data plus options, variants and image URLs, then import it back. CSV works with Microsoft Excel and Google Sheets.</p>
