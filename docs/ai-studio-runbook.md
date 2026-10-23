@@ -3,7 +3,7 @@
 ## Before enabling AI
 
 1. Create an API key in Google AI Studio for the intended project.
-2. Add it to the Cloudflare Worker as an encrypted secret named GEMINI_API_KEY. Do not put the key in GitHub source, a NEXT_PUBLIC_* variable, Firestore settings, or browser code.
+2. In the GitHub repository, open Settings → Secrets and variables → Actions → New repository secret. Name it exactly `GEMINI_API_KEY` and paste the key as its value. The deploy workflow syncs it to Cloudflare Worker encrypted secret storage automatically; do not commit it to source, put it in a `NEXT_PUBLIC_*` variable, Firestore settings, or browser code.
 3. Verify the Firebase service account and Firestore permissions already used by the store are configured in the staging Worker.
 4. Open Admin → AI Studio and run Test Gemini connection. A successful test confirms one small model call only; it does not guarantee ongoing free quota.
 5. Check the Google AI Studio quota page for the selected model before enabling customer traffic. Review Google's current Free-tier data terms: submitted content may be used to improve Google products, so do not send sensitive customer data.
