@@ -4115,3 +4115,12 @@ body:not(:has(.admin-layout)) ::selection{
   body:not(:has(.admin-layout)) .sh-subnav{background:#202b3a}
   body:not(:has(.admin-layout)) .sh-search{box-shadow:none}
 }
+
+/* Header + hero contrast fix: dark header/subnav need light text; dark hero slides need white titles */
+body:not(:has(.admin-layout)) .sh-subnav a{color:#e5eaf1!important}
+body:not(:has(.admin-layout)) .sh-subnav a:hover{color:#ffb27a!important}
+body:not(:has(.admin-layout)) .sh-subnav .sh-all-cats{color:#fff!important;font-weight:800}
+body:not(:has(.admin-layout)) .sh-subnav .sh-all-cats svg{color:#ff8a3d}
+.hp-slide.hp-s1 h2,.hp-slide.hp-s2 h2{color:#fff}
+.hp-slide.hp-s3 h2{color:var(--navy,#131921)}
+.hp-slide.hp-s2 .hp-big{color:#131921}
