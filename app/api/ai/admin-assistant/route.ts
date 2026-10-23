@@ -93,6 +93,34 @@ async function getReadOnlyContext(pageKey: string): Promise<{ source: string; da
       ]);
       return { source: "Live database: public gateway configuration, transaction status aggregates and 30 latest transactions. Secrets/raw provider payloads excluded.", data: jsonSafe({ gateways, groups, recent }) };
     }
+    case "returns": {
+      const [groups, recent] = await Promise.all([
+        db.order.groupBy({ by: ["status", "paymentStatus"], where: { OR: [{ status: "REFUNDED" }, { paymentStatus: "REFUNDED" }, { refundReference: { not: null } }] }, _count: { _all: true }, _sum: { total: true } }),
+        db.order.findMany({ take: 30, where: { OR: [{ status: "REFUNDED" }, { paymentStatus: "REFUNDED" }, { refundReference: { not: null } }] }, orderBy: { updatedAt: "desc" }, select: { orderNumber: true, status: true, paymentStatus: true, total: true, refundReference: true, refundReason: true, refundedAt: true, updatedAt: true } })
+      ]);
+      return { source: "Live database: order refund markers and refunded-order sample only. No separate return-request model exists in the verified schema.", data: jsonSafe({ groups, recent }) };
+    }
+    case "integrations": {
+      const gateways = await db.paymentGateway.findMany({ select: { name: true, type: true, mode: true, enabled: true, sortOrder: true, updatedAt: true, apiBaseUrl: true, publicConfig: true, encryptedSecrets: true } });
+      return { source: "Live database: payment gateway metadata only. Secret values, public config contents and API URLs are not sent to the AI.", data: gateways.map(g => ({ name: g.name, type: g.type, mode: g.mode, enabled: g.enabled, sortOrder: g.sortOrder, updatedAt: g.updatedAt, hasApiBaseUrl: Boolean(g.apiBaseUrl), hasPublicConfig: Boolean(g.publicConfig), hasEncryptedSecrets: Boolean(g.encryptedSecrets) })) };
+    }
+    case "storage": {
+      const logs = await db.auditLog.findMany({ take: 50, where: { OR: [{ entity: { contains: "storage", mode: "insensitive" } }, { action: { contains: "backup", mode: "insensitive" } }, { action: { contains: "storage", mode: "insensitive" } }] }, orderBy: { createdAt: "desc" }, select: { action: true, entity: true, createdAt: true } });
+      return { source: "Live database: up to 50 storage/backup-related audit event labels and timestamps. Metadata, actor IDs and file paths excluded; this is not a storage health probe.", data: logs };
+    }
+    case "marketing":
+    case "flash-sales": {
+      const campaigns = await db.coupon.findMany({ take: 100, where: { campaignName: { not: null } }, orderBy: { updatedAt: "desc" }, select: { campaignName: true, campaignDescription: true, type: true, value: true, startsAt: true, expiresAt: true, usageLimit: true, usedCount: true, active: true } });
+      return { source: "Live database: coupon campaign metadata only; this is not a complete marketing or flash-sale scheduler.", data: jsonSafe({ campaigns, sampleLimit: 100 }) };
+    }
+    case "staff": {
+      const [totalAdmins, totalCustomers, recentAdminActions] = await Promise.all([
+        db.user.count({ where: { role: "ADMIN" } }),
+        db.user.count({ where: { role: "CUSTOMER" } }),
+        db.auditLog.findMany({ take: 30, where: { createdAt: { gte: new Date(Date.now() - 30 * 86400000) } }, orderBy: { createdAt: "desc" }, select: { action: true, entity: true, createdAt: true } })
+      ]);
+      return { source: "Live aggregate user role counts and 30 recent audit action labels; no staff identities or actor IDs. Schema exposes only ADMIN/CUSTOMER roles, not a detailed permission matrix.", data: { totalAdmins, totalCustomers, recentAdminActions } };
+    }
     case "coupons": {
       const coupons = await db.coupon.findMany({ take: 200, orderBy: { updatedAt: "desc" }, select: { code: true, name: true, campaignName: true, type: true, value: true, minOrder: true, startsAt: true, expiresAt: true, usageLimit: true, usedCount: true, perCustomerLimit: true, active: true } });
       return { source: "Live database: coupon rules and usage fields (up to 200), without customer identities.", data: jsonSafe(coupons) };
