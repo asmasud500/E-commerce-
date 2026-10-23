@@ -12,6 +12,8 @@ test("product AI automation is limited to product-authorized roles", () => {
   assert.equal(canAccessAdminPath("SUPPORT", apiPath, "POST"), false);
   assert.equal(canAccessAdminPath("ORDER_MANAGER", apiPath, "POST"), false);
   assert.equal(canAccessAdminPath("UNKNOWN", apiPath, "POST"), false);
+  assert.equal(canAccessAdminPath("PRODUCT_MANAGER", "/api/admin/products/bulk", "POST"), true);
+  assert.equal(canAccessAdminPath("SUPPORT", "/api/admin/products/bulk", "POST"), false);
 });
 
 test("AI product endpoint is suggestion-only and validates bounded requests", () => {
@@ -23,6 +25,7 @@ test("AI product endpoint is suggestion-only and validates bounded requests", ()
   assert.match(source, /AI_PRODUCT_ANALYSIS/);
   assert.match(source, /allowedIds/);
   assert.match(source, /metaKeywords/);
+  assert.match(source, /mimeType: z.enum\(\["image\\/jpeg", "image\\/png", "image\\/webp"\]\)/);
   assert.doesNotMatch(source, /db\.product\.(create|update|delete)\(/);
 });
 
@@ -34,4 +37,5 @@ test("product AI UI requires explicit approval before saving an unpublished draf
   assert.match(source, /publishing changes require review/);
   assert.match(source, /Approve & apply SEO to all listed products/);
   assert.match(source, /method: "PATCH"/);
+  assert.match(source, /4 \* 1024 \* 1024/);
 });
