@@ -15,6 +15,7 @@ const modules = [
   { title: "Coupons & discounts", desc: "Manage discount codes and coupon rules.", href: "/admin/coupons", icon: "％", tag: "Marketing" },
   { title: "Reviews & moderation", desc: "Moderate customer reviews and manage their visibility.", href: "/admin/reviews", icon: "☆", tag: "Engagement" },
   { title: "Reports & analytics", desc: "Review sales activity, order statuses, stock alerts and available exports.", href: "/admin/reports", icon: "▥", tag: "Insights" },
+  { title: "AI Studio", desc: "Manage Gemini-powered product content, smart search, customer support, sales insights and marketing drafts.", href: "/admin/ai-studio", icon: "✦", tag: "AI & automation" },
   { title: "Returns & refunds", desc: "Review return requests and refund-related workflows.", href: "/admin/returns", icon: "↩", tag: "After-sales" },
   { title: "Delivery zones", desc: "Manage delivery areas, charges and estimated delivery times.", href: "/admin/delivery-zones", icon: "⌁", tag: "Delivery" },
   { title: "Store settings", desc: "Review store profile, delivery defaults, tax preferences and announcements.", href: "/admin/settings", icon: "⚙", tag: "Configuration" },

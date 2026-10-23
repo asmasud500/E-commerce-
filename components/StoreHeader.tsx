@@ -3,6 +3,7 @@ import Link from "next/link";
 import {useEffect,useState} from "react";
 import {Icon} from "@/components/Icons";
 import {getCart} from "@/lib/cart";
+import StoreAiAssistant from "@/components/StoreAiAssistant";
 
 type Cat={name:string;slug:string};
 
@@ -77,6 +78,7 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
         <span className="sh-delivery"><Icon name="mapPin" size={15}/> {deliveryNotice}</span>
       </div>
     </nav>
+    <StoreAiAssistant />
     </>
   );
 }

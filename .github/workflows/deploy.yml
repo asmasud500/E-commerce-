@@ -43,6 +43,7 @@ jobs:
           GOOGLE_DRIVE_CLIENT_EMAIL: ${{ secrets.GOOGLE_DRIVE_CLIENT_EMAIL }}
           GOOGLE_DRIVE_PRIVATE_KEY: ${{ secrets.GOOGLE_DRIVE_PRIVATE_KEY }}
           GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           set -euo pipefail
           missing=0
@@ -50,6 +51,11 @@ jobs:
             if [ -z "${!key:-}" ]; then echo "::error::Required repository secret is missing: $key"; missing=1; fi
           done
           if [ "$missing" -ne 0 ]; then exit 1; fi
+          if [ -z "${GEMINI_API_KEY:-}" ]; then
+            echo "::notice::GEMINI_API_KEY is not configured in GitHub Actions; Gemini features will not be connected."
+          else
+            echo "GEMINI_API_KEY is configured in GitHub Actions (value hidden)."
+          fi
           echo "Required production secrets are present (values are not printed)."
       - name: Deploy Firestore composite indexes
         env:
@@ -98,6 +104,7 @@ jobs:
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
       - name: Set application runtime secrets
         run: |
+          set -euo pipefail
           printf '%s' "$ADMIN_EMAIL" | npx wrangler secret put ADMIN_EMAIL
           printf '%s' "$ADMIN_PASSWORD" | npx wrangler secret put ADMIN_PASSWORD
           printf '%s' "$ADMIN_SESSION_SECRET" | npx wrangler secret put ADMIN_SESSION_SECRET
@@ -107,8 +114,9 @@ jobs:
             value="$2"
             if [ -n "$value" ]; then
               printf '%s' "$value" | npx wrangler secret put "$name"
+              echo "$name synced to Worker secret storage."
             else
-              echo "$name not configured; related integration remains disabled."
+              echo "$name not configured in GitHub Actions; related integration remains disabled."
             fi
           }
           put_optional_secret TELEGRAM_BOT_TOKEN "$TELEGRAM_BOT_TOKEN"
@@ -121,6 +129,7 @@ jobs:
           put_optional_secret GOOGLE_DRIVE_CLIENT_EMAIL "$GOOGLE_DRIVE_CLIENT_EMAIL"
           put_optional_secret GOOGLE_DRIVE_PRIVATE_KEY "$GOOGLE_DRIVE_PRIVATE_KEY"
           put_optional_secret GOOGLE_DRIVE_FOLDER_ID "$GOOGLE_DRIVE_FOLDER_ID"
+          put_optional_secret GEMINI_API_KEY "$GEMINI_API_KEY"
           printf '%s' "$PAYMENT_WEBHOOK_SECRET" | npx wrangler secret put PAYMENT_WEBHOOK_SECRET
           put_optional_secret MOBILE_MONEY_SMS_WEBHOOK_SECRET "$MOBILE_MONEY_SMS_WEBHOOK_SECRET"
           printf '%s' "$CRON_SECRET" | npx wrangler secret put CRON_SECRET
@@ -144,6 +153,7 @@ jobs:
           PAYMENT_WEBHOOK_SECRET: ${{ secrets.PAYMENT_WEBHOOK_SECRET }}
           MOBILE_MONEY_SMS_WEBHOOK_SECRET: ${{ secrets.MOBILE_MONEY_SMS_WEBHOOK_SECRET }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       # Telegram registration is best-effort; it must not block a successful Worker deploy.
       - name: Register store Telegram webhook and commands
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
