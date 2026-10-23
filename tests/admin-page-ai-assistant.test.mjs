@@ -43,3 +43,11 @@ test("all 19 admin modules have page-specific assistant guidance", () => {
 test("assistant is mounted in the shared admin navigation", () => {
   assert.match(sidebar, /<AdminPageAiAssistant\s*\/>/);
 });
+
+test("live assistant context avoids payment references and redacts free-text return notes", () => {
+  assert.equal((api.match(/case "staff":/g) || []).length, 1);
+  assert.match(api, /reason: r\.reason \? redact\(String\(r\.reason\)\)/);
+  assert.match(api, /resolution: r\.resolution \? redact\(String\(r\.resolution\)\)/);
+  assert.doesNotMatch(api, /providerTransactionId: true/);
+  assert.doesNotMatch(api, /reference: true, providerTransactionId: true/);
+});
