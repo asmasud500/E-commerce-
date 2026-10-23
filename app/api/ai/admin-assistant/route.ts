@@ -109,7 +109,7 @@ async function getReadOnlyContext(pageKey: string): Promise<{ source: string; da
     }
     case "mart-pay":
     case "transactions": {
-      const [gateways, groups, recent] = await Promise.all([
+      const [gateways, recent] = await Promise.all([
         db.paymentGateway.findMany({ select: { name: true, type: true, mode: true, enabled: true, sortOrder: true } }),
         db.paymentTransaction.findMany({ take: 1000, orderBy: { createdAt: "desc" }, select: { amount: true, status: true, verifiedAt: true, createdAt: true, gateway: { select: { name: true, type: true } }, order: { select: { orderNumber: true, paymentStatus: true, total: true } } } })
       ]);
