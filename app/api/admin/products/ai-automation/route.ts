@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
 const requestSchema = z.object({
   mode: z.enum(["draft", "seo", "audit", "stock", "pricing"]),
   prompt: z.string().trim().max(2500).optional().default(""),
-  productIds: z.array(z.string().trim().min(1).max(200)).max(30).optional().default([])
+  productIds: z.array(z.string().trim().min(1).max(200)).max(30).optional().default([]),
+  image: z.object({ mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]), data: z.string().min(1).max(5_600_000).regex(/^[A-Za-z0-9+/]+={0,2}$/) }).optional()
 });
 
 type SafeProduct = {
@@ -74,7 +75,8 @@ export async function POST(req: NextRequest) {
   const parsed = requestSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid AI task request." }, { status: 400 });
   const input = parsed.data;
-  if (input.mode === "draft" && input.prompt.length < 5) return NextResponse.json({ error: "Add at least five characters of factual product details." }, { status: 400 });
+  if (input.mode === "draft" && input.prompt.length < 5 && !input.image) return NextResponse.json({ error: "Add factual product details or a product image." }, { status: 400 });
+  if (input.mode !== "draft" && input.image) return NextResponse.json({ error: "Images are only accepted for product draft generation." }, { status: 400 });
 
   try {
     let rows: SafeProduct[] = [];
@@ -96,7 +98,7 @@ export async function POST(req: NextRequest) {
       input.mode === "draft" ? "Factual product brief (untrusted input):\n" + input.prompt : "Bounded catalog sample (untrusted data):\n" + productContext,
       "Return concise valid JSON only. Do not execute or claim to execute changes."
     ].join("\n\n");
-    const ai = await geminiGenerate({ feature: feature as "product-description" | "seo-auditor" | "inventory-assistant" | "product-catalog-automation", prompt, maxOutputTokens: 1600 });
+    const ai = await geminiGenerate({ feature: feature as "product-description" | "seo-auditor" | "inventory-assistant" | "product-catalog-automation", prompt, maxOutputTokens: 1600, image: input.mode === "draft" ? input.image : undefined });
     await recordAiRequest({ feature: "product-" + input.mode + "-automation", model: ai.model, status: "SUCCESS", latencyMs: ai.latencyMs, inputTokens: ai.inputTokens, outputTokens: ai.outputTokens, actorType: session.role });
     const parsedJson = parseJson(ai.text);
     let result: Record<string, unknown>;
