@@ -4,6 +4,7 @@ import { readAdminSession } from "@/lib/auth/admin";
 import { db } from "@/lib/prisma";
 import { getEffectivePrice } from "@/lib/products/pricing";
 import { AI_FEATURES, geminiGenerate, getAiSettings, recordAiRequest, safeAiError, type AiFeature } from "@/lib/ai/gemini";
+import { sendComplaintTelegramReport } from "@/lib/notifications/complaints";
 
 export const dynamic = "force-dynamic";
 
@@ -239,6 +240,10 @@ export async function POST(req: NextRequest, context: { params: Promise<{ featur
     }
 
     const generated = await geminiGenerate({ feature: feature as AiFeature, prompt });
+    // Escalate detected complaints from customer-facing AI channels. Notification failure must not break support.
+    if (feature === "customer-support" || feature === "shopping-assistant") {
+      await sendComplaintTelegramReport(input.input || "", generated.text, feature === "customer-support" ? "MART Assistant · Customer Support" : "MART Assistant · Shopping Assistant").catch(() => undefined);
+    }
     let draft: any = null;
     if (["product-description","marketing-studio","sales-analyst","seo-auditor","inventory-assistant","review-analyzer","storefront-audit","creative-studio","workflow-planner","security-assistant"].includes(feature)) {
       draft = await saveDraft(feature, draftTitle, generated.text, session?.email || "admin", draftMetadata);
