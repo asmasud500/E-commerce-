@@ -30,10 +30,10 @@ const schema=z.object({
     ctx.addIssue({code:"custom",path:["endsAt"],message:"End date must be on or after start date."});
   }
 });
-const invalid=(error:{issues:Array<{path:(string|number)[];message:string}>;flatten:()=>unknown})=>{
-  const fieldErrors=error.issues.map(issue=>({field:issue.path.join(".")||"form",message:issue.message}));
+const invalid=(issues:Array<{path:PropertyKey[];message:string}>)=>{
+  const fieldErrors=issues.map(issue=>({field:issue.path.map(String).join(".")||"form",message:issue.message}));
   return NextResponse.json(
-    {error:fieldErrors[0]?.message||"Please review the banner fields.",fieldErrors,details:error.flatten()},
+    {error:fieldErrors[0]?.message||"Please review the banner fields.",fieldErrors},
     {status:400,headers:{"Cache-Control":"private, no-store"}}
   );
 };
@@ -46,7 +46,7 @@ export async function GET(){
 export async function POST(req:NextRequest){
   try{
     const parsed=schema.safeParse(await req.json());
-    if(!parsed.success)return invalid(parsed.error);
+    if(!parsed.success)return invalid(parsed.error.issues);
     const data={...parsed.data,startsAt:parsed.data.startsAt?new Date(parsed.data.startsAt):null,endsAt:parsed.data.endsAt?new Date(parsed.data.endsAt):null};
     const row=await db.banner.create({data});
     await recordAdminAudit(req,{action:"BANNER_CREATED",entity:"banner",entityId:row.id,metadata:{title:row.title,active:row.active,sortOrder:row.sortOrder}});
