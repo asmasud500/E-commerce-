@@ -32,7 +32,7 @@ type Ctx={params:Promise<{id:string}>};
 export async function PATCH(req:NextRequest,ctx:Ctx){
   try{
     const {id}=await ctx.params;const parsed=schema.safeParse(await req.json());
-    if(!parsed.success)return invalid(parsed.error);
+    if(!parsed.success)return invalid(parsed.error.issues);
     const current=await db.banner.findUnique({where:{id}});
     if(!current)return NextResponse.json({error:"Banner not found."},{status:404,headers:noStore});
     const data={...parsed.data,startsAt:parsed.data.startsAt===undefined?undefined:parsed.data.startsAt?new Date(parsed.data.startsAt):null,endsAt:parsed.data.endsAt===undefined?undefined:parsed.data.endsAt?new Date(parsed.data.endsAt):null,updatedAt:new Date()};
