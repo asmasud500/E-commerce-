@@ -154,22 +154,32 @@ jobs:
           MOBILE_MONEY_SMS_WEBHOOK_SECRET: ${{ secrets.MOBILE_MONEY_SMS_WEBHOOK_SECRET }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      # Telegram registration is best-effort; it must not block a successful Worker deploy.
+      # Telegram is an optional integration: registration failure must not turn a healthy Worker deploy red.
       - name: Register store Telegram webhook and commands
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
+        continue-on-error: true
         run: |
           set -euo pipefail
           if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_WEBHOOK_SECRET:-}" ]; then
-            echo "::error::Telegram webhook registration requires TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET."
-            exit 1
+            echo "::warning::Telegram webhook registration skipped because TELEGRAM_BOT_TOKEN or TELEGRAM_WEBHOOK_SECRET is not configured."
+            exit 0
           fi
           API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
           URL="https://ecommerce-platform.masud50003.workers.dev/api/telegram/webhook"
-          curl --fail --silent --show-error -X POST "$API/setWebhook" -H 'content-type: application/json' \
-            -d "{\"url\":\"$URL\",\"secret_token\":\"$TELEGRAM_WEBHOOK_SECRET\",\"allowed_updates\":[\"message\",\"callback_query\"],\"drop_pending_updates\":false}" | tee /dev/stderr | jq -e '.ok == true' > /dev/null
-          curl --fail --silent --show-error -X POST "$API/setMyCommands" -H 'content-type: application/json' \
-            -d '{"commands":[{"command":"start","description":"Start"},{"command":"help","description":"Help"},{"command":"orders","description":"Recent orders"},{"command":"pending","description":"Pending orders"},{"command":"today","description":"Today summary"},{"command":"sales","description":"Sales report"},{"command":"stock","description":"Low stock"},{"command":"search","description":"Search orders"}]}' | tee /dev/stderr | jq -e '.ok == true' > /dev/null
-          curl --fail --silent --show-error "$API/getWebhookInfo" | tee /dev/stderr | jq -e --arg url "$URL" '.ok == true and .result.url == $url' > /dev/null
+          if ! curl --fail --silent --show-error -X POST "$API/setWebhook" -H 'content-type: application/json' \
+            -d "{\"url\":\"$URL\",\"secret_token\":\"$TELEGRAM_WEBHOOK_SECRET\",\"allowed_updates\":[\"message\",\"callback_query\"],\"drop_pending_updates\":false}" | jq -e '.ok == true' > /dev/null; then
+            echo "::warning::Telegram webhook registration failed; website deployment remains available. Re-run the integration setup after checking the bot token and Telegram API."
+            exit 0
+          fi
+          if ! curl --fail --silent --show-error -X POST "$API/setMyCommands" -H 'content-type: application/json' \
+            -d '{"commands":[{"command":"start","description":"Start"},{"command":"help","description":"Help"},{"command":"orders","description":"Recent orders"},{"command":"pending","description":"Pending orders"},{"command":"today","description":"Today summary"},{"command":"sales","description":"Sales report"},{"command":"stock","description":"Low stock"},{"command":"search","description":"Search orders"}]}' | jq -e '.ok == true' > /dev/null; then
+            echo "::warning::Telegram commands could not be updated; website deployment remains available."
+            exit 0
+          fi
+          if ! curl --fail --silent --show-error "$API/getWebhookInfo" | jq -e --arg url "$URL" '.ok == true and .result.url == $url' > /dev/null; then
+            echo "::warning::Telegram webhook URL could not be verified; website deployment remains available."
+            exit 0
+          fi
           echo "Telegram webhook URL verified against the deployed Worker."
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
