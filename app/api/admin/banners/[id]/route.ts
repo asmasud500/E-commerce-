@@ -23,9 +23,9 @@ const schema=z.object({
   active:z.boolean().optional(),
   sortOrder:z.coerce.number().int("Sort order must be a whole number.").min(0,"Sort order cannot be negative.").max(10000,"Sort order must be 10000 or less.").optional()
 }).strict();
-const invalid=(error:{issues:Array<{path:(string|number)[];message:string}>;flatten:()=>unknown})=>{
-  const fieldErrors=error.issues.map(issue=>({field:issue.path.join(".")||"form",message:issue.message}));
-  return NextResponse.json({error:fieldErrors[0]?.message||"Please review the banner fields.",fieldErrors,details:error.flatten()},{status:400,headers:{"Cache-Control":"private, no-store"}});
+const invalid=(issues:Array<{path:PropertyKey[];message:string}>)=>{
+  const fieldErrors=issues.map(issue=>({field:issue.path.map(String).join(".")||"form",message:issue.message}));
+  return NextResponse.json({error:fieldErrors[0]?.message||"Please review the banner fields.",fieldErrors},{status:400,headers:{"Cache-Control":"private, no-store"}});
 };
 const noStore={"Cache-Control":"private, no-store"};
 type Ctx={params:Promise<{id:string}>};
