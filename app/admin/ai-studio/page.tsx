@@ -192,13 +192,20 @@ export default function AiStudioPage() {
           <article><span>Health reports</span><strong>{healthHistory.length+(healthResult&&!healthHistory.some(h=>h.checkedAt===healthResult.checkedAt)?1:0)}</strong><small>Shared maintenance history</small></article>
           <article><span>Audit schedule</span><strong>Daily</strong><small>GitHub Actions · 08:00 Bangladesh time</small></article>
         </div>}
+        {healthResult?.diagnosis&&<section className="ai-panel" style={{marginTop:18,border:"1px solid #fed7aa",background:"#fffaf5"}}>
+          <div className="ai-panel-heading"><div><span className="ai-kicker">AUTOMATED DIAGNOSIS · {healthResult.diagnosis.severity||"INFO"}</span><h2>{healthResult.diagnosis.title}</h2><p>{healthResult.diagnosis.summary}</p></div><span className="ai-pill bad">{healthResult.diagnosis.code}</span></div>
+          <p><strong>Target host:</strong> {healthResult.diagnosis.targetOrigin||healthResult.origin||"Current request host"}</p>
+          <p><strong>Origin selected from:</strong> {healthResult.diagnosis.originSource||healthResult.originSource||"Not recorded"}</p>
+          <ol style={{paddingLeft:22}}>{(healthResult.diagnosis.steps||[]).map((step:string,index:number)=><li key={index} style={{marginBottom:10}}>{step}</li>)}</ol>
+          <div className="ai-actions"><button onClick={()=>{const d=healthResult.diagnosis;const report=[d.title,d.summary,"Target host: "+(d.targetOrigin||healthResult.origin),...(d.steps||[]).map((step:string,i:number)=>(i+1)+". "+step)].join("\\n");void navigator.clipboard?.writeText(report).then(()=>setNotice("Diagnosis and remediation steps copied.")).catch(()=>setNotice("Copy unavailable in this browser."));}}>Copy fix instructions</button><button className="ai-primary" onClick={()=>void runWebsiteHealth()} disabled={healthRunning}>{healthRunning?"Checking…":"Verify after fix"}</button></div>
+        </section>}
         {healthResult&&<><div className="ai-stat-grid">
           <article><span>Overall status</span><strong>{healthResult.summary.status}</strong><small>Checked {new Date(healthResult.checkedAt).toLocaleString()}</small></article>
           <article><span>Passed</span><strong>{healthResult.summary.passed}</strong><small>Expected response verified</small></article>
           <article><span>Warnings</span><strong>{healthResult.summary.warnings}</strong><small>Response needs review</small></article>
           <article><span>Failed</span><strong>{healthResult.summary.failed}</strong><small>Request or server error</small></article>
         </div>
-        <div className="ai-feature-list">{(healthResult.results||[]).map((item:AnyObj)=><div className="ai-feature-row" key={item.id}><span className="ai-feature-mark">{item.status==="PASS"?"✓":item.status==="WARN"?"!":"×"}</span><div className="ai-feature-main"><strong>{item.label}</strong><small>{item.path} · HTTP {item.httpStatus??"no response"} · {item.latencyMs} ms</small><small>{item.message}</small></div><span className={"ai-pill "+(item.status==="PASS"?"good":item.status==="WARN"?"muted":"bad")}>{item.status}</span></div>)}</div>
+        <div className="ai-feature-list">{(healthResult.results||[]).map((item:AnyObj)=><div className="ai-feature-row" key={item.id}><span className="ai-feature-mark">{item.status==="PASS"?"✓":item.status==="WARN"?"!":"×"}</span><div className="ai-feature-main"><strong>{item.label}</strong><small>{item.path} · HTTP {item.httpStatus??"no response"} · {item.latencyMs} ms</small><small>{item.message}</small>{item.recommendation&&<small><strong>Next step:</strong> {item.recommendation}</small>}</div><span className={"ai-pill "+(item.status==="PASS"?"good":item.status==="WARN"?"muted":"bad")}>{item.status}</span></div>)}</div>
         </>}
         {!healthResult&&<div className="ai-empty">No health check has been run in this session yet. Start a check to inspect live endpoint responses.</div>}
         <div className="ai-panel-heading" style={{marginTop:24}}><div><h2>Recent health check history</h2><p>Server-side Firestore history, shared across authorized admin sessions. Up to 50 reports are shown.</p></div></div>
