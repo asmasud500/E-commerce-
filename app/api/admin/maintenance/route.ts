@@ -18,6 +18,12 @@ const resultSchema = z.object({
 const reportSchema = z.object({
   checkedAt: z.string().datetime(),
   origin: z.string().url(),
+  originSource: z.string().max(100).optional(),
+  diagnosis: z.object({
+    code: z.string().max(100), severity: z.string().max(30), title: z.string().max(200),
+    summary: z.string().max(1000), targetOrigin: z.string().url(), originSource: z.string().max(100),
+    steps: z.array(z.string().max(1000)).max(20)
+  }).optional(),
   summary: z.object({
     total: z.number().int().nonnegative(),
     passed: z.number().int().nonnegative(),
@@ -60,7 +66,7 @@ export async function GET(req: NextRequest) {
   try {
     const rows = await db.aiMaintenanceRecord.findMany({ orderBy: { updatedAt: "desc" }, take: 300 });
     const reports = rows.filter((row: any) => row.recordType === "report").slice(0, 50).map((row: any) => ({
-      id: row.id, checkedAt: safeDate(row.checkedAt), origin: row.origin, summary: row.summary, results: row.results || []
+      id: row.id, checkedAt: safeDate(row.checkedAt), origin: row.origin, originSource: row.originSource, diagnosis: row.diagnosis, summary: row.summary, results: row.results || []
     }));
     const issues = rows.filter((row: any) => row.recordType === "issue").map((row: any) => ({
       id: row.id, checkId: row.checkId, title: row.title, endpoint: row.endpoint, severity: row.severity, improvement: row.improvement || improvementFor(row.checkId, row.severity === "HIGH" ? "FAIL" : "WARN"),
@@ -84,8 +90,8 @@ export async function POST(req: NextRequest) {
   try {
     await db.aiMaintenanceRecord.upsert({
       where: { id: reportId },
-      create: { id: reportId, recordType: "report", checkedAt: now, origin: report.origin, summary: report.summary, results: report.results, actorRole: auth.session.role, createdAt: now, updatedAt: now },
-      update: { checkedAt: now, origin: report.origin, summary: report.summary, results: report.results, actorRole: auth.session.role, updatedAt: now }
+      create: { id: reportId, recordType: "report", checkedAt: now, origin: report.origin, originSource: report.originSource, diagnosis: report.diagnosis, summary: report.summary, results: report.results, actorRole: auth.session.role, createdAt: now, updatedAt: now },
+      update: { checkedAt: now, origin: report.origin, originSource: report.originSource, diagnosis: report.diagnosis, summary: report.summary, results: report.results, actorRole: auth.session.role, updatedAt: now }
     });
     for (const result of report.results.filter(item => item.status !== "PASS")) {
       const issueId = "issue-" + result.id.toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 80);
