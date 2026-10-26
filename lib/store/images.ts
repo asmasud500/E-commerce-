@@ -1,4 +1,4 @@
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {storeTelegramFile,readTelegramFile} from "@/lib/telegram/file-storage";
 import {mirrorImageToGoogleDriveWithRetry} from "@/lib/google-drive/file-storage";
 

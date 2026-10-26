@@ -1,5 +1,5 @@
 import {NextRequest} from "next/server";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {readAdminSession} from "@/lib/auth/admin";
 
 export async function recordAdminAudit(

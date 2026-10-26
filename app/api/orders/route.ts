@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {createOrderWithStockReservation} from "@/lib/firestore";
 import {z} from "zod";
 import {sendNewOrderTelegram,notifyLowStock} from "@/lib/notifications/telegram-admin";

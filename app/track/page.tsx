@@ -7,5 +7,5 @@ export const metadata:Metadata={title:"Track your order",description:"Check the 
 
 export default async function TrackPage({searchParams}:{searchParams:Promise<{order?:string}>}){
   const sp=await searchParams;
-  return <><StoreHeader/><main className="pg"><TrackClient initialOrder={(sp.order||"").slice(0,60)}/></main><StoreFooter/></>;
+  return <><StoreHeader/><main id="main-content" className="pg"><TrackClient initialOrder={(sp.order||"").slice(0,60)}/></main><StoreFooter/></>;
 }

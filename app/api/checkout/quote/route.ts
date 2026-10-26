@@ -1,7 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
 import {buildQuote,QuoteError} from "@/lib/checkout";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {rateLimit} from "@/lib/security/rate-limit";
 
 const schema=z.object({

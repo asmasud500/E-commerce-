@@ -8,7 +8,7 @@ export default function Cart(){
  const subtotal=items.reduce((s,i)=>s+i.price*i.quantity,0);
  const count=items.reduce((n,i)=>n+i.quantity,0);
  const checkoutBlocked=items.some(i=>typeof i.stock==="number"&&(i.stock<=0||i.quantity>i.stock));
- return <><StoreHeader/><main className="pg">
+ return <><StoreHeader/><main id="main-content" className="pg">
   <nav className="pg-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><Icon name="chevronRight" size={14}/><b>Shopping cart</b></nav>
   <div className="pg-head"><div><h1>Shopping cart</h1><p>Review your items before checkout.</p></div>{items.length>0&&<span className="pg-pill">{count} item{count===1?"":"s"}</span>}</div>
   {!items.length?<div className="pg-card pg-empty"><span className="pg-empty-ic"><Icon name="cart" size={26}/></span><h2>Your cart is empty</h2><p>Add something you like and it will show up here.</p><Link href="/products" className="pg-btn">Browse products</Link></div>:

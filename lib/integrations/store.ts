@@ -1,4 +1,4 @@
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {encryptSecrets,decryptSecrets} from "@/lib/security/gateway-secrets";
 import {providerById} from "./providers";
 

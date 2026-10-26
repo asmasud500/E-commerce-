@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {rateLimit} from "@/lib/security/rate-limit";
 import {contactMatches,normalizeOrderNumber} from "@/lib/tracking";
 import {telegramApi,esc} from "@/lib/notifications/telegram-admin";

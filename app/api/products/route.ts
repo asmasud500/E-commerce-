@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {getEffectivePrice} from "@/lib/products/pricing";
 
 const hasAvailableStock=(p:any)=>Array.isArray(p.variants)&&p.variants.length>0?p.variants.some((v:any)=>Number(v.stock)>0):Number(p.stock)>0;

@@ -1,4 +1,4 @@
-import {db} from "@/lib/prisma";import {confirmPaymentAtomically} from "@/lib/firestore";import {paymentAdapters} from "@/lib/payments/adapters";import {decryptSecrets} from "@/lib/security/gateway-secrets";import {sendPaidOrderTelegram} from "@/lib/notifications/telegram-admin";
+import {db} from "@/lib/firestore";import {confirmPaymentAtomically} from "@/lib/firestore";import {paymentAdapters} from "@/lib/payments/adapters";import {decryptSecrets} from "@/lib/security/gateway-secrets";import {sendPaidOrderTelegram} from "@/lib/notifications/telegram-admin";
 export async function settlePayment(orderNumber:string,payload:Record<string,unknown>){
  const order=await db.order.findUnique({where:{orderNumber},include:{paymentGateway:true}});
  if(!order||!order.paymentGateway)throw new Error("Order not found");

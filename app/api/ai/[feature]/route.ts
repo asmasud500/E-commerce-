@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { readAdminSession } from "@/lib/auth/admin";
-import { db } from "@/lib/prisma";
+import { db } from "@/lib/firestore";
 import { getEffectivePrice } from "@/lib/products/pricing";
 import { AI_FEATURES, geminiGenerate, getAiSettings, recordAiRequest, safeAiError, type AiFeature } from "@/lib/ai/gemini";
 

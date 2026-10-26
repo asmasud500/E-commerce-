@@ -1,6 +1,6 @@
 import {getSiteUrl} from "@/lib/site-url";
 import type { MetadataRoute } from "next";
-import { db } from "@/lib/prisma";
+import { db } from "@/lib/firestore";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 3600;

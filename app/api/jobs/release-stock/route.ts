@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {releaseOrderStockAtomically} from "@/lib/firestore";
 export async function POST(req:NextRequest){
  const auth=req.headers.get("authorization"),secret=process.env.CRON_SECRET;

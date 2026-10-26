@@ -1,5 +1,5 @@
 import {notFound} from "next/navigation";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import PrintButton from "./PrintButton";
 import TelegramInvoiceStorageButton from "./TelegramInvoiceStorageButton";
 export const dynamic="force-dynamic";

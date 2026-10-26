@@ -6,7 +6,7 @@ import {Icon,categoryIcon} from "@/components/Icons";
 import HeroSlider from "@/components/home/HeroSlider";
 import FlashCountdown from "@/components/home/FlashCountdown";
 import {FlashCard,ProductCard,type HomeProduct} from "@/components/home/ProductCard";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {getEffectivePrice} from "@/lib/products/pricing";
 import {isFreeDelivery} from "@/lib/shipping";
 
@@ -135,7 +135,7 @@ export default async function Home(){
   return (
     <>
       <StoreHeader categories={categories.map((c:any)=>({name:c.name,slug:c.slug}))}/>
-      <main className="hp">
+      <main id="main-content" className="hp">
         <h1 className="sr-only">{settings.seoTitle||settings.storeName||"Store"}: online shopping</h1>
 
         <div className="hp-hero">

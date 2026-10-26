@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/prisma";
+import { db } from "@/lib/firestore";
 import { confirmPaymentAtomically, rejectPendingOrderAtomically } from "@/lib/firestore";
 import { readAdminSession } from "@/lib/auth/admin";
 import { notifyStatus, sendPaidOrderTelegram } from "@/lib/notifications/telegram-admin";

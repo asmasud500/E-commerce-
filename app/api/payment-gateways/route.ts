@@ -1,5 +1,5 @@
 import {NextResponse} from "next/server";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 
 /** Public checkout exposes only automatic merchant checkout and explicit COD. */
 export async function GET(){

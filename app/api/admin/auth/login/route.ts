@@ -2,7 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {rateLimit} from "@/lib/security/rate-limit";
 import {adminCredentials,createAdminToken} from "@/lib/auth/admin";
 import {verifyStaffPassword} from "@/lib/auth/staff-password";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 
 const STAFF_ROLES=["MANAGER","ORDER_MANAGER","PRODUCT_MANAGER","SUPPORT"] as const;
 

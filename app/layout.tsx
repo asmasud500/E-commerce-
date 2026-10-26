@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import {loadBranding,brandCss} from "@/lib/store/branding";
+import MobileNav from "@/components/MobileNav";
 
 export const dynamic="force-dynamic";
 
@@ -22,5 +23,5 @@ export async function generateViewport():Promise<Viewport>{const b=await loadBra
 
 export default async function RootLayout({children}:{children:React.ReactNode}){
   const b=await loadBranding();
-  return <html lang="en-BD"><head><style id="brand-theme" dangerouslySetInnerHTML={{__html:brandCss(b)}}/></head><body data-store-layout={b.layoutPreset} data-store-width={b.contentWidth}>{children}</body></html>
+  return <html lang="en-BD"><head><style id="brand-theme" dangerouslySetInnerHTML={{__html:brandCss(b)}}/></head><body data-store-layout={b.layoutPreset} data-store-width={b.contentWidth}><a className="skip-link" href="#main-content">Skip to content</a>{children}<MobileNav/></body></html>
 }

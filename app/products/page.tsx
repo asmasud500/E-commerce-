@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import {Icon} from "@/components/Icons";
@@ -88,7 +88,7 @@ export default async function ProductsPage({searchParams}:{searchParams:Promise<
 
   return <>
     <StoreHeader categories={categories.map((c:any)=>({name:c.name,slug:c.slug}))}/>
-    <main className="pg">
+    <main id="main-content" className="pg">
       <nav className="pg-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><Icon name="chevronRight" size={14}/>{selectedCategory||q?<><Link href="/products">Products</Link><Icon name="chevronRight" size={14}/><b>{title}</b></>:<b>Products</b>}</nav>
       <div className="pc-layout">
         <aside className="pg-card pc-side" aria-label="Filters">

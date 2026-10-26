@@ -1,6 +1,6 @@
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 
 export type StoreInfo={storeName:string;supportEmail:string;supportPhone:string;deliveryFee:number;freeOver:number|null;address:string;whatsapp:string;facebookUrl:string;instagramUrl:string;youtubeUrl:string;openingHours:string;contactIntro:string;aboutIntro:string;aboutBody:string;privacyContent:string;termsContent:string;returnsContent:string;shippingContent:string;supportEmailRaw?:string};
 export async function loadStoreInfo():Promise<StoreInfo>{

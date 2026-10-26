@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { db } from "@/lib/prisma";
+import { db } from "@/lib/firestore";
 import AdminSidebar from "@/components/AdminSidebar";
 
 const money = (n: number) => "৳" + Number(n || 0).toLocaleString("en-BD");

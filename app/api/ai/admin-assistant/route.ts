@@ -4,7 +4,7 @@ import { readAdminSession } from "@/lib/auth/admin";
 import { canAccessAdminPath } from "@/lib/auth/permissions";
 import { publicIntegrations } from "@/lib/integrations/store";
 import { getStorageOverview } from "@/lib/store/storage-operations";
-import { db } from "@/lib/prisma";
+import { db } from "@/lib/firestore";
 import { geminiGenerate, getAiSettings, recordAiRequest, safeAiError } from "@/lib/ai/gemini";
 
 export const dynamic = "force-dynamic";

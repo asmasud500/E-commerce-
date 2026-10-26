@@ -7,7 +7,7 @@ Make `/admin` the single primary administration entry point for the MART ecommer
 ## Existing production foundation
 
 - Framework: Next.js App Router, TypeScript.
-- Database: PostgreSQL through Prisma (`prisma/schema.prisma`).
+- Database: Firebase Cloud Firestore through `lib/firestore.ts` (Prisma schema is migration-source only).
 - Authentication: `admin_session` HTTP-only cookie, `lib/auth/admin.ts`, login/logout API, and middleware protection for `/admin/*` and `/api/admin/*`.
 - Existing Firestore collections are mapped in `lib/firestore.ts`: users, categories, products, productImages, wishlistItems, reviews, paymentGateways, orders, paymentTransactions, stockReservations, orderItems, coupons and auditLogs.
 - Existing admin APIs/pages cover products, categories, orders, customers, gateways, transactions, coupons, reviews, reports and activity.
@@ -81,7 +81,7 @@ Existing endpoints should be reused where they already provide the feature; do n
 
 1. All mutations happen on the server after session verification and permission authorization.
 2. Validate request bodies with a schema (for example Zod); reject unknown status values and malformed IDs.
-3. Use Prisma transactions for order/payment/refund/inventory state changes.
+3. Use the Firestore atomic helpers in `lib/firestore.ts` for order/payment/refund/inventory state changes.
 4. Use idempotency keys for payment webhooks, refund calls and retryable order actions.
 5. Never expose encrypted gateway secrets, bot tokens, API keys, session cookies or raw provider payloads in browser responses.
 6. Add AuditLog records for staff changes, customer blocking, payment decisions, order status changes, settings changes, refunds and inventory adjustments.

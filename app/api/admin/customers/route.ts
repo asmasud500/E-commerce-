@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {readAdminSession} from "@/lib/auth/admin";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 
 export const dynamic = "force-dynamic";
 

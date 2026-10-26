@@ -22,7 +22,7 @@ export async function sendSms(phone:string,message:string):Promise<{ok:boolean;e
 /** Texts the customer about the order's current status (no-op when SMS is off or the status has no message). */
 export async function smsOrderStatus(orderId:string){
   try{
-    const {db}=await import("@/lib/prisma");
+    const {db}=await import("@/lib/firestore");
     const o:any=await db.order.findUnique({where:{id:orderId}});if(!o?.customerPhone)return;
     const s:any=await db.storeSetting.findUnique({where:{id:"store"}}).catch(()=>null);
     const text=orderSmsText(o,s?.storeName||"MART Store");if(!text)return;

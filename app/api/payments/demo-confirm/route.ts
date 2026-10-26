@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {verifyCustomerToken} from "@/lib/auth/customer";
 import {verifyOrderAccessToken} from "@/lib/auth/order-access";
 import {rateLimit} from "@/lib/security/rate-limit";

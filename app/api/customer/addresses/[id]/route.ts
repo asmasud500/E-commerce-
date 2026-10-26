@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {verifyCustomerToken} from "@/lib/auth/customer";
 async function userId(req:NextRequest){const token=req.cookies.get("customer_session")?.value;const session=token?await verifyCustomerToken(token):null;return session?.userId||null}
 const schema=z.object({

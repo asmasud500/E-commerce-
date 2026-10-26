@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {hashStaffPassword} from "@/lib/auth/staff-password";
 import {readAdminSession} from "@/lib/auth/admin";
 

@@ -1,4 +1,4 @@
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {esc,telegramApi,orderDetailsText} from "@/lib/notifications/telegram-admin";
 import {saveProductImage,saveProductImageFromTelegramFileId} from "@/lib/store/images";
 import {collectCodPaymentAtomically} from "@/lib/firestore";

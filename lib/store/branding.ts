@@ -1,4 +1,4 @@
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 
 export type Branding={storeName:string;tagline:string;brandColor:string;accentColor:string;fontFamily:"Inter"|"Arial"|"Georgia"|"system";headingFont:"Inter"|"Arial"|"Georgia"|"system";layoutPreset:"marketplace"|"modern"|"editorial"|"compact";contentWidth:"wide"|"standard"|"full";buttonStyle:"rounded"|"pill"|"square";cornerStyle:"soft"|"medium"|"sharp";address:string;whatsapp:string;facebookUrl:string;supportEmail:string;supportPhone:string};
 export const BRAND_DEFAULTS:Branding={storeName:"MART Store",tagline:"Quality products, simple shopping.",brandColor:"#131921",accentColor:"#ff6801",fontFamily:"Inter",headingFont:"Inter",layoutPreset:"marketplace",contentWidth:"wide",buttonStyle:"rounded",cornerStyle:"medium",address:"",whatsapp:"",facebookUrl:"",supportEmail:"",supportPhone:""};

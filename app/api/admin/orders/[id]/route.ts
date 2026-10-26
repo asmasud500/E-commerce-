@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {z} from "zod";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {rejectPendingOrderAtomically,updateOrderAdminFieldsAtomically,confirmCodOrderAtomically,cancelCodOrderAtomically} from "@/lib/firestore";
 import {smsOrderStatus} from "@/lib/integrations/sms";
 import {readAdminSession} from "@/lib/auth/admin";

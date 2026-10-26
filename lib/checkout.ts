@@ -1,6 +1,6 @@
 import {resolveSelection} from "@/lib/options";
 import {resolveProductVariant} from "@/lib/product-variants";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 import {getEffectivePrice} from "@/lib/products/pricing";
 import {computeDelivery,productDelivery,type DeliveryMode} from "@/lib/shipping";
 

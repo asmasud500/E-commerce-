@@ -1,5 +1,5 @@
 import {smsOrderStatus} from "@/lib/integrations/sms";
-import {db} from "@/lib/prisma";
+import {db} from "@/lib/firestore";
 
 export const esc=(v:unknown)=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const tk=(n:unknown)=>"৳"+Number(n||0).toLocaleString("en-BD",{maximumFractionDigits:2});

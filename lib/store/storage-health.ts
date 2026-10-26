@@ -1,4 +1,4 @@
-import { db } from "@/lib/prisma";
+import { db } from "@/lib/firestore";
 import { readTelegramFile } from "@/lib/telegram/file-storage";
 import { readGoogleDriveImage } from "@/lib/google-drive/file-storage";
 

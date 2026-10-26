@@ -1,7 +1,7 @@
 import Link from"next/link";import StoreHeader from"@/components/StoreHeader";import StoreFooter from"@/components/StoreFooter";import{Icon}from"@/components/Icons";import InvoiceDownloadButton from"@/components/InvoiceDownloadButton";
 export default async function OrderSuccess({searchParams}:{searchParams:Promise<{order?:string;paid?:string;submitted?:string;cod?:string;giftcard?:string;demo?:string}>}){
  const p=await searchParams;const giftcard=p.giftcard==="true";const paid=p.paid==="true"||giftcard;const submitted=p.submitted==="true";const cod=p.cod==="true";const demo=p.demo==="true";
- return <><StoreHeader/><main className="pg">
+ return <><StoreHeader/><main id="main-content" className="pg">
   <ol className="steps checkout-progress" aria-label="Checkout progress"><li className="done"><i>✓</i><span>Order Summary<small>Reviewed</small></span></li><li className="done"><i>✓</i><span>Customer Info<small>Saved</small></span></li><li className="done"><i>✓</i><span>Delivery<small>Address saved</small></span></li><li className="done"><i>✓</i><span>Payment<small>Submitted</small></span></li><li className="on"><i>5</i><span>Confirmation<small>Order status</small></span></li></ol>
   <section className="pg-card done-card" aria-labelledby="order-confirmation-title">
    <div className="done-ic"><Icon name="check" size={34} strokeWidth={3}/></div>

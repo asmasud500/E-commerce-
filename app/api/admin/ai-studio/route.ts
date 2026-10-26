@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { readAdminSession } from "@/lib/auth/admin";
-import { db } from "@/lib/prisma";
+import { db } from "@/lib/firestore";
 import { AI_FEATURES, DEFAULT_GEMINI_MODEL, SUPPORTED_GEMINI_MODELS, geminiGenerate, getAiSettings, saveAiSettings, recordAiRequest, safeAiError } from "@/lib/ai/gemini";
 import { recordAdminAudit } from "@/lib/auth/audit";
 

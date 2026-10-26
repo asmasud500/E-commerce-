@@ -5,10 +5,8 @@ Next.js 15 + React 19 e-commerce application with a custom Firestore REST data a
 ## Current database architecture
 
 - **Application runtime:** Firebase Cloud Firestore, accessed by `lib/firestore.ts`. Configure `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`.
-- **Prisma schema:** `prisma/schema.prisma` currently describes a PostgreSQL schema used by the optional PostgreSQL-to-Firestore migration script. It is **not** the application's runtime data adapter.
+- **Prisma schema:** `prisma/schema.prisma` is kept only as the source description for the optional PostgreSQL-to-Firestore migration script. Prisma and Neon are no longer runtime dependencies.
 - **Optional migration source:** `scripts/migrate-postgres-to-firestore.ts` reads an existing PostgreSQL database through Prisma and copies supported collections to Firestore. Back up both databases and test the migration against a staging project first.
-
-Do not run `prisma db push` expecting it to configure the live application's Firestore database; it only affects the PostgreSQL database in `DATABASE_URL`.
 
 Native payment and stock transactions use compound Firestore queries. Before enabling these paths in a Firebase project, deploy the checked-in indexes with `firebase deploy --only firestore:indexes` from the repository root (after authenticating the Firebase CLI and selecting the intended project). Index deployment is a separate Firebase-project operation and is not performed by the GitHub code commit.
 
