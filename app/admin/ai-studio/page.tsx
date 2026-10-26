@@ -44,6 +44,9 @@ export default function AiStudioPage() {
   const [healthResult,setHealthResult] = useState<AnyObj|null>(null);
   const [healthRunning,setHealthRunning] = useState(false);
   const [healthHistory,setHealthHistory] = useState<AnyObj[]>([]);
+  const [conversations,setConversations] = useState<AnyObj[]>([]);
+  const [conversationLoading,setConversationLoading] = useState(false);
+  const [selectedConversation,setSelectedConversation] = useState<string>("");
   useEffect(()=>{try{const saved=localStorage.getItem("mart-ai-studio-health-history-v1");if(saved){const parsed=JSON.parse(saved);if(Array.isArray(parsed))setHealthHistory(parsed.slice(0,20));}}catch{/* Ignore malformed local history. */}},[]);
 
   const load = useCallback(async () => {
@@ -116,13 +119,24 @@ export default function AiStudioPage() {
     }catch(e){setNotice(e instanceof Error?e.message:"Website health check failed.");}
     finally{setHealthRunning(false);}
   }
-  const tabs=[["overview","Overview"],["website-health","Website health"],["features","AI features"],["content","Content library"],["logs","Usage & logs"],["settings","Settings"]];
+  async function loadConversations() {
+    setConversationLoading(true);
+    try {
+      const response=await fetch("/api/admin/ai-studio/conversations",{cache:"no-store"});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||"Chat history could not be loaded.");
+      setConversations(Array.isArray(result.conversations)?result.conversations:[]);
+      if(!selectedConversation&&result.conversations?.length)setSelectedConversation(result.conversations[0].id);
+    } catch(e) { setNotice(e instanceof Error?e.message:"Chat history could not be loaded."); }
+    finally { setConversationLoading(false); }
+  }
+  const tabs=[["overview","Overview"],["website-health","Website health"],["chat-history","Chat history"],["features","AI features"],["content","Content library"],["logs","Usage & logs"],["settings","Settings"]];
 
   return <div className="admin-layout"><AdminSidebar/><main className="admin-content ai-studio">
     <div className="admin-kicker">MART · INTELLIGENCE WORKSPACE</div>
     <div className="ai-hero"><div><h1>AI Studio</h1><p>Manage Gemini-powered features, review AI drafts, and monitor real request telemetry in one workspace.</p></div><div className={"ai-health "+(settings.enabled?"is-on":"is-off")}><i/> {settings.enabled?"AI controls enabled":"AI globally paused"}</div></div>
     {notice && <div className="ai-notice" role="status">{notice}<button type="button" onClick={()=>setNotice("")} aria-label="Dismiss notice">×</button></div>}
-    <div className="ai-tabs" role="tablist" aria-label="AI Studio sections">{tabs.map(([id,label])=><button key={id} role="tab" aria-selected={tab===id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}</div>
+    <div className="ai-tabs" role="tablist" aria-label="AI Studio sections">{tabs.map(([id,label])=><button key={id} role="tab" aria-selected={tab===id} className={tab===id?"active":""} onClick={()=>{setTab(id);if(id==="chat-history")void loadConversations();if(id==="website-health"&&!healthResult)void runWebsiteHealth();}}>{label}</button>)}</div>
     {loading && !data ? <div className="ai-panel"><p>Loading live AI Studio data…</p></div> : <>
       {tab==="overview" && <>
         <div className="ai-stat-grid">
@@ -159,6 +173,14 @@ export default function AiStudioPage() {
         <div className="ai-panel-heading" style={{marginTop:24}}><div><h2>Recent health check history</h2><p>Saved locally in this browser, up to 20 reports. This history is not yet shared across devices.</p></div></div>
         {healthHistory.length===0?<div className="ai-empty">No saved health reports yet.</div>:<div className="ai-table-wrap"><table><thead><tr><th>Checked at</th><th>Status</th><th>Passed</th><th>Warnings</th><th>Failed</th><th>Details</th></tr></thead><tbody>{healthHistory.map((entry:AnyObj,i:number)=><tr key={entry.checkedAt||i}><td>{entry.checkedAt?new Date(entry.checkedAt).toLocaleString():"—"}</td><td><span className={"ai-pill "+(entry.summary?.status==="PASS"?"good":entry.summary?.status==="WARN"?"muted":"bad")}>{entry.summary?.status||"—"}</span></td><td>{entry.summary?.passed??0}</td><td>{entry.summary?.warnings??0}</td><td>{entry.summary?.failed??0}</td><td><button onClick={()=>setHealthResult(entry)}>View report</button></td></tr>)}</tbody></table></div>}
         <p className="ai-footnote">Next automation step: schedule daily production checks and alert/report on failures. Automatic code changes should go through tests and approval before deployment.</p>
+      </section>}
+      {tab==="chat-history" && <section className="ai-panel">
+        <div className="ai-panel-heading"><div><h2>Customer chat history</h2><p>Recent MART Assistant conversations. Email addresses, phone-like numbers and common secret patterns are redacted before storage.</p></div><button onClick={()=>void loadConversations()} disabled={conversationLoading}>{conversationLoading?"Loading…":"Refresh history"}</button></div>
+        {conversations.length===0?<div className="ai-empty">{conversationLoading?"Loading conversations…":"No server-side conversations loaded yet. Refresh to check for recent customer chats."}</div>:<div className="ai-two-col">
+          <div className="ai-feature-list">{conversations.map((conversation:AnyObj)=><button key={conversation.id} type="button" onClick={()=>setSelectedConversation(conversation.id)} style={{display:"block",textAlign:"left",width:"100%",padding:14,marginBottom:8,border:conversation.id===selectedConversation?"1px solid var(--accent)":"1px solid var(--line)",background:conversation.id===selectedConversation?"#fff7ed":"#fff",borderRadius:12}}><strong>{conversation.messages?.find((m:AnyObj)=>m.role==="user")?.text?.slice(0,80)||"Conversation"}</strong><small style={{display:"block",marginTop:5}}>{conversation.messages?.length||0} messages · Updated {conversation.updatedAt?new Date(conversation.updatedAt).toLocaleString():"—"}</small></button>)}</div>
+          <div className="ai-panel" style={{background:"#f8fafc",maxHeight:620,overflowY:"auto"}}><h3>Conversation transcript</h3>{(conversations.find((item:AnyObj)=>item.id===selectedConversation)?.messages||[]).map((message:AnyObj,index:number)=><div key={index} style={{padding:12,margin:"10px 0",borderRadius:12,background:message.role==="user"?"#fff0e6":"#fff",border:"1px solid var(--line)"}}><small style={{fontWeight:700}}>{message.role==="user"?"Customer":"MART Assistant"} · {message.createdAt?new Date(message.createdAt).toLocaleString():""}</small><p style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",marginBottom:0}}>{message.text}</p></div>)}</div>
+        </div>}
+        <p className="ai-footnote">Access is limited to managers and super admins. Conversation history is stored in Firestore and contains redacted text; avoid requesting sensitive personal, OTP, password or payment information in chat.</p>
       </section>}
       {tab==="features" && <div className="ai-two-col">
         <section className="ai-panel"><h2>Feature controls</h2><p>Switch features on or off independently. Changes apply after saving.</p>
