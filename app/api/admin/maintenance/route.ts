@@ -13,7 +13,8 @@ const resultSchema = z.object({
   status: z.enum(["PASS", "WARN", "FAIL"]),
   httpStatus: z.number().nullable(),
   latencyMs: z.number().min(0),
-  message: z.string().max(500)
+  message: z.string().max(500),
+  recommendation: z.string().max(1000).optional()
 });
 const reportSchema = z.object({
   checkedAt: z.string().datetime(),
