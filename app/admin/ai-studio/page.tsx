@@ -47,7 +47,16 @@ export default function AiStudioPage() {
   const [conversations,setConversations] = useState<AnyObj[]>([]);
   const [conversationLoading,setConversationLoading] = useState(false);
   const [selectedConversation,setSelectedConversation] = useState<string>("");
-  useEffect(()=>{try{const saved=localStorage.getItem("mart-ai-studio-health-history-v1");if(saved){const parsed=JSON.parse(saved);if(Array.isArray(parsed))setHealthHistory(parsed.slice(0,20));}}catch{/* Ignore malformed local history. */}},[]);
+  const [maintenanceIssues,setMaintenanceIssues] = useState<AnyObj[]>([]);
+  const [issueFilter,setIssueFilter] = useState("OPEN");
+  useEffect(()=>{try{const saved=localStorage.getItem("mart-ai-studio-health-history-v1");if(saved){const parsed=JSON.parse(saved);if(Array.isArray(parsed))setHealthHistory(parsed.slice(0,20));}const issues=localStorage.getItem("mart-ai-studio-maintenance-issues-v1");if(issues){const parsed=JSON.parse(issues);if(Array.isArray(parsed))setMaintenanceIssues(parsed.slice(0,100));}}catch{/* Ignore malformed local history. */}},[]);
+  function saveMaintenanceIssues(next:AnyObj[]) {
+    setMaintenanceIssues(next);
+    try{localStorage.setItem("mart-ai-studio-maintenance-issues-v1",JSON.stringify(next.slice(0,100)));}catch{/* Keep current session state if storage is unavailable. */}
+  }
+  function updateMaintenanceIssue(id:string,status:"OPEN"|"IN_PROGRESS"|"RESOLVED") {
+    saveMaintenanceIssues(maintenanceIssues.map(issue=>issue.id===id?{...issue,status,updatedAt:new Date().toISOString(),timeline:[...(issue.timeline||[]),{status,at:new Date().toISOString()}]}:issue));
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -130,11 +139,11 @@ export default function AiStudioPage() {
     } catch(e) { setNotice(e instanceof Error?e.message:"Chat history could not be loaded."); }
     finally { setConversationLoading(false); }
   }
-  const tabs=[["overview","Overview"],["website-health","Website health"],["chat-history","Chat history"],["features","AI features"],["content","Content library"],["logs","Usage & logs"],["settings","Settings"]];
+  const tabs=[["overview","Overview"],["website-health","Maintenance Center"],["chat-history","Chat history"],["features","AI features"],["content","Content library"],["logs","Usage & logs"],["settings","Settings"]];
 
   return <div className="admin-layout"><AdminSidebar/><main className="admin-content ai-studio">
-    <div className="admin-kicker">MART · INTELLIGENCE WORKSPACE</div>
-    <div className="ai-hero"><div><h1>AI Studio</h1><p>Manage Gemini-powered features, review AI drafts, and monitor real request telemetry in one workspace.</p></div><div className={"ai-health "+(settings.enabled?"is-on":"is-off")}><i/> {settings.enabled?"AI controls enabled":"AI globally paused"}</div></div>
+    <div className="admin-kicker">MART · WEBSITE OPERATIONS</div>
+    <div className="ai-hero"><div><h1>AI Studio & Website Maintenance</h1><p>Monitor website health, track detected issues, review improvement history, and manage AI operations from one workspace.</p></div><div className={"ai-health "+(settings.enabled?"is-on":"is-off")}><i/> {settings.enabled?"AI controls enabled":"AI globally paused"}</div></div>
     {notice && <div className="ai-notice" role="status">{notice}<button type="button" onClick={()=>setNotice("")} aria-label="Dismiss notice">×</button></div>}
     <div className="ai-tabs" role="tablist" aria-label="AI Studio sections">{tabs.map(([id,label])=><button key={id} role="tab" aria-selected={tab===id} className={tab===id?"active":""} onClick={()=>{setTab(id);if(id==="chat-history")void loadConversations();if(id==="website-health"&&!healthResult)void runWebsiteHealth();}}>{label}</button>)}</div>
     {loading && !data ? <div className="ai-panel"><p>Loading live AI Studio data…</p></div> : <>
@@ -160,7 +169,13 @@ export default function AiStudioPage() {
         </section>
       </>}
       {tab==="website-health" && <section className="ai-panel">
-        <div className="ai-panel-heading"><div><h2>Website Health & Improvement Center</h2><p>Run live read-only checks for key storefront and API paths. This detects symptoms; it does not silently edit production code.</p></div><button className="ai-primary" onClick={()=>void runWebsiteHealth()} disabled={healthRunning}>{healthRunning?"Checking website…":"Run health check"}</button></div>
+        <div className="ai-panel-heading"><div><h2>Website Maintenance & Improvement Center</h2><p>Run live production checks, convert warnings and failures into a trackable issue queue, and record maintenance progress. Checks are read-only; fixes require tests and verified deployment.</p></div><div className="ai-actions"><button onClick={()=>{const report={generatedAt:new Date().toISOString(),latest:healthResult,history:healthHistory,issues:maintenanceIssues};const blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="mart-maintenance-report.json";a.click();URL.revokeObjectURL(url);}}>Export report</button><button className="ai-primary" onClick={()=>void runWebsiteHealth()} disabled={healthRunning}>{healthRunning?"Checking website…":"Run live health check"}</button></div></div>
+        {<div className="ai-stat-grid">
+          <article><span>Tracked issues</span><strong>{maintenanceIssues.filter(i=>i.status!=="RESOLVED").length}</strong><small>{maintenanceIssues.filter(i=>i.severity==="HIGH"&&i.status!=="RESOLVED").length} high priority</small></article>
+          <article><span>Resolved issues</span><strong>{maintenanceIssues.filter(i=>i.status==="RESOLVED").length}</strong><small>Tracked in this browser</small></article>
+          <article><span>Health reports</span><strong>{healthHistory.length+(healthResult&&!healthHistory.some(h=>h.checkedAt===healthResult.checkedAt)?1:0)}</strong><small>Latest reports kept locally</small></article>
+          <article><span>Audit schedule</span><strong>Daily</strong><small>GitHub Actions · 08:00 Bangladesh time</small></article>
+        </div>}
         {healthResult&&<><div className="ai-stat-grid">
           <article><span>Overall status</span><strong>{healthResult.summary.status}</strong><small>Checked {new Date(healthResult.checkedAt).toLocaleString()}</small></article>
           <article><span>Passed</span><strong>{healthResult.summary.passed}</strong><small>Expected response verified</small></article>
@@ -172,7 +187,9 @@ export default function AiStudioPage() {
         {!healthResult&&<div className="ai-empty">No health check has been run in this session yet. Start a check to inspect live endpoint responses.</div>}
         <div className="ai-panel-heading" style={{marginTop:24}}><div><h2>Recent health check history</h2><p>Saved locally in this browser, up to 20 reports. This history is not yet shared across devices.</p></div></div>
         {healthHistory.length===0?<div className="ai-empty">No saved health reports yet.</div>:<div className="ai-table-wrap"><table><thead><tr><th>Checked at</th><th>Status</th><th>Passed</th><th>Warnings</th><th>Failed</th><th>Details</th></tr></thead><tbody>{healthHistory.map((entry:AnyObj,i:number)=><tr key={entry.checkedAt||i}><td>{entry.checkedAt?new Date(entry.checkedAt).toLocaleString():"—"}</td><td><span className={"ai-pill "+(entry.summary?.status==="PASS"?"good":entry.summary?.status==="WARN"?"muted":"bad")}>{entry.summary?.status||"—"}</span></td><td>{entry.summary?.passed??0}</td><td>{entry.summary?.warnings??0}</td><td>{entry.summary?.failed??0}</td><td><button onClick={()=>setHealthResult(entry)}>View report</button></td></tr>)}</tbody></table></div>}
-        <p className="ai-footnote">Next automation step: schedule daily production checks and alert/report on failures. Automatic code changes should go through tests and approval before deployment.</p>
+        <div className="ai-panel-heading" style={{marginTop:24}}><div><h2>Improvement & issue queue</h2><p>Warnings and failures from health checks are tracked here. Mark work in progress only when someone has started investigating; resolve after rechecking the affected endpoint.</p></div><select value={issueFilter} onChange={e=>setIssueFilter(e.target.value)}><option value="OPEN">Open issues</option><option value="IN_PROGRESS">In progress</option><option value="RESOLVED">Resolved</option><option value="ALL">All issues</option></select></div>
+        {maintenanceIssues.filter(issue=>issueFilter==="ALL"||issue.status===issueFilter).length===0?<div className="ai-empty">No issues in this view. Run a health check to discover current warnings or failures.</div>:<div className="ai-drafts">{maintenanceIssues.filter(issue=>issueFilter==="ALL"||issue.status===issueFilter).map((issue:AnyObj)=><article className="ai-draft" key={issue.id+issue.firstSeen}><div className="ai-draft-top"><div><span className="ai-kicker">{issue.severity} PRIORITY · {issue.endpoint}</span><h3>{issue.title}</h3><p>{issue.message}</p><small>First detected {issue.firstSeen?new Date(issue.firstSeen).toLocaleString():"—"} · Last detected {issue.lastSeen?new Date(issue.lastSeen).toLocaleString():"—"}</small></div><span className={"ai-pill "+(issue.status==="RESOLVED"?"good":issue.status==="IN_PROGRESS"?"muted":"bad")}>{issue.status.replace("_"," ")}</span></div><div className="ai-draft-actions">{issue.status!=="IN_PROGRESS"&&issue.status!=="RESOLVED"&&<button onClick={()=>updateMaintenanceIssue(issue.id,"IN_PROGRESS")}>Start investigation</button>}{issue.status!=="RESOLVED"&&<button onClick={()=>updateMaintenanceIssue(issue.id,"RESOLVED")}>Mark resolved</button>}{issue.status==="RESOLVED"&&<button onClick={()=>updateMaintenanceIssue(issue.id,"OPEN")}>Reopen</button>}<button onClick={()=>void runWebsiteHealth()} disabled={healthRunning}>Recheck website</button></div></article>)}</div>}
+        <p className="ai-footnote">Automated daily audit: GitHub Actions checks the production storefront and core APIs at 08:00 Bangladesh time. Failed checks create or update a GitHub issue. This dashboard's report and issue history are browser-local; cross-device history and automatic code repair/deployment are not enabled yet.</p>
       </section>}
       {tab==="chat-history" && <section className="ai-panel">
         <div className="ai-panel-heading"><div><h2>Customer chat history</h2><p>Recent MART Assistant conversations. Email addresses, phone-like numbers and common secret patterns are redacted before storage.</p></div><button onClick={()=>void loadConversations()} disabled={conversationLoading}>{conversationLoading?"Loading…":"Refresh history"}</button></div>
