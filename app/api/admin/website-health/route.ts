@@ -30,6 +30,9 @@ async function probe(origin: string, check: { id: string; label: string; path: s
     if (!response.ok) {
       return { id: check.id, label: check.label, path: check.path, status: response.status >= 500 ? "FAIL" : "WARN", httpStatus: response.status, latencyMs, message: "Endpoint returned HTTP " + response.status + "." };
     }
+    if (check.id === "storefront") {
+      return { id: check.id, label: check.label, path: check.path, status: "PASS", httpStatus: response.status, latencyMs, message: "Storefront page returned a successful HTTP response." };
+    }
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {
       return { id: check.id, label: check.label, path: check.path, status: "WARN", httpStatus: response.status, latencyMs, message: "Endpoint responded, but did not return JSON." };
