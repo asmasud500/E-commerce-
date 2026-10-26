@@ -37,6 +37,18 @@ async function authorize(req: NextRequest) {
   if (!allowedRoles.includes(session.role)) return { error: NextResponse.json({ error: "Maintenance Center requires a manager or super admin role." }, { status: 403, headers: noStore }) };
   return { session };
 }
+function improvementFor(checkId: string, status: string) {
+  const plans: Record<string, { action: string; verification: string }> = {
+    health: { action: "Inspect the health route logs and verify Firestore service-account credentials, project ID and read access. Do not expose secrets in logs.", verification: "GET /api/health must return HTTP 200 with status=ok and database=reachable." },
+    "store-config": { action: "Review storefront configuration loading, store settings and delivery-zone data. Check server logs for Firestore permission or parsing errors.", verification: "GET /api/storefront/config must return HTTP 200 with settings and a zones array." },
+    products: { action: "Inspect product API query validation, catalogue collection availability and response serialization. Confirm seeded products exist if the catalogue is expected to be populated.", verification: "GET /api/products?limit=1 must return items array and numeric total/pages fields." },
+    categories: { action: "Inspect category collection reads and API error handling; confirm category documents use the expected shape.", verification: "GET /api/categories must return HTTP 200 and a JSON array." },
+    payments: { action: "Review payment-gateway configuration and API permissions. Confirm only intentionally enabled gateways are exposed; never log credentials or payment secrets.", verification: "GET /api/payment-gateways must return HTTP 200 and a JSON array without secret values." },
+    storefront: { action: "Inspect the production response, recent deployment logs, routing and static asset errors. Reproduce the issue on mobile and desktop before changing code.", verification: "The production storefront must return a successful HTTP response and render without console/runtime errors." }
+  };
+  const plan = plans[checkId] || { action: "Reproduce the failing check, inspect the matching server logs, identify the smallest root-cause fix, and add a regression test before merging.", verification: "Repeat the same health check and run the relevant automated tests; only mark resolved after the production response passes." };
+  return { ...plan, priority: status === "FAIL" ? "HIGH" : "MEDIUM", mode: "Human-reviewed recommendation; no production code changed automatically." };
+}
 function safeDate(value: any) {
   if (!value) return null;
   const date = value instanceof Date ? value : new Date(value);
@@ -51,7 +63,7 @@ export async function GET(req: NextRequest) {
       id: row.id, checkedAt: safeDate(row.checkedAt), origin: row.origin, summary: row.summary, results: row.results || []
     }));
     const issues = rows.filter((row: any) => row.recordType === "issue").map((row: any) => ({
-      id: row.id, checkId: row.checkId, title: row.title, endpoint: row.endpoint, severity: row.severity,
+      id: row.id, checkId: row.checkId, title: row.title, endpoint: row.endpoint, severity: row.severity, improvement: row.improvement || improvementFor(row.checkId, row.severity === "HIGH" ? "FAIL" : "WARN"),
       status: row.status || "OPEN", message: row.message, firstSeen: safeDate(row.firstSeen), lastSeen: safeDate(row.lastSeen),
       latencyMs: row.latencyMs, httpStatus: row.httpStatus, source: row.source, updatedAt: safeDate(row.updatedAt),
       timeline: Array.isArray(row.timeline) ? row.timeline : []
@@ -84,7 +96,7 @@ export async function POST(req: NextRequest) {
         where: { id: issueId },
         create: {
           id: issueId, recordType: "issue", checkId: result.id, title: result.label, endpoint: result.path,
-          severity: result.status === "FAIL" ? "HIGH" : "MEDIUM", status: "OPEN", message: result.message,
+          severity: result.status === "FAIL" ? "HIGH" : "MEDIUM", improvement: improvementFor(result.id, result.status), status: "OPEN", message: result.message,
           firstSeen: now, lastSeen: now, latencyMs: result.latencyMs, httpStatus: result.httpStatus,
           source: "Automated health audit", timeline: [{ ...event, status: "OPEN" }], createdAt: now, updatedAt: now
         },
