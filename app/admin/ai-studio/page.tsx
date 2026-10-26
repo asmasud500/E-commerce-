@@ -41,6 +41,10 @@ export default function AiStudioPage() {
   const [generating,setGenerating] = useState(false);
   const [generated,setGenerated] = useState<AnyObj|null>(null);
   const [actionDraft,setActionDraft] = useState("");
+  const [healthResult,setHealthResult] = useState<AnyObj|null>(null);
+  const [healthRunning,setHealthRunning] = useState(false);
+  const [healthHistory,setHealthHistory] = useState<AnyObj[]>([]);
+  useEffect(()=>{try{const saved=localStorage.getItem("mart-ai-studio-health-history-v1");if(saved){const parsed=JSON.parse(saved);if(Array.isArray(parsed))setHealthHistory(parsed.slice(0,20));}}catch{/* Ignore malformed local history. */}},[]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,7 +102,21 @@ export default function AiStudioPage() {
     }catch(e){setNotice(e instanceof Error?e.message:"Draft review failed.");}
     finally{setActionDraft("");}
   }
-  const tabs=[["overview","Overview"],["features","AI features"],["content","Content library"],["logs","Usage & logs"],["settings","Settings"]];
+  async function runWebsiteHealth() {
+    setHealthRunning(true);setNotice("");
+    try {
+      const response=await fetch("/api/admin/website-health",{cache:"no-store"});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||"Website health check failed.");
+      setHealthResult(result);
+      const next=[{checkedAt:result.checkedAt,summary:result.summary,results:result.results},...healthHistory].slice(0,20);
+      setHealthHistory(next);
+      try{localStorage.setItem("mart-ai-studio-health-history-v1",JSON.stringify(next));}catch{/* History stays available for this session if storage is unavailable. */}
+      setNotice(result.summary.status==="PASS"?"Website health check passed.":result.summary.failed+" failed and "+result.summary.warnings+" warning(s) found.");
+    }catch(e){setNotice(e instanceof Error?e.message:"Website health check failed.");}
+    finally{setHealthRunning(false);}
+  }
+  const tabs=[["overview","Overview"],["website-health","Website health"],["features","AI features"],["content","Content library"],["logs","Usage & logs"],["settings","Settings"]];
 
   return <div className="admin-layout"><AdminSidebar/><main className="admin-content ai-studio">
     <div className="admin-kicker">MART · INTELLIGENCE WORKSPACE</div>
@@ -127,6 +145,21 @@ export default function AiStudioPage() {
           <div className="ai-chart-legend"><span><i/>Total recorded requests</span><span>Data may be truncated if the 3,000-record limit is reached.</span></div>
         </section>
       </>}
+      {tab==="website-health" && <section className="ai-panel">
+        <div className="ai-panel-heading"><div><h2>Website Health & Improvement Center</h2><p>Run live read-only checks for key storefront and API paths. This detects symptoms; it does not silently edit production code.</p></div><button className="ai-primary" onClick={()=>void runWebsiteHealth()} disabled={healthRunning}>{healthRunning?"Checking website…":"Run health check"}</button></div>
+        {healthResult&&<><div className="ai-stat-grid">
+          <article><span>Overall status</span><strong>{healthResult.summary.status}</strong><small>Checked {new Date(healthResult.checkedAt).toLocaleString()}</small></article>
+          <article><span>Passed</span><strong>{healthResult.summary.passed}</strong><small>Expected response verified</small></article>
+          <article><span>Warnings</span><strong>{healthResult.summary.warnings}</strong><small>Response needs review</small></article>
+          <article><span>Failed</span><strong>{healthResult.summary.failed}</strong><small>Request or server error</small></article>
+        </div>
+        <div className="ai-feature-list">{(healthResult.results||[]).map((item:AnyObj)=><div className="ai-feature-row" key={item.id}><span className="ai-feature-mark">{item.status==="PASS"?"✓":item.status==="WARN"?"!":"×"}</span><div className="ai-feature-main"><strong>{item.label}</strong><small>{item.path} · HTTP {item.httpStatus??"no response"} · {item.latencyMs} ms</small><small>{item.message}</small></div><span className={"ai-pill "+(item.status==="PASS"?"good":item.status==="WARN"?"muted":"bad")}>{item.status}</span></div>)}</div>
+        </>}
+        {!healthResult&&<div className="ai-empty">No health check has been run in this session yet. Start a check to inspect live endpoint responses.</div>}
+        <div className="ai-panel-heading" style={{marginTop:24}}><div><h2>Recent health check history</h2><p>Saved locally in this browser, up to 20 reports. This history is not yet shared across devices.</p></div></div>
+        {healthHistory.length===0?<div className="ai-empty">No saved health reports yet.</div>:<div className="ai-table-wrap"><table><thead><tr><th>Checked at</th><th>Status</th><th>Passed</th><th>Warnings</th><th>Failed</th><th>Details</th></tr></thead><tbody>{healthHistory.map((entry:AnyObj,i:number)=><tr key={entry.checkedAt||i}><td>{entry.checkedAt?new Date(entry.checkedAt).toLocaleString():"—"}</td><td><span className={"ai-pill "+(entry.summary?.status==="PASS"?"good":entry.summary?.status==="WARN"?"muted":"bad")}>{entry.summary?.status||"—"}</span></td><td>{entry.summary?.passed??0}</td><td>{entry.summary?.warnings??0}</td><td>{entry.summary?.failed??0}</td><td><button onClick={()=>setHealthResult(entry)}>View report</button></td></tr>)}</tbody></table></div>}
+        <p className="ai-footnote">Next automation step: schedule daily production checks and alert/report on failures. Automatic code changes should go through tests and approval before deployment.</p>
+      </section>}
       {tab==="features" && <div className="ai-two-col">
         <section className="ai-panel"><h2>Feature controls</h2><p>Switch features on or off independently. Changes apply after saving.</p>
           <label className="ai-toggle-row"><span><strong>Global AI switch</strong><small>Pause all Gemini features without disabling checkout or other store functions.</small></span><input type="checkbox" checked={settings.enabled!==false} onChange={e=>setSettings((s:AnyObj)=>({...s,enabled:e.target.checked}))}/></label>
