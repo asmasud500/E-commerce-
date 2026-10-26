@@ -12,8 +12,9 @@ export default function StoreAiAssistant(){
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [historyOpen,setHistoryOpen]=useState(false);
-  useEffect(()=>{try{const saved=localStorage.getItem("mart-assistant-history-v1");if(saved){const parsed=JSON.parse(saved);if(Array.isArray(parsed)&&parsed.length)setMessages(parsed.slice(-60));}}catch{/* Ignore malformed local history. */}},[]);
-  useEffect(()=>{try{localStorage.setItem("mart-assistant-history-v1",JSON.stringify(messages.slice(-60)));}catch{/* Storage may be unavailable. */}},[messages]);
+  const [conversationId,setConversationId]=useState("");
+  useEffect(()=>{try{let id=localStorage.getItem("mart-assistant-conversation-id");if(!id){id=crypto.randomUUID().replace(/-/g,"");localStorage.setItem("mart-assistant-conversation-id",id);}setConversationId(id);const saved=localStorage.getItem("mart-assistant-history-v1");if(saved){const parsed=JSON.parse(saved);if(Array.isArray(parsed)&&parsed.length)setMessages(parsed.slice(-60));}}catch{/* Ignore unavailable local storage. */}},[]);
+  useEffect(()=>{try{localStorage.setItem("mart-assistant-history-v1",JSON.stringify(messages.slice(-60)));}catch{/* Storage may be unavailable. */}if(conversationId&&messages.some(m=>m.role==="user")){fetch("/api/ai/conversations",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({conversationId,messages:messages.slice(-20).map(m=>({role:m.role,text:m.text.slice(0,2000)}))})}).catch(()=>{});}},[messages,conversationId]);
   const bottom=useRef<HTMLDivElement>(null);
   useEffect(()=>{bottom.current?.scrollIntoView({behavior:"smooth",block:"end"});},[messages,busy,open]);
   async function send(e:FormEvent){
