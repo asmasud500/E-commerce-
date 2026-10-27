@@ -186,9 +186,15 @@ jobs:
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
 
       - name: Verify production storefront and Firestore readiness
+        env:
+          MART_PUBLIC_SITE_URL: ${{ vars.MART_PUBLIC_SITE_URL }}
         run: |
           set -euo pipefail
-          BASE_URL="https://ecommerce-platform.masud50003.workers.dev"
+          # Prefer the canonical storefront origin configured in GitHub Actions Variables.
+          # Fall back to the default Workers hostname when no custom origin is configured.
+          BASE_URL="${MART_PUBLIC_SITE_URL:-https://ecommerce-platform.masud50003.workers.dev}"
+          BASE_URL="${BASE_URL%/}"
+          echo "Checking deployed MART origin: $BASE_URL"
           for attempt in $(seq 1 8); do
             if curl --fail --silent --show-error --output /dev/null "$BASE_URL/"; then break; fi
             if [ "$attempt" -eq 8 ]; then echo "Storefront smoke test failed"; exit 1; fi
