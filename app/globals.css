@@ -4318,3 +4318,14 @@ body:not(:has(.admin-layout)) .product-buy-card{border-radius:var(--store-card-r
     transition:none!important;
   }
 }
+
+/* Button redesign: soft, ghost and danger variants */
+button.pg-btn-soft,a.pg-btn-soft{background:#fff4ec;border-color:#ffd2b3;color:#c2410c}
+button.pg-btn-soft:hover,a.pg-btn-soft:hover{background:#ffe7d6;border-color:#ffb98a;color:#9a3412}
+button.pg-btn-ghost,a.pg-btn-ghost{background:transparent;border-color:transparent;color:#475467;box-shadow:none}
+button.pg-btn-ghost:hover,a.pg-btn-ghost:hover{background:#f2f4f7;border-color:transparent;color:#101828;box-shadow:none}
+button.pg-btn-danger,a.pg-btn-danger{background:#fef3f2;border-color:#fecdca;color:#b42318}
+button.pg-btn-danger:hover,a.pg-btn-danger:hover{background:#fee4e2;border-color:#fda29b;color:#912018}
+.ac-order button.pg-btn-line,.ac-order a.pg-btn-line{background:#fff;border-color:#e4e7ec;color:#344054}
+.ac-order button.pg-btn-line:hover,.ac-order a.pg-btn-line:hover{background:#f9fafb;border-color:#d0d5dd;color:#101828}
+.ac-me .pg-btn,.ac-order .pg-btn{border-radius:10px;font-size:13px}

@@ -13,9 +13,9 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
   const [storeName,setStoreName]=useState("MART Store");
   const [logoUrl,setLogoUrl]=useState("");
   const [searchPlaceholder,setSearchPlaceholder]=useState("Search for products, brands and more");
-  const [featuredLabel,setFeaturedLabel]=useState("Featured");
-  const [arrivalsLabel,setArrivalsLabel]=useState("New Arrivals");
-  const [dealsLabel,setDealsLabel]=useState("Deals & Offers");
+  const [featuredLabel,setFeaturedLabel]=useState("Top picks");
+  const [arrivalsLabel,setArrivalsLabel]=useState("What's new");
+  const [dealsLabel,setDealsLabel]=useState("Offers");
   const [deliveryNotice,setDeliveryNotice]=useState("Shopping across Bangladesh");
   const [brandColor,setBrandColor]=useState("#131921");
   const [accentColor,setAccentColor]=useState("#ff6801");
@@ -55,14 +55,14 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
             {cats.map(c=><option key={c.slug} value={c.slug}>{c.name}</option>)}
           </select>
           <input name="q" type="search" placeholder={searchPlaceholder} aria-label="Search products" autoComplete="off"/>
-          <button type="submit" aria-label="Search"><Icon name="search" size={18}/><span>Search</span></button>
+          <button type="submit" aria-label="Search"><Icon name="search" size={18}/><span>Find products</span></button>
         </form>
         <nav className="sh-actions" aria-label="Account and cart">
-          <Link href="/track" className="sh-act"><Icon name="truck" size={22}/><span>Track</span></Link>
-          <Link href="/account" className="sh-act"><Icon name="user" size={22}/><span>Account</span></Link>
-          <Link href="/wishlist" className="sh-act"><Icon name="heart" size={22}/><span>Wishlist</span></Link>
+          <Link href="/track" className="sh-act"><Icon name="truck" size={22}/><span>Orders</span></Link>
+          <Link href="/account" className="sh-act"><Icon name="user" size={22}/><span>Profile</span></Link>
+          <Link href="/wishlist" className="sh-act"><Icon name="heart" size={22}/><span>Saved</span></Link>
           <Link href="/cart" className="sh-act" aria-label={count?`Cart, ${count} items`:"Cart"}>
-            <Icon name="cart" size={22}/><span>Cart</span>
+            <Icon name="cart" size={22}/><span>Bag</span>
             {count>0&&<b className="sh-badge">{count>99?"99+":count}</b>}
           </Link>
         </nav>
@@ -70,7 +70,7 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
     </header>
     <nav className="sh-subnav" aria-label="Main shopping navigation">
       <div className="sh-subnav-in">
-        <Link href="/products" className="sh-all-cats"><Icon name="menu" size={17}/> All Categories</Link>
+        <Link href="/products" className="sh-all-cats"><Icon name="menu" size={17}/> Browse</Link>
         <Link href="/products?featured=true">{featuredLabel}</Link>
         <Link href="/products">{arrivalsLabel}</Link>
         <Link href="/products">{dealsLabel}</Link>
