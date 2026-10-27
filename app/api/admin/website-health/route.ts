@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
   if (!["SUPER_ADMIN", "MANAGER"].includes(session.role)) return NextResponse.json({ error: "Website health access requires a manager or super admin role." }, { status: 403, headers: noStore() });
 
   const configuredOrigin = process.env.MART_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL;
-  const origin = (configuredOrigin || req.nextUrl.origin).replace(/\\/$/, "");
+  const origin = (configuredOrigin || req.nextUrl.origin).replace(/\/$/, "");
   let originSource = configuredOrigin ? "environment configuration" : "current admin request host";
 
   const checks = [
