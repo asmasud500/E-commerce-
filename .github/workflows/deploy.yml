@@ -47,7 +47,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for key in FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID TELEGRAM_WEBHOOK_SECRET ADMIN_EMAIL ADMIN_PASSWORD ADMIN_SESSION_SECRET PAYMENT_ENCRYPTION_KEY PAYMENT_WEBHOOK_SECRET CRON_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+          for key in FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY ADMIN_EMAIL ADMIN_PASSWORD ADMIN_SESSION_SECRET PAYMENT_ENCRYPTION_KEY PAYMENT_WEBHOOK_SECRET CRON_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
             if [ -z "${!key:-}" ]; then echo "::error::Required repository secret is missing: $key"; missing=1; fi
           done
           if [ "$missing" -ne 0 ]; then exit 1; fi
@@ -154,6 +154,22 @@ jobs:
           MOBILE_MONEY_SMS_WEBHOOK_SECRET: ${{ secrets.MOBILE_MONEY_SMS_WEBHOOK_SECRET }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - name: Verify deployed production health
+        run: |
+          set -euo pipefail
+          URL="https://ecommerce-platform.masud50003.workers.dev/api/health"
+          for attempt in $(seq 1 10); do
+            code="$(curl --silent --show-error --output /tmp/mart-health.json --write-out '%{http_code}' "$URL" || true)"
+            if [ "$code" = "200" ] && node -e 'const fs=require("node:fs");try{const x=JSON.parse(fs.readFileSync("/tmp/mart-health.json","utf8"));process.exit(x && x.status === "ok" ? 0 : 1)}catch{process.exit(1)}'; then
+              echo "Production health endpoint returned status=ok."
+              exit 0
+            fi
+            echo "Health check attempt $attempt/10 did not pass (HTTP ${code:-request-error}); waiting 10 seconds."
+            sleep 10
+          done
+          echo "::error::Production health check failed after deployment. Inspect Cloudflare Worker logs and runtime secrets."
+          cat /tmp/mart-health.json || true
+          exit 1
       # Telegram is an optional integration: registration failure must not turn a healthy Worker deploy red.
       - name: Register store Telegram webhook and commands
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
