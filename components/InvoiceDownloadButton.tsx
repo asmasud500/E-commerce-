@@ -1,7 +1,8 @@
 "use client";
 import {useState} from "react";
+import {Icon} from "@/components/Icons";
 
-export default function InvoiceDownloadButton({orderId,className="pg-btn pg-btn-line",label="View / Download A4 Invoice"}:{orderId?:string;className?:string;label?:string}){
+export default function InvoiceDownloadButton({orderId,className="pg-btn pg-btn-line",label="Invoice"}:{orderId?:string;className?:string;label?:string}){
  const[busy,setBusy]=useState(false),[error,setError]=useState("");
  async function openInvoice(){
   if(busy)return;
@@ -17,5 +18,5 @@ export default function InvoiceDownloadButton({orderId,className="pg-btn pg-btn-
   }catch(e){setError(e instanceof Error?e.message:"Could not open invoice.");}
   finally{setBusy(false);}
  }
- return <span style={{display:"inline-flex",flexDirection:"column",alignItems:"flex-start",gap:5}}><button type="button" className={className} disabled={busy} onClick={()=>void openInvoice()}>{busy?"Opening invoice…":label}</button>{error&&<small role="alert" style={{color:"#b42318",maxWidth:280}}>{error}</small>}</span>;
+ return <span style={{display:"inline-flex",flexDirection:"column",alignItems:"flex-start",gap:5}}><button type="button" className={className} disabled={busy} onClick={()=>void openInvoice()}>{busy?"Opening…":<><Icon name="fileDown" size={16}/>{label}</>}</button>{error&&<small role="alert" style={{color:"#b42318",maxWidth:280}}>{error}</small>}</span>;
 }

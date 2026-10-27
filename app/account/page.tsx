@@ -63,7 +63,7 @@ export default function Account(){
  if(!user)return <><StoreHeader/><main id="main-content" className="pg"><div className="pg-card pg-empty"><span className="pg-empty-ic"><Icon name="user" size={26}/></span><h2>My account</h2><p>Please log in to view and manage your orders.</p><Link href="/account/login" className="pg-btn">Log in</Link></div></main><StoreFooter/></>;
  return <><StoreHeader/><main id="main-content" className="pg">
   <nav className="pg-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><Icon name="chevronRight" size={14}/><b>My account</b></nav>
-  <div className="pg-card ac-me"><span className="ac-av" aria-hidden="true">{String(user.name||user.email||"?").charAt(0).toUpperCase()}</span><div><h1>{user.name||"My account"}</h1><p>{user.email}</p></div><div className="ac-btns"><Link href="/account/profile" className="pg-btn pg-btn-line">Edit profile</Link><Link href="/account/addresses" className="pg-btn pg-btn-line">Saved addresses</Link>{isAdmin&&<Link href="/admin/login" className="pg-btn pg-btn-navy">Admin panel</Link>}<button type="button" className="pg-btn pg-btn-line" onClick={logout}>Log out</button></div></div>
+  <div className="pg-card ac-me"><span className="ac-av" aria-hidden="true">{String(user.name||user.email||"?").charAt(0).toUpperCase()}</span><div><h1>{user.name||"My account"}</h1><p>{user.email}</p></div><div className="ac-btns"><Link href="/account/profile" className="pg-btn pg-btn-soft"><Icon name="userEdit" size={16}/>Edit details</Link><Link href="/account/addresses" className="pg-btn pg-btn-soft"><Icon name="mapPin" size={16}/>Addresses</Link>{isAdmin&&<Link href="/admin/login" className="pg-btn pg-btn-navy"><Icon name="dashboard" size={16}/>Dashboard</Link>}<button type="button" className="pg-btn pg-btn-ghost" onClick={logout}><Icon name="logout" size={16}/>Sign out</button></div></div>
   <div className="hp-sec-h hp-tab ac-h"><h2>My orders</h2><span>{orders.length} total</span></div>
   {notice&&<div className="pg-card" role="status" style={{padding:14,marginBottom:16}}>{notice}</div>}
   {orders.length>0&&<div className="pg-card ac-order-filters"><input aria-label="Search orders" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search order number or product…" style={{minWidth:0,padding:"12px 14px",border:"1px solid #d9dee7",borderRadius:10}}/><select aria-label="Filter orders by status" value={filter} onChange={e=>setFilter(e.target.value)} style={{padding:"12px",border:"1px solid #d9dee7",borderRadius:10,background:"white"}}><option value="ALL">All statuses</option>{["PENDING","CONFIRMED","PROCESSING","SHIPPED","DELIVERED","CANCELLED","REFUNDED"].map(s=><option key={s} value={s}>{s}</option>)}</select></div>}
@@ -74,11 +74,11 @@ export default function Account(){
    <small>Placed {o.createdAt?new Date(o.createdAt).toLocaleString():"—"}</small>
    <ul>{(o.items||[]).map((i:any)=><li key={i.id}>{i.name} × {i.quantity} <span>— ৳{money(i.lineTotal)}</span></li>)}</ul>
    <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:14}}>
-    <Link href={"/track?order="+encodeURIComponent(o.orderNumber)} className="pg-btn pg-btn-navy">Track order</Link>
+    <Link href={"/track?order="+encodeURIComponent(o.orderNumber)} className="pg-btn"><Icon name="truck" size={16}/>Track</Link>
     <InvoiceDownloadButton orderId={o.id}/>
-    {o.status==="PENDING"&&o.paymentStatus==="PENDING"&&<button type="button" className="pg-btn pg-btn-line" disabled={busy===o.orderNumber} onClick={()=>void cancelOrder(o.orderNumber)}>{busy===o.orderNumber?"Cancelling…":"Cancel order"}</button>}
-    {o.status==="DELIVERED"&&<Link href={"/track?order="+encodeURIComponent(o.orderNumber)} className="pg-btn pg-btn-line">Return / refund options</Link>}
-    <Link href="/products" className="pg-btn pg-btn-line">Shop again</Link>
+    {o.status==="PENDING"&&o.paymentStatus==="PENDING"&&<button type="button" className="pg-btn pg-btn-danger" disabled={busy===o.orderNumber} onClick={()=>void cancelOrder(o.orderNumber)}>{busy===o.orderNumber?"Cancelling…":"Cancel"}</button>}
+    {o.status==="DELIVERED"&&<Link href={"/track?order="+encodeURIComponent(o.orderNumber)} className="pg-btn pg-btn-soft"><Icon name="undo" size={16}/>Return</Link>}
+    <Link href="/products" className="pg-btn pg-btn-soft"><Icon name="refresh" size={16}/>Reorder</Link>
    </div>
   </article>)}</div>}
  </main><StoreFooter/></>}
