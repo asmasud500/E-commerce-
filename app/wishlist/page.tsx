@@ -106,7 +106,7 @@ export default function Wishlist() {
                     <div className="wishlist-price"><strong>{money(price)}</strong>{price < regular && <del>{money(regular)}</del>}</div>
                     <div className="wishlist-actions">
                       <Link href={"/products/" + product.slug} className="pg-btn">View product <Icon name="arrowRight" size={15}/></Link>
-                      <button type="button" className="pg-btn pg-btn-line" onClick={() => void remove(item.productId)} disabled={removing === item.productId || !!removing} aria-label={"Remove " + product.name + " from wishlist"}>{removing === item.productId ? "Removing…" : <><Icon name="trash" size={15}/> Remove Item</>}</button>
+                      <button type="button" className="pg-btn pg-btn-danger" onClick={() => void remove(item.productId)} disabled={removing === item.productId || !!removing} aria-label={"Remove " + product.name + " from wishlist"}>{removing === item.productId ? "Removing…" : <><Icon name="trash" size={15}/> Remove</>}</button>
                     </div>
                   </div>
                 </article>

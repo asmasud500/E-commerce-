@@ -54,7 +54,7 @@ export default function TrackClient({initialOrder}:{initialOrder:string}){
         <form onSubmit={submit}>
           <label className="fld"><span>Order number / mobile number / email address</span><input required value={searchValue} onChange={e=>{setSearchValue(e.target.value);setOrderNumber(e.target.value)}} placeholder="Enter any one of these details" autoComplete="off" autoCapitalize="none" maxLength={254}/></label>
           {error&&<p className="form-error" role="alert">{error}</p>}
-          <button className="pg-btn pg-btn-block" disabled={busy} type="submit">{busy?"Checking...":"Track order"}{!busy&&<Icon name="arrowRight" size={18}/>}</button>
+          <button className="pg-btn pg-btn-block" disabled={busy} type="submit">{busy?"Checking...":"Check status"}{!busy&&<Icon name="arrowRight" size={18}/>}</button>
         </form>
       </section>
 
@@ -89,7 +89,7 @@ export default function TrackClient({initialOrder}:{initialOrder:string}){
         </ol>
         {result.requiresContact&&<label className="fld"><span>Mobile number or email for cancellation/return verification</span><input value={contact} onChange={e=>{setContact(e.target.value);sessionStorage.setItem("mart_return_order",JSON.stringify({orderNumber:result.orderNumber,contact:e.target.value}))}} placeholder="Phone number or email used at checkout" autoComplete="email" maxLength={254}/></label>}
         {result.status==="DELIVERED"&&(result.returnStatus?<p className="trk-return"><b>Return request:</b> {result.returnStatus.toLowerCase()}</p>:<div className="trk-return"><h3>Need to return something?</h3><p>Your order details are carried forward, so you will not need to enter your phone number or email again.</p><Link className="pg-btn" href="/return" onClick={()=>sessionStorage.setItem("mart_return_order",JSON.stringify({orderNumber:result.orderNumber,contact}))}>Go to return page <Icon name="arrowRight" size={18}/></Link></div>)}
-        {result.canCancel&&<form onSubmit={cancelOrder} className="trk-return"><h3>Cancel this order</h3><p>You can cancel before the order is shipped.</p><label className="fld"><span>Reason for cancellation</span><select value={cancelReason} onChange={e=>setCancelReason(e.target.value)}><option>Changed my mind</option><option>Ordered by mistake</option><option>Delivery takes too long</option><option>Found a better price</option><option>Other</option></select></label><button className="pg-btn" type="submit" disabled={cancelBusy}>{cancelBusy?"Cancelling…":"Cancel order"}</button>{cancelMsg&&<small role="status">{cancelMsg}</small>}</form>}
+        {result.canCancel&&<form onSubmit={cancelOrder} className="trk-return"><h3>Cancel this order</h3><p>You can cancel before the order is shipped.</p><label className="fld"><span>Reason for cancellation</span><select value={cancelReason} onChange={e=>setCancelReason(e.target.value)}><option>Changed my mind</option><option>Ordered by mistake</option><option>Delivery takes too long</option><option>Found a better price</option><option>Other</option></select></label><button className="pg-btn pg-btn-danger" type="submit" disabled={cancelBusy}>{cancelBusy?"Cancelling…":"Cancel order"}</button>{cancelMsg&&<small role="status">{cancelMsg}</small>}</form>}
       </section>}
     </div>
   );

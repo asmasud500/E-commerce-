@@ -26,9 +26,9 @@ export default function ProductActions({p,options=[]}:{p:P;options?:Opt[]}){
   {hasVariants&&<div className="pd-variant-summary" aria-live="polite">{variant?<><strong>৳{Number(activePrice).toLocaleString("en-BD")}</strong><span>{activeStock>0?activeStock+" available":"Out of stock"}</span></>:<span>Choose options to see variant price and availability.</span>}</div>}
   {err&&<p role="alert" className="form-error">{err}</p>}
   <div className="pd-qty-row"><span className="pd-label">Quantity</span><div className="pd-qty"><button type="button" disabled={qty<=1} aria-label="Decrease quantity" onClick={()=>setQty(Math.max(1,qty-1))}>−</button><span aria-live="polite">{qty}</span><button type="button" disabled={qty>=maxQty} aria-label="Increase quantity" onClick={()=>setQty(Math.min(maxQty,qty+1))}>+</button></div></div>
-  <div className="pd-actions"><button type="button" className="pg-btn pg-btn-line" disabled={hasVariants?!variant||activeStock<1:p.stock<1} onClick={add}><Icon name="cart" size={18}/>{added?"Added to Cart":"Add to Cart"}</button><button type="button" className="pg-btn" disabled={hasVariants?!variant||activeStock<1:p.stock<1} onClick={buyNow}>Buy Now</button></div>
+  <div className="pd-actions"><button type="button" className="pg-btn" disabled={hasVariants?!variant||activeStock<1:p.stock<1} onClick={add}><Icon name="cart" size={18}/>{added?"Added to bag":"Add to bag"}</button><button type="button" className="pg-btn pg-btn-navy" disabled={hasVariants?!variant||activeStock<1:p.stock<1} onClick={buyNow}><Icon name="bolt" size={18}/>Buy now</button></div>
   {options.length>0&&<section className="pd-card" style={{marginTop:16,padding:16,border:"1px solid var(--border, #e5e7eb)",borderRadius:12}}>
-   <button type="button" className="pg-btn pg-btn-line" style={{width:"100%"}} onClick={()=>{setBulkOpen(!bulkOpen);setBulkMessage("")}}>{bulkOpen?"Hide multiple variants":"Buy multiple variants together"}</button>
+   <button type="button" className="pg-btn pg-btn-soft" style={{width:"100%"}} onClick={()=>{setBulkOpen(!bulkOpen);setBulkMessage("")}}>{bulkOpen?"Hide multiple variants":"Buy multiple variants together"}</button>
    {bulkOpen&&<div style={{marginTop:14,display:"grid",gap:12}}>
     <p style={{margin:0,fontSize:14}}>Choose different combinations and quantities, then add them all to your cart in one step.</p>
     {bulkRows.map((row,index)=><div key={row.id} style={{display:"grid",gap:10,padding:12,border:"1px solid var(--border, #e5e7eb)",borderRadius:10}}>
@@ -37,7 +37,7 @@ export default function ProductActions({p,options=[]}:{p:P;options?:Opt[]}){
      <label style={{display:"grid",gap:5,fontSize:13,fontWeight:600}}>Quantity<input type="number" min={1} max={100} value={row.quantity} onChange={e=>{const n=Number(e.target.value);setBulkRows(rows=>rows.map(r=>r.id===row.id?{...r,quantity:Number.isFinite(n)?Math.max(1,Math.min(100,n)):1}:r));setBulkMessage("")}} style={{width:"100%",minHeight:42,padding:"8px 10px",borderRadius:8,border:"1px solid var(--border, #d1d5db)",background:"var(--card, #fff)",color:"inherit"}}/></label>
     </div>)}
     <button type="button" className="pg-btn pg-btn-line" disabled={bulkRows.length>=20} onClick={addBulkRow}>+ Add another combination</button>
-    <button type="button" className="pg-btn" onClick={addAllVariants}>Add all combinations to cart</button>
+    <button type="button" className="pg-btn" onClick={addAllVariants}>Add all to bag</button>
     {bulkMessage&&<p role="status" aria-live="polite" style={{margin:0,fontSize:14}}>{bulkMessage}</p>}
    </div>}
   </section>}
