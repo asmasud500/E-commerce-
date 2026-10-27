@@ -4151,3 +4151,170 @@ body:not(:has(.admin-layout)) .product-buy-card{border-radius:var(--store-card-r
   .sh-actions{gap:0}
 }
 @media print{.mnav,.skip-link{display:none!important}}
+
+
+/* ===== MART Compact Button System (Navy #131921 / Orange #FF6801) ===== */
+:root{
+  --mart-navy:#131921;
+  --mart-orange:#ff6801;
+  --mart-orange-hover:#e85d04;
+  --mart-btn-radius:9px;
+  --mart-btn-height:40px;
+  --mart-btn-font:13px;
+  --mart-btn-focus:0 0 0 3px rgba(255,104,1,.22);
+}
+:where(button,[role="button"],input[type="button"],input[type="submit"],input[type="reset"],.button,.btn,.hp-btn,.primary-cta,.secondary-cta,.filter-button,.product-link,.nav-cart,.mnav-item){
+  box-sizing:border-box;
+  min-height:var(--mart-btn-height);
+  border-radius:var(--mart-btn-radius);
+  font-size:var(--mart-btn-font);
+  font-weight:650;
+  line-height:1.25;
+  transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+:where(button,input[type="button"],input[type="submit"],input[type="reset"],.button,.btn){
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:9px 13px;
+  border:1px solid #d6dce5;
+  background:#fff;
+  color:var(--mart-navy);
+  box-shadow:none;
+  cursor:pointer;
+  text-decoration:none;
+}
+:where(button,input[type="button"],input[type="submit"],input[type="reset"],.button,.btn):hover:not(:disabled):not([aria-disabled="true"]){
+  transform:translateY(-1px);
+  box-shadow:0 3px 10px rgba(19,25,33,.09);
+}
+:where(button,input[type="button"],input[type="submit"],input[type="reset"],.button,.btn):active:not(:disabled){
+  transform:translateY(0);
+  box-shadow:none;
+}
+:where(button,input[type="button"],input[type="submit"],input[type="reset"],.button,.btn):focus-visible,
+:where(a[role="button"],.hp-btn,.primary-cta,.secondary-cta,.filter-button):focus-visible{
+  outline:2px solid var(--mart-orange);
+  outline-offset:2px;
+  box-shadow:var(--mart-btn-focus);
+}
+:where(button,input[type="button"],input[type="submit"],input[type="reset"]):disabled,
+:where(button,[role="button"],.button,.btn)[aria-disabled="true"]{
+  opacity:.48;
+  cursor:not-allowed;
+  transform:none;
+  box-shadow:none;
+}
+:where(.primary-cta,.filter-button,.hp-btn,[data-variant="primary"],.btn-primary){
+  background:var(--mart-orange);
+  border:1px solid var(--mart-orange);
+  color:#fff;
+  box-shadow:none;
+}
+:where(.primary-cta,.filter-button,.hp-btn,[data-variant="primary"],.btn-primary):hover:not(:disabled){
+  background:var(--mart-orange-hover);
+  border-color:var(--mart-orange-hover);
+  color:#fff;
+}
+:where(.secondary-cta,.hp-btn-line,[data-variant="secondary"],.btn-secondary){
+  background:#fff;
+  border:1px solid #cbd3df;
+  color:var(--mart-navy);
+  box-shadow:none;
+}
+:where(.secondary-cta,.hp-btn-line,[data-variant="secondary"],.btn-secondary):hover:not(:disabled){
+  border-color:var(--mart-orange);
+  color:var(--mart-orange-hover);
+  background:#fff8f3;
+}
+:where(.danger-button,.btn-danger,[data-variant="danger"]){
+  background:#b91c1c;
+  border-color:#b91c1c;
+  color:#fff;
+}
+:where(.text-button,.btn-text,[data-variant="text"]){
+  min-height:32px;
+  padding:5px 7px;
+  border-color:transparent;
+  background:transparent;
+  color:var(--mart-orange-hover);
+  box-shadow:none;
+}
+:where(.icon-button,.btn-icon,[aria-label][data-icon-button="true"]){
+  width:36px;
+  min-width:36px;
+  height:36px;
+  min-height:36px;
+  padding:7px;
+  border-radius:9px;
+}
+:where(.qty-control button,.quantity-control button,[data-quantity-control] button){
+  width:32px;
+  min-width:32px;
+  min-height:32px;
+  height:32px;
+  padding:0;
+  border-radius:8px;
+}
+:where(.sh-search button,.store-ai-compose button){
+  min-height:38px;
+  border-radius:0;
+  padding:8px 14px;
+  background:var(--mart-orange);
+  border-color:var(--mart-orange);
+  color:#fff;
+  box-shadow:none;
+}
+:where(.sh-search button,.store-ai-compose button):hover{
+  background:var(--mart-orange-hover);
+  border-color:var(--mart-orange-hover);
+  transform:none;
+  box-shadow:none;
+}
+:where(.sh-act,.mnav-item,.nav-cart){
+  min-height:34px;
+}
+:where(.sh-act,.mnav-item){
+  box-shadow:none;
+  transform:none;
+}
+:where(.sh-act,.mnav-item):hover{
+  box-shadow:none;
+  transform:none;
+}
+:where(.checkout-steps button,.pagination button,[aria-label*="pagination"] button){
+  min-width:34px;
+  min-height:34px;
+  padding:6px 10px;
+}
+:where(.remove-button,.btn-danger-quiet){
+  min-height:30px;
+  padding:5px 8px;
+  background:transparent;
+  border-color:transparent;
+  box-shadow:none;
+}
+:where(.remove-button,.btn-danger-quiet):hover{
+  background:#fef2f2;
+  color:#b91c1c;
+  box-shadow:none;
+  transform:none;
+}
+@media(max-width:700px){
+  :where(button,input[type="button"],input[type="submit"],input[type="reset"],.button,.btn){
+    min-height:38px;
+    padding:9px 11px;
+  }
+  :where(.icon-button,.btn-icon,[aria-label][data-icon-button="true"]){
+    width:36px;
+    min-width:36px;
+    min-height:36px;
+    padding:7px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  :where(button,[role="button"],input[type="button"],input[type="submit"],input[type="reset"],.button,.btn,.hp-btn,.primary-cta,.secondary-cta,.filter-button){
+    transition:none!important;
+  }
+}
