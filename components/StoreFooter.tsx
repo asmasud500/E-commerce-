@@ -76,7 +76,7 @@ export default function StoreFooter(){
           <h3>{shopHeading}</h3>
           <Link href="/products">All products</Link>
           <Link href="/products?featured=true">Featured products</Link>
-          <Link href="/cart">Shopping cart</Link>
+          <Link href="/cart">Shopping bag</Link>
         </div>
         <div>
           <h3>{accountHeading}</h3>

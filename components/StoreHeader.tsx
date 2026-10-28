@@ -57,12 +57,12 @@ export default function StoreHeader({categories}:{categories?:Cat[]}){
           <input name="q" type="search" placeholder={searchPlaceholder} aria-label="Search products" autoComplete="off"/>
           <button type="submit" aria-label="Search"><Icon name="search" size={18}/><span>Find products</span></button>
         </form>
-        <nav className="sh-actions" aria-label="Account and cart">
+        <nav className="sh-actions" aria-label="Account and bag">
           <Link href="/track" className="sh-act"><Icon name="truck" size={22}/><span>Orders</span></Link>
           <Link href="/account" className="sh-act"><Icon name="user" size={22}/><span>Profile</span></Link>
           <Link href="/wishlist" className="sh-act"><Icon name="heart" size={22}/><span>Saved</span></Link>
-          <Link href="/cart" className="sh-act" aria-label={count?`Cart, ${count} items`:"Cart"}>
-            <Icon name="cart" size={22}/><span>Bag</span>
+          <Link href="/cart" className="sh-act" aria-label={count?`Bag, ${count} items`:"Bag"}>
+            <Icon name="bag" size={22}/><span>Bag</span>
             {count>0&&<b className="sh-badge">{count>99?"99+":count}</b>}
           </Link>
         </nav>

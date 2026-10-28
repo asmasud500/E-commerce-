@@ -113,11 +113,11 @@ async function loadHome(){
 }
 
 const QUICK=[
-  {icon:"bolt",label:"Flash Deals",href:"#flash-sale",fallback:"/products"},
-  {icon:"ticket",label:"Vouchers",href:"/cart"},
-  {icon:"store",label:"Official Stores",href:"#stores",fallback:"/products"},
-  {icon:"globe",label:"Global Collection",href:"/products"},
-  {icon:"truck",label:"Free Delivery",href:"/products?delivery=free"},
+  {icon:"bolt",label:"Flash Deals",note:"Limited-time prices",href:"#flash-sale",fallback:"/products"},
+  {icon:"ticket",label:"Vouchers",note:"Apply at checkout",href:"/cart"},
+  {icon:"store",label:"Official Stores",note:"Verified sellers",href:"#stores",fallback:"/products"},
+  {icon:"globe",label:"Global Collection",note:"Imported picks",href:"/products"},
+  {icon:"truck",label:"Free Delivery",note:"Eligible products",href:"/products?delivery=free"},
 ];
 
 export async function generateMetadata():Promise<Metadata>{
@@ -174,7 +174,7 @@ export default async function Home(){
           <div className="hp-quick-in">
             {QUICK.map(q=>(
               <Link key={q.label} href={quickHref(q)} className="hp-q">
-                <span className="hp-q-ic"><Icon name={q.icon} size={26}/></span>{q.label}
+                <span className="hp-q-ic"><Icon name={q.icon} size={22}/></span><span className="hp-q-tx"><strong>{q.label}</strong><small>{q.note}</small></span><span className="hp-q-go" aria-hidden="true"><Icon name="chevronRight" size={16}/></span>
               </Link>
             ))}
           </div>

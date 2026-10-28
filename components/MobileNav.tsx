@@ -9,7 +9,7 @@ const TABS=[
   {href:"/",label:"Home",icon:"store"},
   {href:"/products",label:"Shop",icon:"search"},
   {href:"/wishlist",label:"Wishlist",icon:"heart"},
-  {href:"/cart",label:"Cart",icon:"cart"},
+  {href:"/cart",label:"Bag",icon:"bag"},
   {href:"/account",label:"Account",icon:"user"},
 ];
 

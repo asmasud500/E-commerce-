@@ -4329,3 +4329,27 @@ button.pg-btn-danger:hover,a.pg-btn-danger:hover{background:#fee4e2;border-color
 .ac-order button.pg-btn-line,.ac-order a.pg-btn-line{background:#fff;border-color:#e4e7ec;color:#344054}
 .ac-order button.pg-btn-line:hover,.ac-order a.pg-btn-line:hover{background:#f9fafb;border-color:#d0d5dd;color:#101828}
 .ac-me .pg-btn,.ac-order .pg-btn{border-radius:10px;font-size:13px}
+
+
+/* ===== Shortcut cards (Flash Deals, Vouchers, ...) — clear icon tiles, two-line labels, balanced grid ===== */
+body:not(:has(.admin-layout)) .hp-quick .hp-quick-in{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;padding:0;background:transparent;border:0;box-shadow:none;overflow:visible}
+body:not(:has(.admin-layout)) .hp-quick .hp-q{position:relative;display:flex;flex-direction:row;align-items:center;gap:12px;min-width:0;padding:14px;text-align:left;color:var(--navy,#131921);background:#fff;border:1px solid #e8eaee;border-radius:14px;box-shadow:0 1px 2px rgba(19,25,33,.04);transition:border-color .18s,box-shadow .18s,transform .18s}
+body:not(:has(.admin-layout)) .hp-quick .hp-q:hover{background:#fff;color:var(--navy,#131921);border-color:rgba(var(--accent-rgb,255,104,1),.45);box-shadow:0 10px 24px rgba(19,25,33,.09);transform:translateY(-2px)}
+body:not(:has(.admin-layout)) .hp-quick .hp-q-ic{flex:0 0 auto;display:grid;place-items:center;width:46px;height:46px;border-radius:12px;background:rgba(var(--accent-rgb,255,104,1),.12)!important;color:var(--accent,#ff6801);transform:none;transition:background .18s,color .18s}
+body:not(:has(.admin-layout)) .hp-quick .hp-q:hover .hp-q-ic{background:var(--accent,#ff6801)!important;color:#fff;transform:none}
+.hp-q-tx{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.hp-q-tx strong{font-size:14px;font-weight:700;line-height:1.25;color:var(--navy,#131921);overflow-wrap:normal}
+.hp-q-tx small{font-size:12px;font-weight:500;line-height:1.3;color:#6b7280}
+.hp-q-go{flex:0 0 auto;color:#a3aab5;display:grid;transition:color .18s,transform .18s}
+.hp-q:hover .hp-q-go{color:var(--accent,#ff6801);transform:translateX(2px)}
+@media(max-width:1100px){body:not(:has(.admin-layout)) .hp-quick .hp-quick-in{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){
+  body:not(:has(.admin-layout)) .hp-quick .hp-quick-in{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  body:not(:has(.admin-layout)) .hp-quick .hp-q{padding:12px;gap:10px}
+  body:not(:has(.admin-layout)) .hp-quick .hp-q:last-child:nth-child(odd){grid-column:1/-1}
+  body:not(:has(.admin-layout)) .hp-quick .hp-q-ic{width:40px;height:40px;border-radius:11px}
+  .hp-q-tx strong{font-size:13px}
+  .hp-q-tx small{font-size:11px}
+  .hp-q-go{display:none}
+}
+@media(max-width:1100px) and (min-width:761px){body:not(:has(.admin-layout)) .hp-quick .hp-q:last-child:nth-child(3n+1){grid-column:auto}}

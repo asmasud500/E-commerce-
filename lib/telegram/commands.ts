@@ -44,7 +44,7 @@ Photo পাঠিয়ে caption এ <code>/photo SKU</code> দিলে ছ
 <b>Delivery</b>: /delivery SKU free|default|FEE · /shipping · /shipping FEE [FREE-OVER] · /freelist
 <b>Voucher</b>: /vouchers · /voucher CODE percent|fixed VALUE [min] [days] · /voucheroff CODE · /voucheron CODE
 <b>Flash sale</b>: /flash PERCENT HOURS SKU1,SKU2 · /flashlist · /flashoff
-<b>Abandoned cart</b>: /abandoned (ফোন দিয়েছে কিন্তু অর্ডার করেনি)
+<b>Abandoned bag</b>: /abandoned (ফোন দিয়েছে কিন্তু অর্ডার করেনি)
 <b>Courier/SMS</b>: /book ORDER-NO steadfast|pathao (Processing অর্ডার) · /integrations (চালু আছে কিনা; key বসাতে admin panel → Integrations)
 <b>COD</b>: /addcod (Cash on Delivery চালু) · /cash ORDER-NO (টাকা হাতে পেয়েছি)
 <b>Payment</b>: /gateways · /paynumber ID NUMBER · /payinfo ID text · /gatewayon ID · /gatewayoff ID`;
@@ -231,7 +231,7 @@ export async function handleTextCommand(text:string,photo?:{fileId:string},messa
     const cs:any[]=await db.abandonedCart.findMany({where:{recovered:false},orderBy:{updatedAt:"desc"},take:100});
     const now=Date.now();
     const list=cs.filter(c=>{const t=new Date(c.updatedAt).getTime();return now-t>3600000&&now-t<7*86400000}).slice(0,15);
-    await reply("<b>🛒 Abandoned carts</b>\n"+(list.length?list.map(c=>"📞 <code>0"+esc(c.phone)+"</code> "+esc(c.name||"")+" · "+tk(c.total)+"\n"+(c.items||[]).map((i:any)=>esc(i.name)+" ×"+i.quantity).join(", ")).join("\n\n"):"এখন কোনো abandoned cart নেই"));return true;
+    await reply("<b>🛒 Abandoned bags</b>\n"+(list.length?list.map(c=>"📞 <code>0"+esc(c.phone)+"</code> "+esc(c.name||"")+" · "+tk(c.total)+"\n"+(c.items||[]).map((i:any)=>esc(i.name)+" ×"+i.quantity).join(", ")).join("\n\n"):"এখন কোনো abandoned bag নেই"));return true;
   }
   if(cmd==="/integrations"){
     const rows:string[]=[];for(const [id,n] of [["steadfast","Steadfast"],["pathao","Pathao"],["sms","SMS"]]){const i=await loadIntegration(id);rows.push(n+": "+(i?.enabled?"✅ ON":"⛔ OFF")+(i&&Object.keys(i.secrets).length?" · key সেট আছে":" · key নেই"))}

@@ -10,7 +10,7 @@ privacy:`## Information we collect
 When you order we collect your name, phone number, email (optional), delivery address and the order details, so we can deliver your parcel and contact you about it. If you share your location at checkout it is used only for delivery.
 
 ## How we use it
-We use your information to process payments, deliver orders, send order updates and give support. If you enter your phone number at checkout and do not finish the order, we may keep your cart so our team can help you complete it.
+We use your information to process payments, deliver orders, send order updates and give support. If you enter your phone number at checkout and do not finish the order, we may keep your bag so our team can help you complete it.
 
 ## Sharing
 We share only what is needed with delivery couriers and payment providers to complete your order. We do not sell your personal information.

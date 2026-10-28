@@ -40,7 +40,7 @@ export function matchZone(zones:any[],division:string,district:string,upazila:st
  * delivery (area + per-product rules) and tax. The checkout preview and order creation both use it.
  */
 export async function buildQuote(input:QuoteInput,opts:{strictCoupon?:boolean}={}):Promise<Quote>{
-  if(!input.items.length)throw new QuoteError("Your cart is empty.");
+  if(!input.items.length)throw new QuoteError("Your bag is empty.");
   const unique=[...new Set(input.items.map(i=>i.productId))];
 
   const [products,flashSales,storedSettings,zones]=await Promise.all([
