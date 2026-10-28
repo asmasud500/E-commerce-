@@ -156,9 +156,9 @@ export default async function Home(){
         </div>
 
         {settings.showBenefits!==false&&<section className="hp-benefits" aria-label="Shopping benefits">
-          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">✓</span><span><strong>Simple, secure checkout</strong><small>Clear order details before you pay</small></span></div>
-          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">৳</span><span><strong>Local payment options</strong><small>Choose an available payment method</small></span></div>
-          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true">↗</span><span><strong>Order updates</strong><small>Keep track of your order status</small></span></div>
+          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true"><Icon name="checkCircle" size={20}/></span><span><strong>Simple, secure checkout</strong><small>Clear order details before you pay</small></span></div>
+          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true"><Icon name="phone" size={20}/></span><span><strong>Local payment options</strong><small>Choose an available payment method</small></span></div>
+          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true"><Icon name="truck" size={20}/></span><span><strong>Order updates</strong><small>Keep track of your order status</small></span></div>
         </section>}
 
         {settings.showPromotions!==false&&banners.length>0&&<section className="hp-promo-section" aria-label="Store promotions">

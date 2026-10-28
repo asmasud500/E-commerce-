@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Rubik:wght@400;500;600;700&display=swap');
 
 :root{--bg:#f5f5f7;--surface:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--brand:#131921;--accent:#ff6801;--accent-2:#e25b00;--success:#059669;--danger:#dc2626;--radius:18px;--shadow:0 10px 35px rgba(15,23,42,.07)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.55}a{color:inherit;text-decoration:none}a:hover{color:var(--accent)}button,input,select,textarea{font:inherit}button{cursor:pointer}main{min-height:100vh}nav{align-items:center;gap:20px}input,select,textarea{border:1px solid var(--line);background:#fff;color:var(--text);border-radius:12px;padding:12px 14px;outline:none;transition:.2s}input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(255,104,1,.1)}button{border:1px solid var(--line);background:#fff;color:var(--text);border-radius:12px;padding:11px 16px;font-weight:600;transition:.2s}button:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(15,23,42,.08)}a[style*="background"],button[style*="background"]{border:none!important;font-weight:700;box-shadow:0 8px 22px rgba(17,24,39,.12);transition:.2s}a[style*="background"]:hover,button[style*="background"]:hover{transform:translateY(-2px);opacity:.94}article{box-shadow:var(--shadow);border-color:var(--line)!important;transition:.25s}article:hover{transform:translateY(-4px);box-shadow:0 18px 45px rgba(15,23,42,.11)}article img{display:block;background:#f1f5f9}h1,h2,h3{letter-spacing:-.035em;line-height:1.08}h1{font-weight:800}small{color:var(--muted)}s{color:#9ca3af}p{color:#4b5563}section{position:relative}
@@ -4353,3 +4353,80 @@ body:not(:has(.admin-layout)) .hp-quick .hp-q:hover .hp-q-ic{background:var(--ac
   .hp-q-go{display:none}
 }
 @media(max-width:1100px) and (min-width:761px){body:not(:has(.admin-layout)) .hp-quick .hp-q:last-child:nth-child(3n+1){grid-column:auto}}
+
+
+/* ===== Design system v2 (ui-ux-pro-max): tokens, type scale, CTA contrast, touch targets, calmer surfaces =====
+   Brand colours stay admin-controlled (--store-brand / --store-accent). Green is used only for "good" states. */
+:root{
+  --ds-bg:#f6f7f9;--ds-surface:#fff;--ds-ink:#111827;--ds-ink-2:#4b5563;--ds-ink-3:#667085;--ds-line:#e5e7eb;
+  --ds-ok:#047857;--ds-ok-bg:#ecfdf5;--ds-warn:#b45309;--ds-danger:#b91c1c;
+  --ds-r-sm:8px;--ds-r-md:12px;--ds-r-lg:16px;
+  --ds-shadow-1:0 1px 2px rgba(16,24,40,.05);--ds-shadow-2:0 10px 28px rgba(16,24,40,.10);
+  --ds-cta:color-mix(in srgb,var(--store-accent,#ff6801) 76%,#000);--ds-cta-hover:color-mix(in srgb,var(--store-accent,#ff6801) 64%,#000);
+  --disp:Rubik,"Hind Siliguri",Inter,ui-sans-serif,system-ui,sans-serif;
+}
+body:not(:has(.admin-layout)){background:var(--ds-bg);color:var(--ds-ink);font-size:16px;line-height:1.6}
+:where(body:not(:has(.admin-layout))) :where(h1,h2,h3,h4){font-family:var(--disp);font-weight:600;letter-spacing:-.01em;line-height:1.25;color:var(--ds-ink)}
+:where(body:not(:has(.admin-layout))) :where(p){color:var(--ds-ink-2)}
+:where(body:not(:has(.admin-layout))) :where(small){color:var(--ds-ink-3)}
+/* dark surfaces keep light text */
+.hp-slide.hp-s1 p,.hp-slide.hp-s2 p{color:rgba(255,255,255,.86)}
+.sf p,.sf small,.sf-brand p{color:#b4bcc8}.sf h3{color:#fff}
+body:not(:has(.admin-layout)) .hp-sec-h h2{font-size:clamp(19px,2.4vw,24px);font-weight:600}
+body:not(:has(.admin-layout)) .hp-sec{margin-top:clamp(28px,4vw,44px)}
+body:not(:has(.admin-layout)) .hp-card{border-radius:var(--ds-r-lg);border-color:var(--ds-line);box-shadow:var(--ds-shadow-1)}
+
+/* Primary actions: darker orange so white text passes 4.5:1, 44px minimum height */
+body:not(:has(.admin-layout)) :where(.hp-atc,.primary-cta,.pg-btn:not(.pg-btn-navy):not(.pg-btn-line):not(.pg-btn-soft):not(.pg-btn-ghost):not(.pg-btn-danger),.hp-btn:not(.hp-btn-line),.sh-search button){background:var(--ds-cta)!important;color:#fff!important;border-color:transparent!important;font-weight:700}
+body:not(:has(.admin-layout)) :where(.hp-atc,.primary-cta,.pg-btn,.hp-btn,.sh-search button):hover{background:var(--ds-cta-hover)!important;color:#fff!important}
+body:not(:has(.admin-layout)) :where(.pg-btn,.hp-btn,.primary-cta,.secondary-cta,.pd-actions button){min-height:46px;border-radius:var(--ds-r-md)}
+body:not(:has(.admin-layout)) .hp-atc{min-height:44px;font-size:14px}
+body:not(:has(.admin-layout)) .hp-pc .hp-atc{left:12px;right:12px;bottom:12px}
+/* Header search: 16px text avoids iOS zoom, taller field */
+body:not(:has(.admin-layout)) .sh-search{border-radius:var(--ds-r-md);border-width:2px}
+body:not(:has(.admin-layout)) .sh-search input{font-size:16px;min-height:46px}
+body:not(:has(.admin-layout)) .sh-act span{font-size:12px}
+
+/* Product cards: quieter surface, clear price, readable meta */
+body:not(:has(.admin-layout)) :where(.hp-pc,.hp-fc,.product-card){border-radius:var(--ds-r-lg);border:1px solid var(--ds-line);box-shadow:var(--ds-shadow-1)}
+body:not(:has(.admin-layout)) :where(.hp-pc,.hp-fc):hover{box-shadow:var(--ds-shadow-2)}
+body:not(:has(.admin-layout)) .hp-pm,body:not(:has(.admin-layout)) .hp-fm{background:#f3f4f6}
+body:not(:has(.admin-layout)) .hp-pb{gap:6px;padding:12px 14px 16px}
+body:not(:has(.admin-layout)) .hp-pb small{font-size:12px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ds-ink-3)}
+body:not(:has(.admin-layout)) .hp-pt{font-size:14px;font-weight:500;line-height:1.4;min-height:2.8em}
+body:not(:has(.admin-layout)) .hp-price strong{color:var(--ds-ink);font-size:18px;font-weight:700}
+body:not(:has(.admin-layout)) .hp-price s{color:var(--ds-ink-3);font-size:13px}
+body:not(:has(.admin-layout)) .hp-rate-n,body:not(:has(.admin-layout)) .hp-norate{font-size:12px;color:var(--ds-ink-3)}
+body:not(:has(.admin-layout)) .hp-free{align-self:flex-start;padding:3px 9px;border-radius:999px;background:var(--ds-ok-bg);color:var(--ds-ok);font-size:12px;font-weight:600}
+body:not(:has(.admin-layout)) :where(.hp-off,.pd-off){background:var(--ds-danger)!important;color:#fff!important;border-radius:999px;font-size:12px;font-weight:700;padding:3px 9px}
+body:not(:has(.admin-layout)) :where(.hp-empty,.pg-empty,.empty-state) p{margin-inline:auto}
+
+/* Benefits strip: compact row with real icons instead of three tall cards */
+body:not(:has(.admin-layout)) .hp-benefits{margin-top:16px;gap:10px}
+body:not(:has(.admin-layout)) .hp-benefit{padding:12px 14px;border-radius:var(--ds-r-md);border-color:var(--ds-line);box-shadow:none;gap:12px}
+body:not(:has(.admin-layout)) .hp-benefit-icon{width:40px;height:40px;border-radius:var(--ds-r-sm);background:var(--ds-ok-bg);color:var(--ds-ok)}
+body:not(:has(.admin-layout)) .hp-benefit strong{font-size:14px;font-weight:600}
+body:not(:has(.admin-layout)) .hp-benefit small{font-size:12px;color:var(--ds-ink-3);margin-top:1px}
+@media(max-width:760px){
+  body:not(:has(.admin-layout)) .hp-benefits{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(260px,84%);overflow-x:auto;scroll-snap-type:x proximity;scroll-padding-inline:14px;gap:10px;padding:0 14px 4px;scrollbar-width:none}
+  body:not(:has(.admin-layout)) .hp-benefits::-webkit-scrollbar{display:none}
+  body:not(:has(.admin-layout)) .hp-benefit{scroll-snap-align:start}
+}
+
+/* Product page, bag and checkout surfaces */
+body:not(:has(.admin-layout)) .pg-card{border-radius:var(--ds-r-lg);border:1px solid var(--ds-line);box-shadow:var(--ds-shadow-1);background:#fff}
+body:not(:has(.admin-layout)) .pd-info h1{font-size:clamp(22px,3vw,30px);font-weight:600}
+body:not(:has(.admin-layout)) .pd-price strong{font-family:var(--disp);font-size:clamp(26px,4vw,34px);font-weight:700;color:var(--ds-ink)}
+body:not(:has(.admin-layout)) .pd-stock.ok{color:var(--ds-ok);font-weight:600}
+body:not(:has(.admin-layout)) .pd-stock.out{color:var(--ds-danger);font-weight:600}
+body:not(:has(.admin-layout)) .cart-item{padding:16px 0}
+body:not(:has(.admin-layout)) .cart-summary{border-radius:var(--ds-r-lg);box-shadow:var(--ds-shadow-1)}
+body:not(:has(.admin-layout)) .qty-control button,body:not(:has(.admin-layout)) .pd-qty button{min-width:44px;min-height:44px}
+body:not(:has(.admin-layout)) .fld{font-size:14px;color:var(--ds-ink)}
+body:not(:has(.admin-layout)) .fld input,body:not(:has(.admin-layout)) .fld textarea,body:not(:has(.admin-layout)) .fld select{min-height:46px;font-size:16px;border-color:#cfd4dc;border-radius:var(--ds-r-md)}
+body:not(:has(.admin-layout)) .fld input:focus,body:not(:has(.admin-layout)) .fld textarea:focus,body:not(:has(.admin-layout)) .fld select:focus{border-color:var(--store-accent,#ff6801);box-shadow:0 0 0 4px rgba(var(--accent-rgb,255,104,1),.16)}
+body:not(:has(.admin-layout)) .form-error{color:var(--ds-danger);font-weight:600}
+@media(max-width:760px){
+  body:not(:has(.admin-layout)) .pd-actions{position:sticky;bottom:calc(68px + env(safe-area-inset-bottom));z-index:20;padding:10px;margin-inline:-6px;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border:1px solid var(--ds-line);border-radius:var(--ds-r-lg);box-shadow:var(--ds-shadow-2)}
+}
+@media(prefers-reduced-motion:reduce){body:not(:has(.admin-layout)) :where(.hp-pc,.hp-fc,.hp-q,.hp-atc){transition:none!important;transform:none!important}}
