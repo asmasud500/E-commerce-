@@ -3,7 +3,6 @@ import type {Metadata} from "next";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import {Icon,categoryIcon} from "@/components/Icons";
-import HeroSlider from "@/components/home/HeroSlider";
 import FlashCountdown from "@/components/home/FlashCountdown";
 import {FlashCard,ProductCard,type HomeProduct} from "@/components/home/ProductCard";
 import {db} from "@/lib/firestore";
@@ -138,27 +137,30 @@ export default async function Home(){
       <main id="main-content" className="hp">
         <h1 className="sr-only">{settings.seoTitle||settings.storeName||"Store"}: online shopping</h1>
 
-        <div className="hp-hero">
-          <aside className="hp-cats" aria-label="Shop by category">
-            <div className="hp-cats-h"><Icon name="menu" size={18}/> Categories</div>
-            <div className="hp-cats-list">
-              {categories.slice(0,10).map((c:any)=>(
-                <Link key={c.id} href={"/products?category="+c.slug} className="hp-cat">
-                  <Icon name={categoryIcon(c.name)} size={19} className="hp-cat-ic"/>
-                  <span>{c.name}</span>
-                  <Icon name="chevronRight" size={16} className="hp-cat-go"/>
-                </Link>
-              ))}
-              <Link href="/products" className="hp-cat hp-cat-all"><Icon name="grid" size={19} className="hp-cat-ic"/><span>All products</span><Icon name="chevronRight" size={16} className="hp-cat-go"/></Link>
+        <section className="hp-stage" aria-label="Featured">
+          <div className="hp-stage-copy">
+            <span className="hp-stage-kicker">{settings.heroBadge||"Curated collection"}</span>
+            <p className="hp-stage-title" role="presentation">{settings.heroTitle&&settings.heroTitle!=="Mega Flash Sale"?settings.heroTitle:"Chosen with care. Delivered fast."}</p>
+            <p className="hp-stage-text">{settings.heroDescription&&!/lowest prices/i.test(settings.heroDescription)?settings.heroDescription:"A focused range of good-quality products, safe local payment and easy returns."}</p>
+            <div className="hp-stage-cta">
+              <Link href={hasFlash&&!settings.heroCtaHref?"#flash-sale":(typeof settings.heroCtaHref==="string"&&/^(\/|#|https:\/\/)/.test(settings.heroCtaHref)&&settings.heroCtaHref!=="#flash-sale"?settings.heroCtaHref:"/products")} className="hp-btn">{settings.heroCtaLabel&&!/flash/i.test(settings.heroCtaLabel)?settings.heroCtaLabel:"Shop the collection"} <Icon name="arrowRight" size={18}/></Link>
+              <Link href="/products?featured=true" className="hp-stage-link">Top picks</Link>
             </div>
-          </aside>
-          <HeroSlider flashImages={flashImages} newImages={newImages} flashHref={hasFlash?"#flash-sale":"/products"} settings={settings}/>
-        </div>
+            <ul className="hp-stage-pay" aria-label="Payment methods"><li>bKash</li><li>Nagad</li><li>Cash on delivery</li></ul>
+          </div>
+          <div className={"hp-stage-art"+(newImages.length?"":" is-empty")} aria-hidden="true">
+            {newImages.slice(0,3).map((src,j)=>(<span key={src+j} className={"hp-stage-img hp-stage-i"+j}><img src={src} alt="" loading={j===0?"eager":"lazy"} decoding="async"/></span>))}
+          </div>
+        </section>
+        {categories.length>0&&<nav className="hp-chips" aria-label="Shop by category">
+          {categories.slice(0,8).map((c:any)=><Link key={c.id} href={"/products?category="+c.slug} className="hp-chip">{c.name}</Link>)}
+          <Link href="/products" className="hp-chip hp-chip-all">All products <Icon name="arrowRight" size={15}/></Link>
+        </nav>}
 
         {settings.showBenefits!==false&&<section className="hp-benefits" aria-label="Shopping benefits" tabIndex={0}>
-          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true"><Icon name="checkCircle" size={20}/></span><span><strong>Simple, secure checkout</strong><small>Clear order details before you pay</small></span></div>
-          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true"><Icon name="phone" size={20}/></span><span><strong>Local payment options</strong><small>Choose an available payment method</small></span></div>
-          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true"><Icon name="truck" size={20}/></span><span><strong>Order updates</strong><small>Keep track of your order status</small></span></div>
+          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true"><Icon name="truck" size={20}/></span><span><strong>Fast delivery</strong><small>Across Bangladesh</small></span></div>
+          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true"><Icon name="phone" size={20}/></span><span><strong>Secure payment</strong><small>bKash, Nagad or cash on delivery</small></span></div>
+          <div className="hp-benefit"><span className="hp-benefit-icon" aria-hidden="true"><Icon name="checkCircle" size={20}/></span><span><strong>Easy returns</strong><small>Simple return policy</small></span></div>
         </section>}
 
         {settings.showPromotions!==false&&banners.length>0&&<section className="hp-promo-section" aria-label="Store promotions">
