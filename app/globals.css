@@ -4720,3 +4720,13 @@ body:not(:has(.admin-layout)) .hp-sec-h.hp-tab h2{border:0;box-shadow:none;paddi
 body:not(:has(.admin-layout)) .hp-sec-h.hp-tab h2::after,body:not(:has(.admin-layout)) .hp-sec-h.hp-tab::after,body:not(:has(.admin-layout)) .hp-sec-h.hp-tab::before{display:none}
 body:not(:has(.admin-layout)) .hp-sec-h.hp-tab{border-bottom:0!important}
 body:not(:has(.admin-layout)) .sf .sf-trust-note{color:#b9b2a7!important}
+/* v3: catalog, bag and empty states match the boutique look */
+body:not(:has(.admin-layout)) :is(.pg-btn:not(.pg-btn-line),.pc-search button,.pg-empty a.pg-btn,.pc-clear-filters){background:var(--pm-ink)!important;color:#fff!important;border-radius:999px;border-color:var(--pm-ink)!important;box-shadow:none}
+body:not(:has(.admin-layout)) :is(.pg-btn:not(.pg-btn-line),.pc-search button):hover{background:var(--ds-cta)!important;border-color:var(--ds-cta)!important}
+body:not(:has(.admin-layout)) .pc-side>:first-child,body:not(:has(.admin-layout)) .pc-side h2{background:transparent!important;color:var(--pm-ink)!important}
+body:not(:has(.admin-layout)) .pc-catalog-head{background:#fff!important;background-image:none!important}
+body:not(:has(.admin-layout)) .pc-eyebrow{color:var(--ds-cta)}
+body:not(:has(.admin-layout)) .pg-empty-ic{background:var(--pm-soft)!important;color:var(--pm-ink)!important}
+body:not(:has(.admin-layout)) .pc-search{border-radius:999px}
+body:not(:has(.admin-layout)) .sh-search{overflow:hidden;padding-right:0}
+body:not(:has(.admin-layout)) .sh-search button{margin:4px 4px 4px 0!important;border-radius:999px!important}
