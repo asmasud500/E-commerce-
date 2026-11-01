@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function ErrorPage({reset}:{error:Error;reset:()=>void}){
   return (
-    <main className="site-error-page" role="alert">
+    <main id="main-content" className="site-error-page" role="alert">
       <section className="site-error-card" aria-labelledby="site-error-title">
         <span className="site-error-mark" aria-hidden="true">!</span>
         <p className="site-error-eyebrow">TEMPORARY ISSUE</p>

@@ -4531,3 +4531,51 @@ body:not(:has(.admin-layout)) .form-error{color:var(--ds-danger);font-weight:600
   .admin-layout .orders-table .orders-actions>*{flex:1 1 calc(50% - 8px)!important;width:auto!important;max-width:none!important;min-height:44px;display:inline-flex;align-items:center;justify-content:center;text-align:center;white-space:normal;margin:0!important}
   .admin-layout .orders-table .orders-actions>.orders-view-detail{flex-basis:100%!important;background:var(--store-accent,#ff6801);border-color:transparent;color:#fff}
 }
+
+
+/* ===== Audit fixes (Nov 2026): headings, touch targets, contrast floor, readable small text ===== */
+/* Footer column titles are h2 now (heading order); keep the previous look */
+.sf-in h2{margin:0 0 12px;font-family:var(--disp);font-size:14px;font-weight:600;letter-spacing:.02em;color:#fff}
+@media(max-width:760px){.sf-in h2{margin-bottom:8px}}
+.sf-in h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+/* Account / sign-in headings promoted to h1 without changing appearance */
+.pg-empty h1{margin:0 0 6px;font-family:var(--disp);font-size:22px;color:var(--navy)}
+.mart-auth-heading h1{margin:0;color:#172337;font-size:clamp(25px,3vw,32px);font-weight:850;letter-spacing:-1.1px;line-height:1.2}
+.mart-auth-hero-title{margin:17px 0 14px;color:#fff;font-size:clamp(34px,4vw,52px);font-weight:850;line-height:1.08;letter-spacing:-2px}
+.mart-auth-hero-title span{color:#ff873e}
+/* Carousel dots: visible dot stays small, tap area is 44px */
+.hp-dots button{position:relative}
+.hp-dots button::after{content:"";position:absolute;inset:-18px -5px}
+.hp-dots{gap:10px}
+/* Checkbox / radio keep their natural size (admin 40px input rule must not stretch them) */
+.admin-layout .admin-content input:is([type="checkbox"],[type="radio"]){min-height:0;width:20px;height:20px;padding:0;accent-color:var(--store-accent,#ff6801)}
+input:is([type="checkbox"],[type="radio"]){accent-color:var(--store-accent,#ff6801)}
+/* Storefront: orange on white text/buttons use the accessible CTA orange */
+body:not(:has(.admin-layout)) .store-ai-launcher{background:var(--ds-cta)!important;color:#fff}
+body:not(:has(.admin-layout)) .store-ai-launcher>b{background:transparent;color:#fff}
+body:not(:has(.admin-layout)) .hp-slide .hp-btn:not(.hp-btn-line){background:var(--ds-cta)!important;color:#fff!important}
+body:not(:has(.admin-layout)) .hp-s2 .hp-btn{background:var(--navy)!important}
+body:not(:has(.admin-layout)) :is(.pg-btn-line,.hp-btn-line,.mart-auth-kicker,.mart-auth-show-password,.mart-auth-switch>button){color:var(--ds-cta)!important;border-color:var(--ds-cta)}
+body:not(:has(.admin-layout)) .mnav-item.is-active{color:var(--ds-cta)}
+body:not(:has(.admin-layout)) :is(.checkout-progress small,.mart-auth-switch>span,.mart-auth-secure span,.mart-auth-back,.hp-norate,.hp-rate-n){color:#5b6472}
+/* Small-text floor: nothing readable below 12px */
+body:not(:has(.admin-layout)) :is(small,.sf-trust-note,.mnav-item,.mnav-item span,.checkout-progress li span,.pc-eyebrow,.mart-auth-kicker,.mart-auth-show-password,.mart-auth-back,.mart-auth-secure span){font-size:max(12px,.75rem)}
+.admin-layout :is(.admin-module-tag,.admin-alert-eyebrow,.ss-nav-number,.ss-preview-label,.ss-aside-caption,.ss-health-disclaimer,.orders-live,.orders-count,.admin-nav-group,.admin-sidebar-status,.ss-eyebrow,.ss-banner-pill,.ss-mini-cta,.ss-admin-tools-note,.martpay-kicker,.admin-footnote,.inventory-footnote){font-size:12px!important}
+.admin-layout .admin-content :is(small,th,.admin-module-link,em,code){font-size:max(12px,.75rem)!important}
+.admin-layout .admin-content th{font-size:12px!important;color:#475467}
+.admin-layout .admin-content :is(small,.admin-stat small,.martpay-section-head div,.ss-nav-number){color:#667085}
+.admin-layout :is(.catalog-back-link,.admin-back-link,.orders-back,.inventory-topline>a){color:#475467}
+/* Touch: footer, breadcrumb and back links get 44px reach on touch devices */
+@media(pointer:coarse){
+  .sf-in a:not(.sh-logo){padding:11px 0}
+  .pg-crumbs a,.pg-crumbs b{display:inline-flex;align-items:center;min-height:44px}
+  .sh-logo{min-height:44px;display:inline-flex;align-items:center}
+  .admin-layout :is(.catalog-back-link,.admin-back-link,.orders-back,.inventory-topline>a,.admin-secondary-action),.admin-login-back,.mart-auth-back{display:inline-flex;align-items:center;min-height:44px}
+}
+/* Contrast: secondary text and table headers (admin keeps its orange untouched) */
+.admin-layout .admin-content th,.admin-layout .table-wrap th{color:#475467!important}
+.admin-layout .admin-content :is(.admin-stat small,.martpay-section-head div,.ss-nav-number,.ss-preview-wrap p,article>small){color:#5b6472!important}
+body:not(:has(.admin-layout)) :is(.wishlist-bottom-link a,.checkout-progress li.on,.checkout-progress li.on *,.pg-crumbs b){color:#a83c00}
+body:not(:has(.admin-layout)) .mart-auth-card p,body:not(:has(.admin-layout)) .mart-auth-panel p{color:#5b6472}
+body:not(:has(.admin-layout)) .pc-side-list a.on{color:#a83c00}
+body:not(:has(.admin-layout)) .info-page p a{color:#a83c00;text-decoration:underline;text-underline-offset:2px}

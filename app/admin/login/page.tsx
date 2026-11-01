@@ -17,7 +17,7 @@ export default function Login(){
   }catch{setError("Could not connect to the store. Check your internet connection and try again.");}
   finally{setBusy(false);}
  }
- return <main className="admin-login-shell"><section className="admin-login-card" aria-labelledby="admin-login-title">
+ return <main id="main-content" className="admin-login-shell"><section className="admin-login-card" aria-labelledby="admin-login-title">
   <div className="admin-login-logo" aria-hidden="true">M</div><div className="admin-kicker">MART · SECURE WORKSPACE</div>
   <h1 id="admin-login-title">Welcome back</h1><p>Sign in to manage your store, orders, catalog and payments.</p>
   <form onSubmit={submit}>

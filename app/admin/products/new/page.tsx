@@ -161,7 +161,7 @@ export default function NewProduct() {
 
   return <div className="admin-layout">
     <AdminSidebar />
-    <main className="admin-content product-editor-page">
+    <main id="main-content" className="admin-content product-editor-page">
       <div className="admin-page-head" style={{ marginBottom: 22 }}>
         <div style={{ width: "100%" }}>
           <div className="admin-kicker">MART · CATALOG MANAGEMENT</div>

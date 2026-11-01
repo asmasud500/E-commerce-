@@ -1,7 +1,7 @@
 import AdminSidebar from "@/components/AdminSidebar";
 import StoreSettingsEditor from "@/components/StoreSettingsEditor";
 
-export default function StoreSettingsPage(){return <div className="admin-layout"><AdminSidebar/><main className="admin-content ss-page">
+export default function StoreSettingsPage(){return <div className="admin-layout"><AdminSidebar/><main id="main-content" className="admin-content ss-page">
  <div className="ss-page-top"><div><div className="admin-kicker">MART · STORE MANAGEMENT</div><h1>Store settings</h1><p>One workspace for your store identity, checkout rules, customer support and storefront content.</p></div><a className="ss-dashboard-link" href="/admin">← Back to dashboard</a></div>
  <div className="ss-page-banner"><span className="ss-banner-icon" aria-hidden="true">⚙</span><div><strong>Your store, configured in one place</strong><p>Changes are saved through the existing validated settings API. Review the preview and save when you're ready.</p></div><span className="ss-banner-pill">BDT · Bangladesh</span></div>
  <StoreSettingsEditor/>

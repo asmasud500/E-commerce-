@@ -70,7 +70,7 @@ export default function Wishlist() {
   return (
     <>
       <StoreHeader />
-      <main className="pg wishlist-page">
+      <main id="main-content" className="pg wishlist-page">
         <nav className="pg-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><Icon name="chevronRight" size={14}/><b>Wishlist</b></nav>
         <div className="pg-head wishlist-heading">
           <div><h1>My wishlist</h1><p>Save your favourites and find them again whenever you're ready.</p></div>

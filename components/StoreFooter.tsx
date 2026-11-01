@@ -73,20 +73,20 @@ export default function StoreFooter(){
           <small className="sf-trust-note">{footerNote}</small>
         </div>
         <div>
-          <h3>{shopHeading}</h3>
+          <h2>{shopHeading}</h2>
           <Link href="/products">All products</Link>
           <Link href="/products?featured=true">Featured products</Link>
           <Link href="/cart">Shopping bag</Link>
         </div>
         <div>
-          <h3>{accountHeading}</h3>
+          <h2>{accountHeading}</h2>
           <Link href="/track">Track your order</Link>
           <Link href="/account">Orders and profile</Link>
           <Link href="/wishlist">Wishlist</Link>
           <Link href="/products">Continue shopping</Link>
         </div>
         <div className="sf-contact">
-          <h3>{supportHeading}</h3>
+          <h2>{supportHeading}</h2>
           {socials.length>0&&<div className="sf-social">{socials.map(x=><a key={x.name} href={x.href} className="sf-soc" aria-label={x.label} {...(x.external?{target:"_blank",rel:"noopener noreferrer"}:{})}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{x.icon}</svg><span>{x.name}</span></a>)}</div>}
           {address&&<p>{address}</p>}
           {openingHours&&<p>Hours: {openingHours}</p>}

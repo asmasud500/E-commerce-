@@ -58,7 +58,7 @@ export default async function AdminPage() {
 
   return <div className="admin-layout">
     <AdminSidebar />
-    <main className="admin-content">
+    <main id="main-content" className="admin-content">
       <div className="admin-kicker">MART · STORE OPERATIONS</div>
       <div className="admin-heading-row">
         <div><h1>Admin dashboard</h1><p>Your store overview, daily operations and management tools in one place.</p></div>
@@ -86,7 +86,7 @@ export default async function AdminPage() {
       </div>
       <section className="admin-recent">
         <div className="admin-section-heading"><div><h2>Recent orders</h2><p>Latest records from the connected database.</p></div><Link href="/admin/orders">View all orders →</Link></div>
-        <div className="admin-table-wrap"><table><thead><tr><th>Order number</th><th>Customer</th><th>Order total</th><th>Payment</th><th>Order status</th><th>Created</th><th></th></tr></thead>
+        <div role="region" aria-label="Data table, scrollable" tabIndex={0} className="admin-table-wrap"><table><thead><tr><th>Order number</th><th>Customer</th><th>Order total</th><th>Payment</th><th>Order status</th><th>Created</th><th><span className="sr-only">Actions</span></th></tr></thead>
           <tbody>{recent.map(o => <tr key={o.id}>
             <td><strong>{o.orderNumber || o.id}</strong></td><td>{o.customerName || "Customer"}</td><td>{money(Number(o.total))}</td>
             <td><span className="admin-status" data-tone={tone(o.paymentStatus)}>{o.paymentStatus || "—"}</span></td><td><span className="admin-status" data-tone={tone(o.status)}>{o.status || "—"}</span></td>

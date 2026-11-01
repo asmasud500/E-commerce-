@@ -36,7 +36,7 @@ export default function SecurityPage(){
  const changes=useMemo(()=>events.filter(e=>/SETTING|STAFF|PERMISSION|GATEWAY|INTEGRATION|PASSWORD|ROLE/i.test(e.action)),[events]);
  const recentFailures=useMemo(()=>failed.filter(e=>Date.now()-new Date(e.createdAt).getTime()<24*60*60*1000),[failed]);
  const fmtActor=(v:string|null)=>v||"Actor not recorded";
- return <div className="admin-layout"><AdminSidebar/><main className="admin-content">
+ return <div className="admin-layout"><AdminSidebar/><main id="main-content" className="admin-content">
   <div className="admin-kicker">MART · SECURITY CENTER</div><Link href="/admin" className="admin-back-link">← Dashboard</Link>
   <div className="admin-heading-row"><div><h1>Security &amp; Audit Logs</h1><p>Review recorded admin sign-ins, failed login attempts and sensitive configuration changes.</p></div><button className="admin-secondary-action" onClick={()=>void load()} disabled={loading}>{loading?"Refreshing…":"Refresh security data"}</button></div>
   {error&&<div className="admin-report-alert" role="alert"><strong>Security data unavailable</strong><span>{error}</span><button onClick={()=>void load()}>Retry</button></div>}
@@ -54,19 +54,19 @@ export default function SecurityPage(){
   </section>
   <section className="admin-recent" style={{marginBottom:22}}>
    <div className="admin-heading-row"><div><h2>Login history</h2><p>Latest successful and failed sign-in events from the audit log.</p></div></div>
-   <div className="admin-table-wrap"><table><thead><tr><th>Time</th><th>Event</th><th>Account</th><th>Result</th></tr></thead><tbody>
+   <div role="region" aria-label="Data table, scrollable" tabIndex={0} className="admin-table-wrap"><table><thead><tr><th>Time</th><th>Event</th><th>Account</th><th>Result</th></tr></thead><tbody>
     {logins.slice(0,50).map(e=><tr key={e.id}><td>{timeLabel(e.createdAt)}</td><td>{pretty(e.action)}</td><td>{fmtActor(e.actorId)}</td><td><span className={e.action==="ADMIN_LOGIN_FAILED"?"admin-stock-badge admin-stock-badge-out":"admin-stock-badge"}>{e.action==="ADMIN_LOGIN_FAILED"?"Failed":"Successful"}</span></td></tr>)}
    </tbody></table>{!loading&&!logins.length&&<p className="admin-empty">No login events are available in the current audit history.</p>}</div>
   </section>
   <section className="admin-recent" style={{marginBottom:22}}>
    <div className="admin-heading-row"><div><h2>Staff access &amp; last login</h2><p>Current staff accounts and their latest recorded successful login timestamp.</p></div><Link href="/admin/staff" className="admin-secondary-action">Manage staff</Link></div>
-   <div className="admin-table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last login</th></tr></thead><tbody>
+   <div role="region" aria-label="Data table, scrollable" tabIndex={0} className="admin-table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last login</th></tr></thead><tbody>
     {staff.map(s=><tr key={s.id}><td>{s.name}</td><td>{s.email}</td><td>{pretty(s.role)}</td><td>{s.active?"Active":"Inactive"}</td><td>{s.lastLoginAt?timeLabel(s.lastLoginAt):"Never recorded"}</td></tr>)}
    </tbody></table>{!loading&&!staff.length&&<p className="admin-empty">No staff accounts found.</p>}</div>
   </section>
   <section className="admin-recent">
    <div className="admin-heading-row"><div><h2>Sensitive configuration changes</h2><p>Recent audit events related to settings, staff, permissions, gateways and integrations.</p></div><Link href="/admin/activity" className="admin-secondary-action">Open full activity log</Link></div>
-   <div className="admin-table-wrap"><table><thead><tr><th>Time</th><th>Action</th><th>Entity</th><th>Actor</th></tr></thead><tbody>
+   <div role="region" aria-label="Data table, scrollable" tabIndex={0} className="admin-table-wrap"><table><thead><tr><th>Time</th><th>Action</th><th>Entity</th><th>Actor</th></tr></thead><tbody>
     {changes.slice(0,30).map(e=><tr key={e.id}><td>{timeLabel(e.createdAt)}</td><td>{pretty(e.action)}</td><td>{pretty(e.entity)}{e.entityId?" · "+e.entityId:""}</td><td>{fmtActor(e.actorId)}</td></tr>)}
    </tbody></table>{!loading&&!changes.length&&<p className="admin-empty">No matching configuration changes are present in the loaded audit history.</p>}</div>
   </section>

@@ -255,7 +255,7 @@ export default function PaymentGateways() {
     const a = document.createElement("a"); a.href = url; a.download = "payment-methods.csv"; a.click(); URL.revokeObjectURL(url);
   }
 
-  return <div className="admin-layout"><AdminSidebar /><main className="admin-content" style={{ maxWidth: 1440, width: "100%", margin: "0 auto", padding: "clamp(16px, 3vw, 32px)" }}>
+  return <div className="admin-layout"><AdminSidebar /><main id="main-content" className="admin-content" style={{ maxWidth: 1440, width: "100%", margin: "0 auto", padding: "clamp(16px, 3vw, 32px)" }}>
     <a href="/admin" style={{ color: "var(--admin-muted, #64748b)", textDecoration: "none" }}>← Admin dashboard</a>
     <div className="admin-heading-row" style={{ marginTop: 16, alignItems: "center", gap: 16, flexWrap: "wrap" }}>
       <div><div className="admin-kicker">PAYMENTS · CONFIGURATION</div><h1>Payment methods</h1><p>Manage checkout payment options, merchant details and sandbox/live modes.</p><p role="note" style={{maxWidth:850,fontSize:13,lineHeight:1.6,color:"var(--admin-muted,#64748b)"}}>Automatic online checkout currently supports SSLCOMMERZ only. Other payment providers remain disabled until their APIs are implemented and verified; an image/merchant number alone cannot confirm payment automatically. Cash on Delivery can be enabled by adding a CUSTOM method and checking “This is Cash on Delivery”. Enable live online payments only after provider approval and a successful end-to-end test.</p></div>

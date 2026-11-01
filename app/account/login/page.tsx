@@ -55,7 +55,7 @@ export default function Login() {
   return (
     <>
       <StoreHeader />
-      <main className="pg mart-auth-page">
+      <main id="main-content" className="pg mart-auth-page">
         <div className="mart-auth-shell">
           <aside className="mart-auth-story" aria-label="MART shopping benefits">
             <Link href="/" className="mart-auth-brand" aria-label="MART home">
@@ -64,7 +64,7 @@ export default function Login() {
             </Link>
             <div className="mart-auth-story-copy">
               <span className="mart-auth-eyebrow">YOUR EVERYDAY MARKETPLACE</span>
-              <h1>Good finds.<br /><span>Great prices.</span></h1>
+              <p className="mart-auth-hero-title">Good finds.<br /><span>Great prices.</span></p>
               <p>Everything you love, in one place. Sign in and make your next shopping experience effortless.</p>
             </div>
             <div className="mart-auth-benefits">
@@ -85,7 +85,7 @@ export default function Login() {
             <div className="mart-auth-heading">
               <span className="mart-auth-heading-icon" aria-hidden="true">{mode === "login" ? "↗" : "＋"}</span>
               <p className="mart-auth-kicker">{mode === "login" ? "WELCOME BACK" : "JOIN THE MART COMMUNITY"}</p>
-              <h2 id="auth-title">{mode === "login" ? "Sign in to MART" : "Create your account"}</h2>
+              <h1 id="auth-title">{mode === "login" ? "Sign in to MART" : "Create your account"}</h1>
               <p>{mode === "login" ? "Your next great find is just around the corner." : "A few details and you’re ready to start shopping."}</p>
             </div>
 

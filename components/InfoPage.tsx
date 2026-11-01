@@ -19,5 +19,5 @@ export async function PolicyPage({kind}:{kind:PolicyKey}){
 export const tk=(n:number)=>"৳"+n.toLocaleString("en-BD");
 
 export default function InfoPage({title,intro,children}:{title:string;intro?:string;children:React.ReactNode}){
-  return <><StoreHeader/><main className="pg"><article className="pg-card info-page"><h1>{title}</h1>{intro&&<p className="info-intro">{intro}</p>}{children}</article></main><StoreFooter/></>;
+  return <><StoreHeader/><main id="main-content" className="pg"><article className="pg-card info-page"><h1>{title}</h1>{intro&&<p className="info-intro">{intro}</p>}{children}</article></main><StoreFooter/></>;
 }

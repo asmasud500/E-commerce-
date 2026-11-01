@@ -49,7 +49,7 @@ export default function AdminSidebar() {
         <strong><Icon name="menu" size={18} /> MART Admin</strong><span>{open ? "Close navigation ×" : "Open navigation →"}</span>
       </button>
       {open && <button className="admin-sidebar-overlay" aria-label="Close admin navigation" type="button" onClick={() => setOpen(false)} />}
-      <aside id="mart-admin-navigation" className={`admin-sidebar${open ? " is-open" : ""}`}>
+      <aside id="mart-admin-navigation" aria-label="Admin sidebar" className={`admin-sidebar${open ? " is-open" : ""}`}>
         <Link href="/admin" className="admin-brand" onClick={() => setOpen(false)}><span>MART</span><small>ADMIN CONTROL CENTER</small></Link>
         <nav aria-label="Admin modules">
           {groups.map(group => (
